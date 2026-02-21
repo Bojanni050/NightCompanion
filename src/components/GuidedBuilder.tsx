@@ -44,6 +44,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
           if (state.currentStep) setCurrentStep(state.currentStep);
           if (state.generatedPrompt) setGeneratedPrompt(state.generatedPrompt);
           if (state.showResult !== undefined) setShowResult(state.showResult);
+          if (state.aiAdvice) setAiAdvice(state.aiAdvice);
         }
       }
     } catch (e) {
@@ -60,10 +61,11 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
       currentStep,
       generatedPrompt,
       showResult,
-      initialPrompt // Save this to compare later
+      initialPrompt, // Save this to compare later
+      aiAdvice
     };
     localStorage.setItem('nightcompanion_guided_state', JSON.stringify(state));
-  }, [selections, additions, customInputs, currentStep, generatedPrompt, showResult, initialPrompt]);
+  }, [selections, additions, customInputs, currentStep, generatedPrompt, showResult, initialPrompt, aiAdvice]);
 
   const step = GUIDED_STEPS[currentStep] || GUIDED_STEPS[0];
 
@@ -121,6 +123,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
     setAiLoading(true);
     try {
       const currentPrompt = buildGuidedPrompt(selections, additions, customInputs);
+      setAiAdvice(null); // Clear previous advice
       const token = '';
 
       const improved = await generateFromDescription(
@@ -150,6 +153,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
     setCurrentStep(0);
     setGeneratedPrompt('');
     setShowResult(false);
+    setAiAdvice(null);
     localStorage.removeItem('nightcompanion_guided_state');
   }
 

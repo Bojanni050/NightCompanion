@@ -57,8 +57,22 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
   const [pendingAction, setPendingAction] = useState<((keepNegative: boolean) => void) | null>(null);
 
   // AI model advice state
-  const [aiAdvice, setAiAdvice] = useState<{ name: string; reasoning: string; tips: string[]; preset?: string } | null>(null);
+  const [aiAdvice, setAiAdvice] = useState<{ name: string; reasoning: string; tips: string[]; preset?: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem('nightcompanion_random_ai_advice');
+      if (saved) return JSON.parse(saved);
+    } catch { /* ignore */ }
+    return null;
+  });
   const [loadingAiAdvice, setLoadingAiAdvice] = useState(false);
+
+  useEffect(() => {
+    if (aiAdvice) {
+      localStorage.setItem('nightcompanion_random_ai_advice', JSON.stringify(aiAdvice));
+    } else {
+      localStorage.removeItem('nightcompanion_random_ai_advice');
+    }
+  }, [aiAdvice]);
 
   const confirmClear = (action: (keepNegative: boolean) => void) => {
     if (prompt.trim()) {
@@ -169,6 +183,9 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
       }
       setGeneratedStyle('');
       setCopiedPrompt(false);
+      setCopiedNeg(false);
+      setAiAdvice(null); // Clear previous advice
+      localStorage.removeItem('nightcompanion_random_ai_advice');
       onPromptGenerated(newPrompt);
     };
 
