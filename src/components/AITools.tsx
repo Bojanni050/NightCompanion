@@ -28,6 +28,7 @@ interface AIToolsProps {
   defaultTab?: Tab;
   showHeader?: boolean;
   initialExpanded?: boolean;
+  availableModelTips?: string[] | undefined;
 }
 
 interface ModelInfo {
@@ -70,7 +71,7 @@ function loadAIToolsState<T>(key: string, fallback: T): T {
   return fallback;
 }
 
-const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNegativePromptGenerated, generatedPrompt, generatedNegativePrompt, maxWords, onSaved, allowedTabs, defaultTab = 'improve', showHeader = true, initialExpanded = false }, ref) => {
+const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNegativePromptGenerated, generatedPrompt, generatedNegativePrompt, maxWords, onSaved, allowedTabs, defaultTab = 'improve', showHeader = true, initialExpanded = false, availableModelTips }, ref) => {
   const { t } = useTranslation();
   const { improve: taskImproveModel, generate: taskGenerateModel } = useTaskModels();
   const [tab, setTab] = useState<Tab>(() => {
@@ -482,6 +483,7 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNeg
               useModelTips={useModelTips}
               onSetUseModelTips={setUseModelTips}
               onSetModelTips={setModelTips}
+              availableModelTips={availableModelTips}
             />
           )}
 
@@ -539,7 +541,7 @@ export default AITools;
 
 
 function ImproveTab({
-  input, setInput, negativeInput, setNegativeInput, result, negativeResult, loading, copied, saving, onSubmit, onCopy, onUse, onSave, onClear, generatedPrompt, generatedNegativePrompt, suggestedModel, activeModel, modelTips, useModelTips, onSetUseModelTips, onSetModelTips,
+  input, setInput, negativeInput, setNegativeInput, result, negativeResult, loading, copied, saving, onSubmit, onCopy, onUse, onSave, onClear, generatedPrompt, generatedNegativePrompt, suggestedModel, activeModel, modelTips, useModelTips, onSetUseModelTips, onSetModelTips, availableModelTips,
 }: {
   input: string;
   setInput: (v: string) => void;
@@ -563,9 +565,11 @@ function ImproveTab({
   useModelTips: boolean;
   onSetUseModelTips: (v: boolean) => void;
   onSetModelTips: (tips: string[]) => void;
+  availableModelTips?: string[] | undefined;
 }) {
   const { t } = useTranslation();
   const [showDiff, setShowDiff] = useState(true);
+  const [fetchingTips, setFetchingTips] = useState(false);
 
   const diff = result ? diffWords(input, result) : [];
   const negativeDiff = negativeResult ? diffWords(negativeInput, negativeResult) : [];
@@ -601,6 +605,12 @@ function ImproveTab({
               {modelTips.length === 0 ? (
                 <button
                   onClick={async () => {
+                    if (availableModelTips && availableModelTips.length > 0) {
+                      onSetModelTips(availableModelTips);
+                      onSetUseModelTips(true);
+                      return;
+                    }
+                    setFetchingTips(true);
                     try {
                       const { getTopCandidates } = await import('../lib/models-data');
                       const { recommendModels } = await import('../lib/ai-service');
@@ -611,12 +621,15 @@ function ImproveTab({
                         onSetModelTips(top.tips);
                         onSetUseModelTips(true);
                       }
-                    } catch { /* ignore */ }
+                    } catch { /* ignore */ } finally {
+                      setFetchingTips(false);
+                    }
                   }}
-                  className="flex items-center gap-1.5 text-[10px] text-teal-400 hover:text-teal-300 border border-teal-900/50 hover:border-teal-700/60 bg-teal-950/30 px-2 py-1 rounded-md transition-colors"
+                  disabled={fetchingTips}
+                  className="flex items-center gap-1.5 text-[10px] text-teal-400 hover:text-teal-300 border border-teal-900/50 hover:border-teal-700/60 bg-teal-950/30 px-2 py-1 rounded-md transition-colors disabled:opacity-60"
                 >
-                  <Sparkles size={10} />
-                  Fetch model tips
+                  {fetchingTips ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                  {fetchingTips ? 'Fetching...' : (availableModelTips?.length ? 'Use suggested tips' : 'Fetch model tips')}
                 </button>
               ) : (
                 <label className="flex items-center gap-2 cursor-pointer select-none">

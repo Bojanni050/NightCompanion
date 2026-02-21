@@ -23,13 +23,14 @@ interface RandomGeneratorProps {
   initialPrompt?: string;
   initialNegativePrompt?: string;
   onCheckExternalFields?: (proceed: (keepNegative: boolean) => void, isLocalDirty: boolean) => void;
+  onAiAdviceTips?: (tips: string[]) => void;
   magicInputSlot?: React.ReactNode;
   greylist: string[];
   recentPrompts?: string[];
   selectedNightCafePreset?: string;
 }
 
-export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, onSaved, onPromptGenerated, onNegativePromptChanged, maxWords, initialPrompt, initialNegativePrompt, onCheckExternalFields, magicInputSlot, greylist, recentPrompts, selectedNightCafePreset }: RandomGeneratorProps) {
+export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, onSaved, onPromptGenerated, onNegativePromptChanged, maxWords, initialPrompt, initialNegativePrompt, onCheckExternalFields, onAiAdviceTips, magicInputSlot, greylist, recentPrompts, selectedNightCafePreset }: RandomGeneratorProps) {
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [negativePrompt, setNegativePrompt] = useState(initialNegativePrompt || '');
   const { generate: taskGenerateModel } = useTaskModels();
@@ -251,6 +252,9 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
           tips: top.tips || [],
           ...(top.recommendedPreset ? { preset: top.recommendedPreset } : {}),
         });
+        if (onAiAdviceTips && top.tips) {
+          onAiAdviceTips(top.tips);
+        }
       }
     } catch (e) {
       handleAIError(e);
@@ -546,7 +550,7 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
               <textarea
                 value={prompt}
                 onChange={(e) => { setPrompt(e.target.value); onPromptGenerated(e.target.value); }}
-                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500/50 leading-relaxed resize-none h-32 pr-10"
+                className="w-full bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500/50 leading-relaxed resize-none h-40 pr-10"
                 placeholder="Positive prompt..."
               />
               {prompt && (
@@ -576,7 +580,7 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
                     onNegativePromptChanged?.(val);
                   }}
                   maxLength={600}
-                  className="w-full bg-transparent border-0 p-0 text-xs text-red-200/80 leading-relaxed focus:outline-none focus:ring-0 placeholder-red-900/50 resize-none h-16"
+                  className="w-full bg-transparent border-0 p-0 text-xs text-red-200/80 leading-relaxed focus:outline-none focus:ring-0 placeholder-red-900/50 resize-none h-20"
                   placeholder="blurred, low quality, watermark, distorted..."
                 />
               </div>

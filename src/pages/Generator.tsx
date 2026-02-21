@@ -26,6 +26,7 @@ export default function Generator() {
   });
 
   const aiToolsRef = useRef<AIToolsRef>(null);
+  const [aiAdviceTips, setAiAdviceTips] = useState<string[]>([]);
 
   const [guidedInitial, setGuidedInitial] = useState(() => {
     try { const s = localStorage.getItem(STORAGE_KEY); if (s) return JSON.parse(s).guidedInitial || ''; } catch { /* ignore */ } return '';
@@ -424,6 +425,7 @@ export default function Generator() {
           initialNegativePrompt={randomNegativePrompt}
           selectedNightCafePreset={selectedNightCafePreset}
           onCheckExternalFields={handleCheckExternalFields}
+          onAiAdviceTips={setAiAdviceTips}
           magicInputSlot={
             <MagicPromptInput
               className="h-full"
@@ -445,6 +447,7 @@ export default function Generator() {
           onSaved={() => setSaveCount((c) => c + 1)}
           maxWords={maxWords}
           selectedNightCafePreset={selectedNightCafePreset}
+          onAiAdviceTips={setAiAdviceTips}
         />
       )}
 
@@ -517,6 +520,7 @@ export default function Generator() {
         defaultTab="improve"
         showHeader={false}
         initialExpanded={true}
+        availableModelTips={aiAdviceTips}
       />
       <ChoiceModal
         isOpen={showExternalClearModal}

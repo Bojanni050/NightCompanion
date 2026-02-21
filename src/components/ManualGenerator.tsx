@@ -439,7 +439,7 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
                                 value={prompt}
                                 onChange={(e) => handlePromptChange(index, e.target.value)}
                                 placeholder={`Enter prompt part ${index + 1}...`}
-                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-10 pt-3 pb-10 text-sm text-white placeholder-slate-600 resize-none h-24 focus:outline-none focus:border-teal-500/40"
+                                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-10 pt-3 pb-10 text-sm text-white placeholder-slate-600 resize-none h-32 focus:outline-none focus:border-teal-500/40"
                             />
 
                             <div className="absolute top-3 right-3 flex items-center gap-1">
@@ -552,7 +552,7 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
                                     onChange={(e) => setNegativePrompt(e.target.value.slice(0, 600))}
                                     maxLength={600}
                                     placeholder="blurred, low quality, watermark, distorted..."
-                                    className="w-full bg-slate-900/30 border border-red-900/30 focus:border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-50 placeholder-red-900/50 resize-none h-20 focus:outline-none pr-20"
+                                    className="w-full bg-slate-900/30 border border-red-900/30 focus:border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-50 placeholder-red-900/50 resize-none h-28 focus:outline-none pr-20"
                                 />
                                 <div className="absolute bottom-2 right-2 flex gap-1.5">
                                     <button

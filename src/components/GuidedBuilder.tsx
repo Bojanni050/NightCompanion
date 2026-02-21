@@ -13,9 +13,10 @@ interface GuidedBuilderProps {
   onSaved: () => void;
   maxWords: number;
   selectedNightCafePreset?: string;
+  onAiAdviceTips?: (tips: string[]) => void;
 }
 
-export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, selectedNightCafePreset }: GuidedBuilderProps) {
+export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, selectedNightCafePreset, onAiAdviceTips }: GuidedBuilderProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [additions, setAdditions] = useState<string[]>([]);
@@ -184,6 +185,9 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
       const top = result.recommendations[0];
       if (top) {
         setAiAdvice({ name: top.modelName, reasoning: top.reasoning, tips: top.tips || [], ...(top.recommendedPreset ? { preset: top.recommendedPreset } : {}) });
+        if (onAiAdviceTips && top.tips) {
+          onAiAdviceTips(top.tips);
+        }
       }
     } catch (e) {
       console.error('AI advice failed', e);
