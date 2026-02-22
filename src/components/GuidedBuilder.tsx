@@ -181,6 +181,9 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
       return;
     }
 
+    const suggestion = analyzePrompt(generatedPrompt)[0];
+    const suggestedModelIdToSave = suggestion ? suggestion.model.id : undefined;
+
     await db.from('prompts').insert({
       title: (generatedPrompt.split(',')[0] || 'Untitled').trim().slice(0, 160),
       content: generatedPrompt,
@@ -188,6 +191,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
       rating: 0,
       is_template: false,
       is_favorite: false,
+      suggested_model: suggestedModelIdToSave
     });
     setSaving(false);
     onSaved();
@@ -274,8 +278,8 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
                   setGeneratedPrompt(buildGuidedPrompt(selections, newAdditions, customInputs));
                 }}
                 className={`px - 3 py - 1.5 rounded - lg text - xs font - medium transition - all border ${additions.includes(add.id)
-                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                    : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
+                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                  : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
                   } `}
               >
                 {add.label}
@@ -354,10 +358,10 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
             key={s.id}
             onClick={() => setCurrentStep(i)}
             className={`flex - 1 h - 1.5 rounded - full transition - all ${selections[s.id] || customInputs[s.id]
-                ? 'bg-amber-500'
-                : i === currentStep
-                  ? 'bg-amber-500/40'
-                  : 'bg-slate-800'
+              ? 'bg-amber-500'
+              : i === currentStep
+                ? 'bg-amber-500/40'
+                : 'bg-slate-800'
               } `}
           />
         ))}
@@ -381,8 +385,8 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
               key={option.id}
               onClick={() => handleSelect(option.id)}
               className={`p - 4 rounded - xl text - left transition - all border ${isSelected
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
-                  : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
+                : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
                 } `}
             >
               <span className="text-sm font-medium block">{option.label}</span>
@@ -404,8 +408,8 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
               setCustomInputs(prev => ({ ...prev, [step.id]: prev[step.id] || '' }));
             }}
             className={`p - 4 rounded - xl text - left transition - all border ${selections[step.id] === 'manual'
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
-                : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
+              : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
               } `}
           >
             <div className="flex items-center gap-2 mb-1">

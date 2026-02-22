@@ -392,6 +392,9 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
                 return;
             }
 
+            const topSuggestion = analyzePrompt(fullPrompt)[0];
+            const suggestedModelIdToSave = topSuggestion ? topSuggestion.model.id : undefined;
+
             await db.from('prompts').insert({
                 title: (prompts[0] || 'Untitled').trim().slice(0, 160),
                 content: fullPrompt,
@@ -399,6 +402,7 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
                 rating: 0,
                 is_template: false,
                 is_favorite: false,
+                suggested_model: suggestedModelIdToSave
             });
             toast.success('Prompt saved to library');
             onSaved();

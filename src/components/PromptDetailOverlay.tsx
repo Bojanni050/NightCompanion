@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Hash, Database, AlignLeft, ExternalLink, Clock, Plus, Loader2, GitBranch } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Hash, Database, AlignLeft, ExternalLink, Clock, Plus, Loader2, GitBranch, Sparkles } from 'lucide-react';
 import { db } from '../lib/api';
 import { toast } from 'sonner';
 import DropZone from './DropZone';
@@ -108,6 +108,23 @@ export default function PromptDetailOverlay({
     const modelInfo = MODELS.find(m => m.id === modelId);
     const modelName = modelInfo?.name || modelId || 'Unknown Model';
 
+    // Resolve Suggested Model Name
+    const suggestedModelId = prompt.suggested_model;
+    let suggestedModelName = suggestedModelId;
+    if (suggestedModelId) {
+        try {
+            if (suggestedModelId.startsWith('{')) {
+                const parsed = JSON.parse(suggestedModelId);
+                suggestedModelName = parsed.name || parsed.id || suggestedModelId;
+            } else {
+                const info = MODELS.find(m => m.id === suggestedModelId);
+                suggestedModelName = info?.name || suggestedModelId;
+            }
+        } catch {
+            suggestedModelName = suggestedModelId;
+        }
+    }
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-xl p-4 md:p-8">
             {/* Navigation Buttons - Outside Card */}
@@ -208,13 +225,21 @@ export default function PromptDetailOverlay({
                     <div className="p-8 border-b border-slate-800">
                         <h2 className="text-2xl font-bold text-white mb-2">{prompt.title || 'Untitled Prompt'}</h2>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-slate-400 text-sm">
-                            <div className="flex items-center gap-2">
-                                <Database size={14} />
-                                <span>Model: {modelName}</span>
+                            <div className="flex flex-col gap-1.5">
+                                <div className="flex items-center gap-2">
+                                    <Database size={14} className="text-amber-500" />
+                                    <span>Model: {modelName}</span>
+                                </div>
+                                {suggestedModelName && suggestedModelName !== modelName && (
+                                    <div className="flex items-center gap-2 pl-5 border-l border-slate-700/50 ml-1.5 py-0.5">
+                                        <Sparkles size={12} className="text-teal-400" />
+                                        <span className="text-xs text-slate-500">Suggested: {suggestedModelName}</span>
+                                    </div>
+                                )}
                             </div>
                             {prompt.created_at && (
-                                <div className="flex items-center gap-2">
-                                    <Clock size={14} />
+                                <div className="flex items-center gap-2 mt-1 sm:mt-0">
+                                    <Clock size={14} className="text-slate-500" />
                                     <span>Created: {formatDate(prompt.created_at)}</span>
                                 </div>
                             )}
