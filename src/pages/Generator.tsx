@@ -9,6 +9,7 @@ import ManualGenerator from '../components/ManualGenerator';
 import AITools, { AIToolsRef } from '../components/AITools';
 import MagicPromptInput from '../components/MagicPromptInput';
 import PromptEditor from '../components/PromptEditor';
+import Modal from '../components/Modal';
 import { db } from '../lib/api';
 import type { Prompt } from '../lib/types';
 import { PRESET_OPTIONS } from '../lib/models-data';
@@ -384,6 +385,7 @@ export default function Generator() {
                 value={selectedNightCafePreset}
                 onChange={(e) => setSelectedNightCafePreset(e.target.value)}
                 className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500/50"
+                aria-label="Select NightCafe Preset"
               >
                 <option value="">No Preset</option>
                 {PRESET_OPTIONS.map((preset) => (
@@ -549,17 +551,24 @@ export default function Generator() {
         initialExpanded={true}
         availableModelTips={aiAdviceTips}
       />
-      {editingPromptData && (
-        <PromptEditor
-          prompt={editingPromptData.id ? (editingPromptData as Prompt) : null}
-          {...(!editingPromptData.id && { initialData: editingPromptData })}
-          onSave={() => {
-            setSaveCount((c) => c + 1);
-            setEditingPromptData(null);
-          }}
-          onCancel={() => setEditingPromptData(null)}
-        />
-      )}
+      <Modal
+        open={!!editingPromptData}
+        onClose={() => setEditingPromptData(null)}
+        title={editingPromptData?.id ? "Edit Prompt" : "Save Prompt"}
+        wide
+      >
+        {editingPromptData && (
+          <PromptEditor
+            prompt={editingPromptData.id ? (editingPromptData as Prompt) : null}
+            {...(!editingPromptData.id && { initialData: editingPromptData })}
+            onSave={() => {
+              setSaveCount((c) => c + 1);
+              setEditingPromptData(null);
+            }}
+            onCancel={() => setEditingPromptData(null)}
+          />
+        )}
+      </Modal>
       <ChoiceModal
         isOpen={showExternalClearModal}
         onClose={() => {
