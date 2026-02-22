@@ -11,6 +11,7 @@ import Generator from './pages/Generator';
 import Settings from './pages/Settings';
 import AIConfig from './pages/AIConfig';
 import StyleProfile from './pages/StyleProfile';
+import NCModels from './pages/NCModels';
 import BatchTesting from './pages/BatchTesting';
 import VersioningGuide from './pages/VersioningGuide';
 import Tools from './pages/Tools';
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/characters" element={<Characters />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/models" element={<Models />} />
+          <Route path="/nc-models" element={<NCModels />} />
           <Route path="/batch-testing" element={<BatchTesting />} />
           <Route path="/style" element={<StyleProfile />} />
           <Route path="/versioning-guide" element={<VersioningGuide />} />

@@ -5,7 +5,7 @@ import {
   Wrench, Clock, ChevronLeft, ChevronRight,
   LayoutDashboard, Wand2, Sparkles, Users, Image as ImageIcon,
   Compass, FlaskConical, Fingerprint, Settings, Flame,
-  Moon, Sun, BarChart2, Loader2
+  Moon, Sun, BarChart2, Loader2, Info
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { db } from '../lib/api';
@@ -21,9 +21,15 @@ const navItems = [
   { to: '/models', icon: Compass, labelKey: 'nav.models' },
   { to: '/batch-testing', icon: FlaskConical, labelKey: 'nav.batchTesting' },
   { to: '/style', icon: Fingerprint, labelKey: 'nav.styleProfile' },
+];
+
+const infoItems = [
+  { to: '/nc-models', icon: Info, labelKey: 'nav.ncModels', fallbackLabel: 'NC Models Guide' },
   { to: '/statistics', icon: BarChart2, labelKey: 'nav.statistics' },
   { to: '/timeline', icon: Clock, labelKey: 'nav.timeline' },
+];
 
+const settingsItems = [
   { to: '/ai-config', icon: Settings, labelKey: 'nav.settings' },
   { to: '/settings', icon: Wrench, labelKey: 'nav.generalSettings' },
 ];
@@ -138,25 +144,76 @@ export default function Layout() {
         {/* Cost / Usage Widget */}
         <SidebarCostWidget collapsed={collapsed} />
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-x-hidden">
-          {navItems.map(({ to, icon: Icon, labelKey }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap
-                ${isActive ? 'bg-amber-500/10 text-amber-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'}
-                ${collapsed ? 'justify-center' : ''}`
-              }
-              title={collapsed ? t(labelKey) : undefined}
-            >
-              <Icon size={18} className="shrink-0" />
-              {!collapsed && (
-                <span className="animate-in fade-in slide-in-from-left-2 duration-300">{t(labelKey)}</span>
-              )}
-            </NavLink>
-          ))}
+        <nav className="flex-1 px-3 py-4 space-y-4 overflow-x-hidden">
+          <div className="space-y-1">
+            {navItems.map(({ to, icon: Icon, labelKey }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap
+                  ${isActive ? 'bg-amber-500/10 text-amber-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'}
+                  ${collapsed ? 'justify-center' : ''}`
+                }
+                title={collapsed ? t(labelKey) : undefined}
+              >
+                <Icon size={18} className="shrink-0" />
+                {!collapsed && (
+                  <span className="animate-in fade-in slide-in-from-left-2 duration-300">{t(labelKey)}</span>
+                )}
+              </NavLink>
+            ))}
+          </div>
+
+          <div>
+            {!collapsed && <div className="px-3 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Info & History</div>}
+            <div className="space-y-1">
+              {infoItems.map(({ to, icon: Icon, labelKey, fallbackLabel }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap
+                     ${isActive ? 'bg-amber-500/10 text-amber-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'}
+                     ${collapsed ? 'justify-center' : ''}`
+                  }
+                  title={collapsed ? (t(labelKey) !== labelKey ? t(labelKey) : fallbackLabel || t(labelKey)) : undefined}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {!collapsed && (
+                    <span className="animate-in fade-in slide-in-from-left-2 duration-300">
+                      {t(labelKey) !== labelKey ? t(labelKey) : fallbackLabel || t(labelKey)}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+          <div>
+            {!collapsed && <div className="px-3 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Settings</div>}
+            <div className="space-y-1">
+              {settingsItems.map(({ to, icon: Icon, labelKey }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all whitespace-nowrap
+                     ${isActive ? 'bg-amber-500/10 text-amber-400 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-slate-800'}
+                     ${collapsed ? 'justify-center' : ''}`
+                  }
+                  title={collapsed ? t(labelKey) : undefined}
+                >
+                  <Icon size={18} className="shrink-0" />
+                  {!collapsed && (
+                    <span className="animate-in fade-in slide-in-from-left-2 duration-300">
+                      {t(labelKey)}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         </nav>
 
       </aside>
