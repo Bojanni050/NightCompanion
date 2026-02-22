@@ -5,7 +5,7 @@ import {
   Wrench, Clock, ChevronLeft, ChevronRight,
   LayoutDashboard, Wand2, Sparkles, Users, Image as ImageIcon,
   Compass, FlaskConical, Fingerprint, Settings, Flame,
-  Moon, Sun, BarChart2, Loader2, Info
+  Moon, Sun, BarChart2, Loader2, Info, Download
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { db } from '../lib/api';
@@ -21,6 +21,7 @@ const navItems = [
   { to: '/models', icon: Compass, labelKey: 'nav.models' },
   { to: '/batch-testing', icon: FlaskConical, labelKey: 'nav.batchTesting' },
   { to: '/style', icon: Fingerprint, labelKey: 'nav.styleProfile' },
+  { to: '/import-hub', icon: Download, labelKey: 'Import Hub' },
 ];
 
 const infoItems = [

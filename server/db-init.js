@@ -208,6 +208,12 @@ async function initSchema() {
             CREATE INDEX IF NOT EXISTS idx_gallery_items_created_at ON gallery_items(created_at DESC);
         `);
 
+        // Index voor snelle extensie duplicate-check
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_gallery_items_nightcafe_id 
+            ON gallery_items ((metadata->>'nightcafe_creation_id'));
+        `);
+
         // Collections
         await pool.query(`
             CREATE TABLE IF NOT EXISTS collections (

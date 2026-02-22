@@ -18,6 +18,8 @@ import Tools from './pages/Tools';
 import Timeline from './pages/Timeline';
 import Statistics from './pages/Statistics';
 
+import ImportHub from './pages/ImportHub';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -42,6 +44,7 @@ export default function App() {
           <Route path="/tools" element={<Tools />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/timeline" element={<Timeline />} />
+          <Route path="/import-hub" element={<ImportHub />} />
         </Route>
       </Routes>
     </BrowserRouter>

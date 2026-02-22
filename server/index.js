@@ -84,6 +84,29 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/providers', require('./routes/providers'));
 app.use('/api/usage', require('./routes/usage'));
+
+// Server-Sent Events voor realtime extensie-updates
+const sseClients = new Set();
+app.set('sseClients', sseClients);
+
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.flushHeaders();
+
+  // Stuur ping elke 30 seconden
+  const ping = setInterval(() => res.write('data: {"type":"ping"}\n\n'), 30000);
+
+  sseClients.add(res);
+  req.on('close', () => {
+    clearInterval(ping);
+    sseClients.delete(res);
+  });
+});
+
+app.use('/api/import', require('./routes/import'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Health check
