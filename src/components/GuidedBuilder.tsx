@@ -167,7 +167,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
     if (!generatedPrompt) return;
     setSaving(true);
     await db.from('prompts').insert({
-      title: 'Guided: ' + (generatedPrompt.split(',')[0] || '').slice(0, 160),
+      title: (generatedPrompt.split(',')[0] || 'Untitled').trim().slice(0, 160),
       content: generatedPrompt,
       notes: 'Built with Guided mode' + (selectedNightCafePreset ? ` [NC Preset: ${selectedNightCafePreset}]` : ''),
       rating: 0,

@@ -27,10 +27,9 @@ interface RandomGeneratorProps {
   magicInputSlot?: React.ReactNode;
   greylist: string[];
   recentPrompts?: string[];
-  selectedNightCafePreset?: string;
 }
 
-export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, onSaved, onPromptGenerated, onNegativePromptChanged, maxWords, initialPrompt, initialNegativePrompt, onCheckExternalFields, onAiAdviceTips, magicInputSlot, greylist, recentPrompts, selectedNightCafePreset }: RandomGeneratorProps) {
+export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, onSaved, onPromptGenerated, onNegativePromptChanged, maxWords, initialPrompt, initialNegativePrompt, onCheckExternalFields, onAiAdviceTips, magicInputSlot, greylist, recentPrompts }: RandomGeneratorProps) {
   const [prompt, setPrompt] = useState(initialPrompt || '');
   const [negativePrompt, setNegativePrompt] = useState(initialNegativePrompt || '');
   const { generate: taskGenerateModel } = useTaskModels();
@@ -42,7 +41,7 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
     }
   }, [initialPrompt]);
 
-  const [filters, setFilters] = useState({ dreamy: false, characters: false, cinematic: false });
+  const [filters, setFilters] = useState<FilterState>({ dreamy: false, characters: false, cinematic: false });
   const [creativityLevel, setCreativityLevel] = useState<'focused' | 'balanced' | 'wild'>('balanced');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [copiedNeg, setCopiedNeg] = useState(false);
@@ -224,15 +223,18 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
       ? `${prompt}\n\n### Negative Prompt:\n${negativePrompt}`
       : prompt;
 
+    const topSuggestion = (prompt && typeof prompt === 'string') ? analyzePrompt(prompt)[0] : null;
+
     // Build the generation journey chain
     const journeySteps = [
       { step: regenerating ? 'Magic Random (AI)' : 'Random', label: '🎲 Random' },
     ];
     if (generatedStyle) journeySteps.push({ step: 'Style', label: `🎨 ${generatedStyle}` });
-    if (selectedNightCafePreset) journeySteps.push({ step: 'NightCafe Preset', label: `⚙️ Preset: ${selectedNightCafePreset}` });
     if (filters.dreamy) journeySteps.push({ step: 'Filter', label: '💫 Dreamy' });
     if (filters.characters) journeySteps.push({ step: 'Filter', label: '👤 Characters' });
     if (filters.cinematic) journeySteps.push({ step: 'Filter', label: '🎬 Cinematic' });
+
+    const suggestedModelIdToSave = topSuggestion ? topSuggestion.model.id : undefined;
 
     await db.from('prompts').insert({
       title: (prompt.split(',')[0] || 'Untitled').trim().slice(0, 160),
@@ -243,7 +245,7 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
       is_template: false,
       is_favorite: false,
       model: activeModel,
-      suggested_model: topSuggestion ? topSuggestion.model.id : undefined
+      suggested_model: suggestedModelIdToSave
     });
     setSaving(false);
     onSaved();

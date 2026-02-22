@@ -480,7 +480,7 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNeg
                 if (onPromptGenerated) onPromptGenerated(improveResult);
                 if (negativeResult && onNegativePromptGenerated) onNegativePromptGenerated(negativeResult);
               }}
-              onSave={(text) => handleSavePrompt(text, 'AI Improved: ' + (text.split(',')[0] || 'Untitled').slice(0, 160), { originalPrompt: improveInput, suggestedModelId: suggestedModel?.id })}
+              onSave={(text) => handleSavePrompt(text, (text.split(',')[0] || 'Untitled').trim().slice(0, 160), { originalPrompt: improveInput, suggestedModelId: suggestedModel?.id })}
               onClear={() => { setImproveResult(''); setNegativeResult(''); }}
               generatedPrompt={generatedPrompt}
               generatedNegativePrompt={generatedNegativePrompt}
@@ -507,7 +507,7 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNeg
               onSubmit={handleGenerate}
               onCopy={handleCopy}
               onUse={() => { if (onPromptGenerated) onPromptGenerated(generateResult); }}
-              onSave={(text) => handleSavePrompt(text, 'AI Generated: ' + generateInput.slice(0, 160), { originalPrompt: generateInput })}
+              onSave={(text) => handleSavePrompt(text, (text.split(',')[0] || 'Untitled').trim().slice(0, 160), { originalPrompt: generateInput })}
               generatedPrompt={generatedPrompt}
             />
           )}
@@ -533,7 +533,7 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNeg
               onSubmit={handleDiagnose}
               onCopy={handleCopy}
               onUse={(p) => { if (onPromptGenerated) onPromptGenerated(p); }}
-              onSave={(text) => handleSavePrompt(text, 'AI Diagnosed: ' + (text.split(',')[0] || 'Untitled').slice(0, 160))}
+              onSave={(text) => handleSavePrompt(text, (text.split(',')[0] || 'Untitled').trim().slice(0, 160))}
               generatedPrompt={generatedPrompt}
             />
           )}

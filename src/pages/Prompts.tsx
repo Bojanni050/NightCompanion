@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Plus, Search, Heart, Wand2, Trash2, Edit3, Copy, Check,
-  SlidersHorizontal, BookTemplate, Filter, ChevronLeft, ChevronRight, Clock, Sparkles, Zap, Link, Lock, X, Calendar, Loader2
-} from 'lucide-react';
+import { Sparkles, Loader2, BookTemplate, Heart, Search, Filter, SlidersHorizontal, Plus, Link, Trash2, Edit3, Lock, Zap, Calendar, Clock, Wand2, Copy, Check, ChevronLeft, ChevronRight, X, ExternalLink } from 'lucide-react';
 import { formatDate } from '../lib/date-utils';
 import { db } from '../lib/api';
 import type { Prompt } from '../lib/types';
+import { MODELS, type ModelInfo } from '../lib/models-data';
 import Modal from '../components/Modal';
 import { PromptSkeleton } from '../components/PromptSkeleton';
 import PromptEditor from '../components/PromptEditor';
@@ -531,7 +529,9 @@ export default function Prompts() {
                                     const parsed = JSON.parse(prompt.suggested_model);
                                     return parsed.name || parsed.id || prompt.suggested_model;
                                   }
-                                  return prompt.suggested_model;
+                                  // Look up model by ID if it's just an ID
+                                  const modelInfo = MODELS?.find((m: ModelInfo) => m.id === prompt.suggested_model);
+                                  return modelInfo ? modelInfo.name : prompt.suggested_model;
                                 } catch {
                                   return prompt.suggested_model;
                                 }

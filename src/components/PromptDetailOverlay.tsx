@@ -222,20 +222,6 @@ export default function PromptDetailOverlay({
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-8 space-y-8 no-scrollbar">
-                        {/* Tags Section */}
-                        <div>
-                            <div className="flex items-center gap-2 mb-4 text-amber-500 font-semibold uppercase tracking-wider text-xs">
-                                <Hash size={14} />
-                                <span>Associated Tags</span>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {tags.length > 0 ? (
-                                    tags.map((tag) => <TagBadge key={tag.id} tag={tag} />)
-                                ) : (
-                                    <p className="text-sm text-slate-500 italic">No tags associated</p>
-                                )}
-                            </div>
-                        </div>
 
                         {/* Generation Journey */}
                         {prompt.generation_journey && prompt.generation_journey.length > 0 && (
@@ -290,6 +276,21 @@ export default function PromptDetailOverlay({
                                 </p>
                             </div>
                         )}
+
+                        {/* Tags Section */}
+                        <div>
+                            <div className="flex items-center gap-2 mt-8 mb-4 text-amber-500 font-semibold uppercase tracking-wider text-xs">
+                                <Hash size={14} />
+                                <span>Tags</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {tags.length > 0 ? (
+                                    tags.map((tag) => <TagBadge key={tag.id} tag={tag} />)
+                                ) : (
+                                    <p className="text-sm text-slate-500 italic">No tags</p>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </motion.div>
