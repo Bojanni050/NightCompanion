@@ -7,6 +7,7 @@ import { GUIDED_STEPS, OPTIONAL_ADDITIONS, buildGuidedPrompt } from '../lib/prom
 import { analyzePrompt, getTopCandidates } from '../lib/models-data';
 import { generateFromDescription, recommendModels } from '../lib/ai-service';
 import { db } from '../lib/api';
+import { toast } from 'sonner';
 
 interface GuidedBuilderProps {
   initialPrompt?: string;
@@ -127,7 +128,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
       const token = '';
 
       const improved = await generateFromDescription(
-        `Complete and polish this image prompt based on these attributes: ${currentPrompt}`,
+        `Complete and polish this image prompt based on these attributes: ${currentPrompt} `,
         {
           context: 'User is using a guided prompt builder. Maintain their choices but make it professional and high quality.',
           preferences: { maxWords }
@@ -166,6 +167,20 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
   async function handleSave() {
     if (!generatedPrompt) return;
     setSaving(true);
+
+    // Check for duplicates
+    const { data: existingPrompts } = await db
+      .from('prompts')
+      .select('id')
+      .eq('content', generatedPrompt)
+      .limit(1);
+
+    if (existingPrompts && existingPrompts.length > 0) {
+      toast.error('This prompt is already in your library.');
+      setSaving(false);
+      return;
+    }
+
     await db.from('prompts').insert({
       title: (generatedPrompt.split(',')[0] || 'Untitled').trim().slice(0, 160),
       content: generatedPrompt,
@@ -258,10 +273,10 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
                     : [...additions, add.id];
                   setGeneratedPrompt(buildGuidedPrompt(selections, newAdditions, customInputs));
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${additions.includes(add.id)
-                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                  : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
-                  }`}
+                className={`px - 3 py - 1.5 rounded - lg text - xs font - medium transition - all border ${additions.includes(add.id)
+                    ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                    : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:text-white hover:border-slate-600'
+                  } `}
               >
                 {add.label}
               </button>
@@ -338,12 +353,12 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
           <button
             key={s.id}
             onClick={() => setCurrentStep(i)}
-            className={`flex-1 h-1.5 rounded-full transition-all ${selections[s.id] || customInputs[s.id]
-              ? 'bg-amber-500'
-              : i === currentStep
-                ? 'bg-amber-500/40'
-                : 'bg-slate-800'
-              }`}
+            className={`flex - 1 h - 1.5 rounded - full transition - all ${selections[s.id] || customInputs[s.id]
+                ? 'bg-amber-500'
+                : i === currentStep
+                  ? 'bg-amber-500/40'
+                  : 'bg-slate-800'
+              } `}
           />
         ))}
       </div>
@@ -365,10 +380,10 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
             <button
               key={option.id}
               onClick={() => handleSelect(option.id)}
-              className={`p-4 rounded-xl text-left transition-all border ${isSelected
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
-                : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
-                }`}
+              className={`p - 4 rounded - xl text - left transition - all border ${isSelected
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
+                  : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+                } `}
             >
               <span className="text-sm font-medium block">{option.label}</span>
               <span className="text-[10px] text-slate-500 mt-1 block truncate">
@@ -388,10 +403,10 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
               setSelections(prev => ({ ...prev, [step.id]: 'manual' }));
               setCustomInputs(prev => ({ ...prev, [step.id]: prev[step.id] || '' }));
             }}
-            className={`p-4 rounded-xl text-left transition-all border ${selections[step.id] === 'manual'
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
-              : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
-              }`}
+            className={`p - 4 rounded - xl text - left transition - all border ${selections[step.id] === 'manual'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 ring-1 ring-amber-500/20'
+                : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-800 hover:border-slate-600'
+              } `}
           >
             <div className="flex items-center gap-2 mb-1">
               <Keyboard size={16} />

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { handleAIError } from '../lib/error-handler';
+import { toast } from 'sonner';
 import { Shuffle, Copy, Check, Save, Loader2, ArrowRight, Compass, Sparkles, PenTool, Palette, Eraser, Coins } from 'lucide-react';
 import ChoiceModal from './ChoiceModal';
 import { generateRandomPrompt } from '../lib/prompt-fragments';
@@ -235,6 +236,19 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
     if (filters.cinematic) journeySteps.push({ step: 'Filter', label: '🎬 Cinematic' });
 
     const suggestedModelIdToSave = topSuggestion ? topSuggestion.model.id : undefined;
+
+    // Check for duplicates
+    const { data: existingPrompts } = await db
+      .from('prompts')
+      .select('id')
+      .eq('content', fullContent)
+      .limit(1);
+
+    if (existingPrompts && existingPrompts.length > 0) {
+      toast.error('This prompt is already in your library.');
+      setSaving(false);
+      return;
+    }
 
     await db.from('prompts').insert({
       title: (prompt.split(',')[0] || 'Untitled').trim().slice(0, 160),

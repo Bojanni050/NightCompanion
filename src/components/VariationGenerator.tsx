@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Wand2, Copy, Check, Save, Sparkles, Loader2, Bot } from 'lucide-react';
+```typescript
+import { useState, useEffect } from 'react';
+import { Wand2, Copy, Check, Save, Sparkles, Loader2, Bot, ArrowRight, Settings2 } from 'lucide-react';
 import { db } from '../lib/api';
 import { generatePromptVariations } from '../lib/ai-service';
 import { toast } from 'sonner';
@@ -69,7 +70,7 @@ function getModifiers(strategy: string): string[] {
 function generateVariations(base: string, strategy: string, count: number): string[] {
   const modifiers = getModifiers(strategy);
   const shuffled = [...modifiers].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count).map((mod) => `${base}, ${mod}`);
+  return shuffled.slice(0, count).map((mod) => `${ base }, ${ mod } `);
 }
 
 export default function VariationGenerator({ basePrompt, onSaved }: VariationGeneratorProps) {
@@ -77,7 +78,7 @@ export default function VariationGenerator({ basePrompt, onSaved }: VariationGen
   const [count, setCount] = useState(5);
   const [variations, setVariations] = useState<string[]>([]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
-  const [savingIdx, setSavingIdx] = useState<number | null>(null);
+  const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [regeneratingIdx, setRegeneratingIdx] = useState<number | null>(null);
 
   const [useAI, setUseAI] = useState(false);
@@ -115,12 +116,26 @@ export default function VariationGenerator({ basePrompt, onSaved }: VariationGen
     setTimeout(() => setCopiedIdx(null), 2000);
   }
 
-  async function handleSaveAsPrompt(text: string, idx: number) {
-    setSavingIdx(idx);
+  async function handleSave(prompt: string, titleSuffix: string, index: number) {
+    setSavingIndex(index);
+
+    // Check for duplicates
+    const { data: existingPrompts } = await db
+        .from('prompts')
+        .select('id')
+        .eq('content', prompt)
+        .limit(1);
+
+    if (existingPrompts && existingPrompts.length > 0) {
+        toast.error('This variation is already in your library.');
+        setSavingIndex(null);
+        return;
+    }
+
     const strategyLabel = VARIATION_STRATEGIES.find((s) => s.id === strategy)?.label ?? strategy;
     await db.from('prompts').insert({
-      title: `Variation: ${strategyLabel} #${idx + 1}`,
-      content: text,
+      title: `Variation: ${ strategyLabel } #${ index + 1 } `,
+      content: prompt,
       notes: `Generated variation from: "${basePrompt.slice(0, 100)}..."`,
       rating: 0,
       is_template: false,
@@ -167,10 +182,11 @@ export default function VariationGenerator({ basePrompt, onSaved }: VariationGen
           <button
             key={s.id}
             onClick={() => setStrategy(s.id)}
-            className={`p-3 rounded-xl text-left transition-all ${strategy === s.id
-              ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
-              : 'bg-slate-700/30 border border-slate-700 text-slate-300 hover:bg-slate-700/50'
-              }`}
+            className={`p - 3 rounded - xl text - left transition - all ${
+  strategy === s.id
+  ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400'
+  : 'bg-slate-700/30 border border-slate-700 text-slate-300 hover:bg-slate-700/50'
+} `}
           >
             <p className="text-xs font-medium">{s.label}</p>
             <p className="text-[10px] mt-0.5 opacity-70">{s.description}</p>

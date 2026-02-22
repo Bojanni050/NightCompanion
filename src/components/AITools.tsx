@@ -394,6 +394,19 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNeg
         { step: 'Improved by AI', label: text }
       ] : [{ step: 'Generated with AI', label: text }];
 
+      // Check for duplicates
+      const { data: existingPrompts } = await db
+        .from('prompts')
+        .select('id')
+        .eq('content', text)
+        .limit(1);
+
+      if (existingPrompts && existingPrompts.length > 0) {
+        toast.error('This prompt is already in your library.');
+        setSaving('');
+        return;
+      }
+
       const { error } = await db.from('prompts').insert({
         title: title,
         content: text,

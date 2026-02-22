@@ -379,6 +379,19 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
             ];
             if (selectedNightCafePreset) journeySteps.push({ step: 'NightCafe Preset', label: `⚙️ Preset: ${selectedNightCafePreset}` });
 
+            // Check for duplicates
+            const { data: existingPrompts } = await db
+                .from('prompts')
+                .select('id')
+                .eq('content', fullPrompt)
+                .limit(1);
+
+            if (existingPrompts && existingPrompts.length > 0) {
+                toast.error('This prompt is already in your library.');
+                setSaving(false);
+                return;
+            }
+
             await db.from('prompts').insert({
                 title: (prompts[0] || 'Untitled').trim().slice(0, 160),
                 content: fullPrompt,
