@@ -1651,7 +1651,14 @@ export function analyzePrompt(prompt: string): { model: ModelInfo; score: number
   const lower = prompt.toLowerCase();
   const words = lower.split(/\s+/);
 
-  return MODELS.map((model) => {
+  // Filter only for models that are likely on NightCafe (provider NightCafe or Community)
+  const allowedModels = MODELS.filter(m =>
+    m.provider === 'NightCafe' || m.provider === 'Community' ||
+    m.id.startsWith('juggernaut') || m.id.startsWith('realvis') ||
+    m.id.startsWith('flux') || m.id.includes('dalle3') || m.id.startsWith('ideogram')
+  );
+
+  return allowedModels.map((model) => {
     let score = 0;
     const reasons: string[] = [];
 
