@@ -63,6 +63,7 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, on
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [filePreviews, setFilePreviews] = useState<string[]>([]);
+  const [uploadModels, setUploadModels] = useState<string[]>([]);
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [showCollectionManager, setShowCollectionManager] = useState(false);
   const [managingCollectionFor, setManagingCollectionFor] = useState<string | null>(null); // gallery_item_id
@@ -145,6 +146,10 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, on
     loadTags();
   }, [prompt]);
 
+  const suggestedModelObj = useMemo(() => {
+    return content.trim() ? analyzePrompt(content)[0]?.model : null;
+  }, [content]);
+
   async function handleCreateTag() {
     if (!newTagName.trim()) return;
     const { data } = await db
@@ -182,6 +187,7 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, on
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setFilePreviews(prev => [...prev, result]);
+        setUploadModels(prev => [...prev, model]);
 
         // Auto-detect aspect ratio from first image if not set
         if (newFiles.indexOf(file) === 0 && !detectedAspectRatio) {
@@ -418,7 +424,7 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, on
                   prompt_used: validated.content,
                   prompt_id: promptId,
                   rating: 0,
-                  model: model || null,
+                  model: uploadModels[i] || model || null,
                   notes: 'Uploaded via Prompt Editor',
                   created_at: new Date().toISOString()
                 }).select().maybeSingle();
@@ -506,9 +512,20 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, on
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1.5">
-          Model <span className="text-red-400">*</span>
-        </label>
+        <div className="flex justify-between items-center mb-1.5">
+          <label className="block text-sm font-medium text-slate-300">
+            Model <span className="text-red-400">*</span>
+          </label>
+          {suggestedModelObj && (
+            <button
+              onClick={() => setModel(suggestedModelObj.id)}
+              className="text-xs text-amber-500 hover:text-amber-400 flex items-center gap-1 transition-colors"
+              title="Click to apply suggested model"
+            >
+              <Wand2 size={12} /> Suggested: {suggestedModelObj.name}
+            </button>
+          )}
+        </div>
         <ModelSelector
           value={model}
           onChange={(id) => { setModel(id); setFormTouched(prev => ({ ...prev, model: true })); setFormErrors(prev => { const next = { ...prev }; delete next.model; return next; }); }}
@@ -888,17 +905,34 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, on
 
           {/* New Upload Previews */}
           {filePreviews.map((preview, idx) => (
-            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-800/50">
+            <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-800/50 flex flex-col">
               <img src={preview} alt="Upload preview" className="w-full h-full object-cover opacity-75" />
-              <div className="absolute inset-0 flex items-center justify-center">
+              <div className="absolute inset-x-0 bottom-0 p-1.5 bg-black/70 flex flex-col gap-1 z-10">
+                <select
+                  value={uploadModels[idx] || model || ''}
+                  onChange={(e) => {
+                    const newModels = [...uploadModels];
+                    newModels[idx] = e.target.value;
+                    setUploadModels(newModels);
+                  }}
+                  className="w-full text-[10px] bg-slate-800 border border-slate-600 rounded px-1 py-1 text-slate-200 focus:outline-none focus:border-amber-500"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label="Select model for uploaded image"
+                >
+                  <option value="">No Model</option>
+                  {availableModels.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-6">
                 <span className="text-xs font-medium text-white drop-shadow-md">Queued</span>
               </div>
               <button
                 onClick={() => {
                   setFilePreviews(prev => prev.filter((_, i) => i !== idx));
                   setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
+                  setUploadModels(prev => prev.filter((_, i) => i !== idx));
                 }}
-                className="absolute top-1 right-1 p-1 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                className="absolute top-1 right-1 p-1 bg-red-500/80 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-20"
               >
                 <X size={12} />
               </button>
