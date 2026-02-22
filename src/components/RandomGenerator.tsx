@@ -12,7 +12,12 @@ import { getDefaultModelForProvider, ModelOption } from '../lib/provider-models'
 import { estimateLLMCost } from '../lib/pricing';
 import { useTaskModels } from '../hooks/useTaskModels';
 
-
+interface FilterState {
+  dreamy: boolean;
+  characters: boolean;
+  cinematic: boolean;
+  [key: string]: boolean;
+}
 
 interface RandomGeneratorProps {
   onSwitchToGuided: (prompt: string) => void;
