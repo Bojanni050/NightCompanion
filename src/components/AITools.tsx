@@ -407,15 +407,17 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onPromptGenerated, onNeg
         return;
       }
 
+      const suggestion = analyzePrompt(text)[0];
+      const suggestedModelIdToSave = suggestion ? suggestion.model.id : undefined;
+
       const { error } = await db.from('prompts').insert({
         title: title,
         content: text,
-        notes: 'Generated with AI Tools',
         generation_journey: journeySteps,
-        suggested_model: options?.suggestedModelId,
         rating: 0,
         is_template: false,
         is_favorite: false,
+        suggested_model: suggestedModelIdToSave
       });
 
       if (error) throw error;
