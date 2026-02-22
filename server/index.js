@@ -67,18 +67,30 @@ const apiKeysLimiter = rateLimit({
   message: { error: 'Too many requests for API keys, please try again later.' }
 });
 
-const aiLimiter = rateLimit({
+const providerAwareLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Limit each IP to 50 requests per `window` for AI functionality
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Too many AI requests, please try again later.' }
+  max: 500, // Limit each external provider to 500 requests per window
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  keyGenerator: (req) => {
+    // Determine provider from body or query, fallback to IP if none provided
+    const provider = req.body?.provider || req.query?.provider || req.ip;
+    return String(provider).toLowerCase();
+  },
+  skip: (req) => {
+    const provider = String(req.body?.provider || req.query?.provider || '').toLowerCase();
+    // Skip rate limiting entirely for local models
+    return ['ollama', 'lmstudio', 'local', 'localhost'].includes(provider);
+  },
+  message: {
+    error: 'Rate limit bereikt voor deze externe AI provider. Probeer een lokaal model (Ollama/LM Studio) als alternatief of wacht 15 minuten.'
+  }
 });
 
 // API Keys & Local Endpoints
 app.use('/api/user_api_keys', apiKeysLimiter, apiKeysRouter);
 app.use('/api/user_local_endpoints', localEndpointsRouter);
-app.use('/api/ai', aiLimiter, require('./routes/ai'));
+app.use('/api/ai', providerAwareLimiter, require('./routes/ai'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/upload', require('./routes/upload'));

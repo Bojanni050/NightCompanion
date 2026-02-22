@@ -3,6 +3,8 @@ const router = express.Router();
 const { pool } = require('../db');
 const { decrypt } = require('../lib/crypto');
 const logger = require('../lib/logger');
+const fs = require('fs');
+const path = require('path');
 
 const LANGUAGE_INSTRUCTION = "CRITICAL: All output, including descriptions, reasoning, and analysis, MUST use English (UK) spelling and terminology (e.g., 'colour', 'centre', 'maximise').";
 
@@ -836,6 +838,9 @@ router.post('/', async (req, res) => {
         if (isLoggingEnabled) {
             logger.info(`[API Request -> ${action}] Provider: ${provider.provider || provider.type} | Model: ${activeModel}`);
             logger.info(`[API Request Payload]: ${JSON.stringify({ systemPrompt, userPrompt, maxTokens, temperature }, null, 2)}`);
+
+            const reqLog = `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n[${new Date().toISOString()}]\n[API Request -> ${action}] Provider: ${provider.provider || provider.type} | Model: ${activeModel}\n[API Request Payload]: ${JSON.stringify({ systemPrompt, userPrompt, maxTokens, temperature }, null, 2)}\n`;
+            fs.appendFile(path.join(__dirname, '../../logs/api.log'), reqLog, (err) => { if (err) console.error('Error writing to api.log', err); });
         }
 
         const { content: result, usage } = await callAI(provider, systemPrompt, userPrompt, maxTokens, temperature);
@@ -843,6 +848,9 @@ router.post('/', async (req, res) => {
         if (isLoggingEnabled) {
             logger.info(`[API Response <- ${action}] Usage: ${JSON.stringify(usage)}`);
             logger.info(`[API Response Content]: ${result}`);
+
+            const resLog = `[API Response <- ${action}] Usage: ${JSON.stringify(usage)}\n[API Response Content]: ${result}\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
+            fs.appendFile(path.join(__dirname, '../../logs/api.log'), resLog, (err) => { if (err) console.error('Error writing to api.log', err); });
         }
 
         // Log token usage to DB (fire and forget)
@@ -919,4 +927,10 @@ router.post('/', async (req, res) => {
     }
 });
 
+function isLocalProvider(provider) {
+    if (!provider) return false;
+    return ['ollama', 'lmstudio', 'local', 'localhost'].includes(provider.toLowerCase());
+}
+
 module.exports = router;
+module.exports.isLocalProvider = isLocalProvider;
