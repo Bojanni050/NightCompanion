@@ -77,10 +77,26 @@ const providerAwareLimiter = rateLimit({
     const provider = req.body?.provider || req.query?.provider || req.ip;
     return String(provider).toLowerCase();
   },
-  skip: (req) => {
+  skip: async (req) => {
     const provider = String(req.body?.provider || req.query?.provider || '').toLowerCase();
+
     // Skip rate limiting entirely for local models
-    return ['ollama', 'lmstudio', 'local', 'localhost'].includes(provider);
+    if (['ollama', 'lmstudio', 'local', 'localhost'].includes(provider)) {
+      return true;
+    }
+
+    try {
+      // Fast check if it's the very first start/generations of the app.
+      // If the usage log is totally empty, give them a free pass right away.
+      const res = await pool.query('SELECT 1 FROM api_usage_log LIMIT 1');
+      if (res.rowCount === 0) {
+        return true; // Unlimited on first start
+      }
+    } catch (e) {
+      // Fallback to rate limiting if the DB check fails
+    }
+
+    return false;
   },
   message: {
     error: 'Rate limit bereikt voor deze externe AI provider. Probeer een lokaal model (Ollama/LM Studio) als alternatief of wacht 15 minuten.'
