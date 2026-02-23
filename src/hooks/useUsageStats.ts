@@ -39,10 +39,32 @@ export function useUsageStats(from: string, to: string) {
             const params = new URLSearchParams();
             if (from) params.set('from', from);
             if (to) params.set('to', to);
-            const res = await fetch(`${API_BASE_URL}/api/usage?${params}`);
+            // Use the dashboard endpoint and map its shape to the simpler UsageStats
+            const res = await fetch(`${API_BASE_URL}/api/usage/dashboard?${params}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const json = await res.json();
-            setData(json);
+
+            // Map UsageDashboardData -> UsageStats (best-effort)
+            const totals = {
+                calls: json.totals?.this_month_requests || 0,
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_cost_usd: String(json.totals?.this_month_cost_usd || 0)
+            };
+
+            // Flatten models across providers into breakdown rows
+            const breakdown = (json.providers || []).flatMap((p) => {
+                return (p.models || []).map((m) => ({
+                    provider: p.provider,
+                    model: m.model,
+                    calls: m.requests || 0,
+                    prompt_tokens: 0,
+                    completion_tokens: 0,
+                    total_cost_usd: String(m.cost_usd || 0)
+                }));
+            });
+
+            setData({ totals, breakdown });
         } catch (e) {
             setError(e instanceof Error ? e.message : 'Failed to load usage stats');
         } finally {
