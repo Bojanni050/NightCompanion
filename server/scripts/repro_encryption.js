@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 
+const machineId = 'test-machine-id';
 const RAW_ENCRYPTION_KEY = 'a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456';
 const ALGORITHM = 'aes-256-cbc';
 
@@ -16,34 +17,37 @@ function encrypt(text, salt) {
     return iv.toString('hex') + ':' + encrypted;
 }
 
-function decrypt(text, salt) {
+// SIMULATE the new logic in server/lib/crypto.js
+function decryptImproved(text) {
+    const textParts = text.split(':');
+    const iv = Buffer.from(textParts.shift(), 'hex');
+    const encryptedText = textParts.join(':');
+
+    // Pass 1: Salted
     try {
-        const textParts = text.split(':');
-        const iv = Buffer.from(textParts.shift(), 'hex');
-        const encryptedText = textParts.join(':');
-        const key = getCipherKey(salt);
+        const key = getCipherKey(machineId);
         const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
         let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
         decrypted += decipher.final('utf8');
-        return decrypted;
-    } catch (err) {
-        return `FAILED: ${err.message}`;
+        return `SUCCESS (Salted): ${decrypted}`;
+    } catch (e) {
+        // Pass 2: Legacy
+        try {
+            const legacyKey = getCipherKey('');
+            const decipher = crypto.createDecipheriv(ALGORITHM, legacyKey, iv);
+            let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            return `SUCCESS (Legacy): ${decrypted}`;
+        } catch (e2) {
+            return `FAILED: ${e2.message}`;
+        }
     }
 }
 
 const testText = 'my-secret-api-key';
-const machineId = 'test-machine-id';
-
-console.log('--- Testing Key Derivation Impact ---');
-
 const encryptedWithSalt = encrypt(testText, machineId);
 const encryptedWithoutSalt = encrypt(testText, '');
 
-console.log('Encrypted with salt:', encryptedWithSalt);
-console.log('Encrypted without salt:', encryptedWithoutSalt);
-
-console.log('\n--- Decryption Matrix ---');
-console.log('EncWithSalt -> DecWithSalt:', decrypt(encryptedWithSalt, machineId));
-console.log('EncWithSalt -> DecWithoutSalt:', decrypt(encryptedWithSalt, ''));
-console.log('EncWithoutSalt -> DecWithSalt:', decrypt(encryptedWithoutSalt, machineId));
-console.log('EncWithoutSalt -> DecWithoutSalt:', decrypt(encryptedWithoutSalt, ''));
+console.log('--- Testing Two-Pass Decryption Fallback ---');
+console.log('Deciphering Salted Input: ', decryptImproved(encryptedWithSalt));
+console.log('Deciphering Unsalted Input:', decryptImproved(encryptedWithoutSalt));
