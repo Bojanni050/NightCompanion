@@ -127,7 +127,10 @@ export default function PromptDetailOverlay({
     }
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-8 overflow-hidden">
+        <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 md:p-8 overflow-hidden"
+            onClick={onClose}
+        >
             {/* Dynamic Apple-like Screen Background */}
             {mainImage && (
                 <div

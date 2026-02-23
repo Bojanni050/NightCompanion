@@ -11,7 +11,7 @@ interface MediaRendererProps {
 
 export default function MediaRenderer({ item, className, autoPlay = false, controls = false }: MediaRendererProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
-    const blurhash = item.metadata?.blurhash;
+    const blurhash = item.metadata?.blurhash as string | undefined;
 
     if (item.media_type === 'video') {
         const src = item.video_url || item.image_url; // image_url als fallback voor URL-only
