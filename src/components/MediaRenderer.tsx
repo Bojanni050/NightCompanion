@@ -11,6 +11,7 @@ interface MediaRendererProps {
 
 export default function MediaRenderer({ item, className, autoPlay = false, controls = false }: MediaRendererProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const blurhash = item.metadata?.blurhash as string | undefined;
 
     if (item.media_type === 'video') {
@@ -30,8 +31,8 @@ export default function MediaRenderer({ item, className, autoPlay = false, contr
     }
 
     return (
-        <div className={`relative overflow-hidden ${className || ''}`}>
-            {blurhash && !imageLoaded && (
+        <div className={`relative overflow-hidden flex items-center justify-center ${className || ''}`}>
+            {blurhash && !imageLoaded && !imageError && (
                 <Blurhash
                     hash={blurhash}
                     width="100%"
@@ -43,11 +44,23 @@ export default function MediaRenderer({ item, className, autoPlay = false, contr
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
                 />
             )}
+
+            {imageError ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-slate-500 z-20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2"><line x1="15" y1="9" x2="15.01" y2="9"></line><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path><line x1="3" y1="3" x2="21" y2="21"></line></svg>
+                    <span className="text-xs font-medium">Failed to load</span>
+                </div>
+            ) : null}
+
             <img
                 src={item.image_url}
                 alt={item.title}
                 className={`absolute inset-0 w-full h-full transition-opacity duration-300 z-10 ${className?.includes('object-contain') ? 'object-contain' : 'object-cover'} ${imageLoaded ? 'opacity-100' : 'opacity-0 bg-slate-800'}`}
                 onLoad={() => setImageLoaded(true)}
+                onError={() => {
+                    setImageError(true);
+                    setImageLoaded(true);
+                }}
             />
         </div>
     );

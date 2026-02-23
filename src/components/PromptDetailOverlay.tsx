@@ -176,14 +176,14 @@ export default function PromptDetailOverlay({
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Left Side: Image */}
-                <div className="w-full md:w-[70%] bg-black relative overflow-hidden flex items-center justify-center p-4 min-h-[40vh] md:min-h-auto">
+                <div className="relative w-full md:w-[70%] bg-black/40 overflow-hidden flex flex-col items-center justify-center p-4 min-h-[40vh] md:min-h-auto">
 
-                    <div className="relative z-10 w-full h-full flex items-center justify-center">
+                    <div className="absolute inset-0 z-10 p-4 lg:p-12 flex items-center justify-center">
                         {mainImage ? (
                             <MediaRenderer
                                 item={mainImage}
                                 controls
-                                className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain rounded-xl shadow-2xl"
+                                className="w-full h-full object-contain rounded-xl shadow-2xl"
                             />
                         ) : (
                             <div className="flex flex-col items-center gap-4 text-slate-500 py-10 w-full max-w-sm px-6">
