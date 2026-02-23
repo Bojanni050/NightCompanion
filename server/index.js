@@ -7,6 +7,8 @@ const cors = require('cors');
 const { pool } = require('./db');
 const path = require('path');
 const { initSchema } = require('./db-init');
+const errorMiddleware = require('./middleware/error-handler');
+const { handlePgError } = require('./lib/pg-error-handler');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -20,7 +22,7 @@ const apiKeysRouter = require('./routes/api-keys');
 const localEndpointsRouter = require('./routes/local-endpoints');
 
 // Custom Prompts Endpoint for Similarity Search
-app.get('/api/prompts/similar', async (req, res) => {
+app.get('/api/prompts/similar', async (req, res, next) => {
   try {
     const { content } = req.query;
     if (!content) {
@@ -37,8 +39,7 @@ app.get('/api/prompts/similar', async (req, res) => {
         `, [content]);
     res.json(result.rows);
   } catch (err) {
-    logger.error('Error fetching similar prompts:', err);
-    res.status(500).json({ error: err.message });
+    next(handlePgError(err));
   }
 });
 
@@ -171,3 +172,6 @@ initSchema().then(() => {
   logger.error('❌ Failed to initialize database:', err);
   process.exit(1);
 });
+
+// Error handling middleware should be the last app.use()
+app.use(errorMiddleware);

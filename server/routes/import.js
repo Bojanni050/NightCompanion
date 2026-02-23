@@ -3,6 +3,7 @@ const router = express.Router();
 const { pool } = require('../db');
 const { v4: uuidv4 } = require('uuid');
 const { processBlurhashAsync } = require('../lib/blurhash');
+const { handlePgError } = require('../lib/pg-error-handler');
 
 // ── Health check (extensie test verbinding) ──────────────────────────────────
 router.get('/health', (req, res) => {
@@ -15,7 +16,7 @@ router.get('/health', (req, res) => {
 });
 
 // ── Check of creatie al geïmporteerd is ─────────────────────────────────────
-router.get('/status', async (req, res) => {
+router.get('/status', async (req, res, next) => {
     const { creationId } = req.query;
     if (!creationId) return res.status(400).json({ error: 'creationId is vereist' });
 
@@ -39,13 +40,12 @@ router.get('/status', async (req, res) => {
         }
         return res.json({ exists: false });
     } catch (err) {
-        console.error('[import/status]', err.message);
-        return res.status(500).json({ error: 'Database fout' });
+        next(handlePgError(err));
     }
 });
 
 // ── Importeer een creatie ─────────────────────────────────────────────────────
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     const data = req.body;
 
     // Valideer minimale velden
@@ -171,15 +171,14 @@ router.post('/', async (req, res) => {
 
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error('[import POST]', err.message);
-        return res.status(500).json({ error: 'Import mislukt: ' + err.message });
+        next(handlePgError(err));
     } finally {
         client.release();
     }
 });
 
 // ── Recente imports ophalen (voor de app UI) ─────────────────────────────────
-router.get('/recent', async (req, res) => {
+router.get('/recent', async (req, res, next) => {
     const limit = Math.min(parseInt(req.query.limit) || 20, 100);
     try {
         const result = await pool.query(
@@ -194,13 +193,12 @@ router.get('/recent', async (req, res) => {
         );
         res.json(result.rows);
     } catch (err) {
-        console.error('[import/recent]', err.message);
-        res.status(500).json({ error: 'Database fout' });
+        next(handlePgError(err));
     }
 });
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (req, res, next) => {
     try {
         const result = await pool.query(`
       SELECT
@@ -214,8 +212,7 @@ router.get('/stats', async (req, res) => {
     `);
         res.json(result.rows[0]);
     } catch (err) {
-        console.error('[import/stats]', err.message);
-        res.status(500).json({ error: 'Database fout' });
+        next(handlePgError(err));
     }
 });
 

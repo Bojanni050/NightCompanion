@@ -29,6 +29,12 @@ const ERROR_MESSAGES: Record<string, string> = {
     'invalid json': 'Invalid file format. Please select a valid backup file.',
     'syntaxerror': 'Invalid file format. Please select a valid backup file.',
     'parse error': 'Unable to read the file. Please check the file format.',
+
+    // Backend API mappings
+    'dit item bestaat al': 'Dit item bestaat al.',
+    'item is in gebruik': 'Dit item is in gebruik en kan niet verwijderd worden.',
+    'verplicht veld': 'Vul alle verplichte velden in.',
+    'niet gevonden': 'Het item kon niet worden gevonden.',
 };
 
 /**
@@ -70,7 +76,7 @@ export function getUserFriendlyError(error: unknown): string {
 export function handleError(
     error: unknown,
     context: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
 ) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const userMessage = getUserFriendlyError(error);
@@ -80,6 +86,25 @@ export function handleError(
 
     // Log technical details for debugging
     console.error(`[${context}]`, errorMessage, metadata || {});
+}
+
+/**
+ * Handle fetch API responses consistently, throwing an Error on non-ok status
+ */
+export async function handleApiResponse<T>(response: Response): Promise<T> {
+    if (response.ok) {
+        return response.json();
+    }
+
+    let errData: { error?: string, message?: string } = {};
+    try {
+        errData = await response.json();
+    } catch {
+        // Fallback if response is not JSON
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    throw new Error(errData.error || errData.message || 'Onbekende fout');
 }
 
 /**

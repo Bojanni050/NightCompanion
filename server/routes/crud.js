@@ -1,6 +1,8 @@
 const express = require('express');
 const { pool } = require('../db');
 const logger = require('../lib/logger');
+const { handlePgError } = require('../lib/pg-error-handler');
+const { notFound } = require('../lib/app-error');
 
 const createCrudRouter = (tableName, searchableColumns = []) => {
     const router = express.Router();
@@ -71,7 +73,7 @@ const createCrudRouter = (tableName, searchableColumns = []) => {
     };
 
     // GET all items with filtering, sorting, and pagination
-    router.get('/', async (req, res) => {
+    router.get('/', async (req, res, next) => {
         try {
             const { limit, offset, order, search, ...filters } = req.query;
             let queryText = `SELECT * FROM ${tableName}`;
@@ -113,33 +115,32 @@ const createCrudRouter = (tableName, searchableColumns = []) => {
             const result = await pool.query(queryText, values);
             res.json(result.rows);
         } catch (err) {
-            logger.error(`Error fetching ${tableName}:`, err);
             // Retry without order if created_at failed (fallback)
-            if (err.message.includes('column "created_at" does not exist')) {
+            if (err.message && err.message.includes('column "created_at" does not exist')) {
                 try {
                     const result = await pool.query(`SELECT * FROM ${tableName}`);
                     return res.json(result.rows);
                 } catch (retryErr) {
-                    return res.status(500).json({ error: retryErr.message });
+                    return next(handlePgError(retryErr));
                 }
             }
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
     // GET single item
-    router.get('/:id', async (req, res) => {
+    router.get('/:id', async (req, res, next) => {
         try {
             const result = await pool.query(`SELECT * FROM ${tableName} WHERE id = $1`, [req.params.id]);
-            if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+            if (result.rows.length === 0) return next(notFound('Item'));
             res.json(result.rows[0]);
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
     // CREATE item (Supports UPSERT via onConflict=col)
-    router.post('/', async (req, res) => {
+    router.post('/', async (req, res, next) => {
         try {
             const data = req.body;
             // Support both snake_case and camelCase param
@@ -206,13 +207,12 @@ const createCrudRouter = (tableName, searchableColumns = []) => {
                 res.status(201).json(result.rows[0]);
             }
         } catch (err) {
-            logger.error(`Error creating in ${tableName}:`, err);
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
     // UPDATE item
-    router.put('/:id', async (req, res) => {
+    router.put('/:id', async (req, res, next) => {
         try {
             const { id } = req.params;
             const data = req.body;
@@ -259,16 +259,15 @@ const createCrudRouter = (tableName, searchableColumns = []) => {
             logger.debug(`[CRUD] Values: ${JSON.stringify(values)}`);
 
             const result = await pool.query(query, values);
-            if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+            if (result.rows.length === 0) return next(notFound('Item'));
             res.json(result.rows[0]);
         } catch (err) {
-            logger.error(`[CRUD] Error updating ${tableName}:`, err);
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
     // UPDATE with filters (Batch update)
-    router.put('/', async (req, res) => {
+    router.put('/', async (req, res, next) => {
         try {
             const filters = req.query;
             const data = req.body;
@@ -320,13 +319,12 @@ const createCrudRouter = (tableName, searchableColumns = []) => {
             const result = await pool.query(query, values);
             res.json(result.rows);
         } catch (err) {
-            logger.error(`Error batch updating ${tableName}:`, err);
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
     // DELETE with filters (e.g. DELETE /?prompt_id=123)
-    router.delete('/', async (req, res) => {
+    router.delete('/', async (req, res, next) => {
         try {
             const filters = req.query;
             if (Object.keys(filters).length === 0) {
@@ -343,18 +341,18 @@ const createCrudRouter = (tableName, searchableColumns = []) => {
             await pool.query(query, values);
             res.json({ status: 'deleted' });
         } catch (err) {
-            logger.error(`Error deleting from ${tableName}:`, err);
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
     // DELETE item
-    router.delete('/:id', async (req, res) => {
+    router.delete('/:id', async (req, res, next) => {
         try {
-            await pool.query(`DELETE FROM ${tableName} WHERE id = $1`, [req.params.id]);
+            const result = await pool.query(`DELETE FROM ${tableName} WHERE id = $1 RETURNING id`, [req.params.id]);
+            if (result.rowCount === 0) return next(notFound('Item'));
             res.json({ status: 'deleted' });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            next(handlePgError(err));
         }
     });
 
