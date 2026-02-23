@@ -35,36 +35,49 @@ function encrypt(text) {
 function decrypt(text) {
     if (!text) return null;
 
-    const textParts = text.split(':');
-    if (textParts.length < 2) return null;
+    let iv, encryptedText;
+    const hasColon = text.includes(':');
 
-    const ivHex = textParts.shift();
-    const encryptedText = textParts.join(':');
-    const iv = Buffer.from(ivHex, 'hex');
+    if (hasColon) {
+        const textParts = text.split(':');
+        iv = Buffer.from(textParts.shift(), 'hex');
+        encryptedText = textParts.join(':');
+    } else if (text.length >= 32) {
+        // Fallback: Assume first 32 hex chars is IV
+        iv = Buffer.from(text.substring(0, 32), 'hex');
+        encryptedText = text.substring(32);
+    } else {
+        // Too short to be standard encryption
+        return text;
+    }
 
-    // Pass 1: Try salted decryption (New standard)
-    try {
-        const key = getCipherKey(machineId);
-        const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
-        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
-        return decrypted;
-    } catch (err) {
-        // Fallback: Try unsalted decryption (Legacy mode)
+    const salts = [machineId, '']; // Try modern, then legacy
+
+    for (const salt of salts) {
         try {
-            const legacyKey = getCipherKey('');
-            const decipher = crypto.createDecipheriv(ALGORITHM, legacyKey, iv);
+            const key = getCipherKey(salt);
+            const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
             let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
             decrypted += decipher.final('utf8');
 
-            // Log once so we know legacy keys are still present
-            console.log('🔓 Note: Successfully decrypted key using legacy (unsalted) fallback.');
+            if (salt === '') {
+                console.log('🔓 Note: Successfully decrypted key using legacy (unsalted) fallback.');
+            }
             return decrypted;
-        } catch (fallbackErr) {
-            console.error('Decryption failed (even with fallback):', fallbackErr.message);
-            return null;
+        } catch (err) {
+            // Continue to next salt/fallback
         }
     }
+
+    // Last resort: If decryption failed but it looks like it might be a raw key
+    // (e.g. hex string of 64 chars or starts with common provider prefixes)
+    if (text.startsWith('sk-') || text.startsWith('pk_') || text.length === 64) {
+        console.warn('⚠️ Warning: Decryption failed, but string looks like a raw key. Returning as-is.');
+        return text;
+    }
+
+    console.error('Decryption failed for key:', text.substring(0, 10) + '...');
+    return null;
 }
 
 function maskKey(key) {
