@@ -909,7 +909,17 @@ router.post('/', async (req, res) => {
             }
         }
 
-        res.json({ result: parsedResult });
+        res.json({
+            result: parsedResult,
+            usage: {
+                prompt_tokens: promptTokens,
+                completion_tokens: completionTokens,
+                estimated_cost_usd: cost,
+                provider: provider.provider || provider.type || 'unknown',
+                model: provider.modelName || provider.model_name || '',
+                action
+            }
+        });
 
     } catch (err) {
         logger.error('AI Service Error:', err.message);

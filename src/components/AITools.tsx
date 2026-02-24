@@ -2,7 +2,7 @@ import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Sparkles, Brain, MessageSquare, AlertTriangle,
-  Loader2, Copy, Check, ArrowRight, ChevronDown, ChevronUp, Eraser, ArrowUp, Save,
+  Loader2, Copy, Check, ArrowRight, ChevronDown, ChevronUp, Eraser, ArrowUp, Save, RefreshCcw,
 } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -676,6 +676,31 @@ function ImproveTab({
                     className="w-3.5 h-3.5 accent-teal-500 rounded"
                   />
                   <span className="text-[11px] text-teal-300 font-medium">Use model tips ({modelTips.length})</span>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setFetchingTips(true);
+                      try {
+                        const { getTopCandidates } = await import('../lib/models-data');
+                        const { recommendModels } = await import('../lib/ai-service');
+                        const candidates = getTopCandidates(input, 5);
+                        const res = await recommendModels(input, { candidates });
+                        const top = res.recommendations[0];
+                        if (top?.tips?.length) {
+                          onSetModelTips(top.tips);
+                          onSetUseModelTips(true);
+                        }
+                      } catch { /* ignore */ } finally {
+                        setFetchingTips(false);
+                      }
+                    }}
+                    disabled={fetchingTips}
+                    title="Refresh model tips"
+                    className="p-1 text-slate-500 hover:text-teal-400 transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCcw size={10} className={fetchingTips ? 'animate-spin' : ''} />
+                  </button>
                   <button onClick={() => { onSetModelTips([]); onSetUseModelTips(false); }} className="text-[10px] text-slate-500 hover:text-slate-300">✕</button>
                 </label>
               )}

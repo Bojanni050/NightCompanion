@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { handleAIError } from '../lib/error-handler';
 import { toast } from 'sonner';
-import { Shuffle, Copy, Check, Save, Loader2, ArrowRight, Compass, Sparkles, PenTool, Palette, Eraser, Coins } from 'lucide-react';
+import { Shuffle, Copy, Check, Save, Loader2, ArrowRight, Compass, Sparkles, PenTool, Palette, Eraser, Coins, RefreshCcw } from 'lucide-react';
 import ChoiceModal from './ChoiceModal';
 import { generateRandomPrompt } from '../lib/prompt-fragments';
 import { analyzePrompt, supportsNegativePrompt, getTopCandidates } from '../lib/models-data';
@@ -714,7 +714,17 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-white">{aiAdvice.name}</p>
-                    <button onClick={() => setAiAdvice(null)} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors">↩ Local</button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleGetAIAdvice}
+                        disabled={loadingAiAdvice}
+                        title="Rerun AI Advice"
+                        className="p-1 text-slate-500 hover:text-teal-400 transition-colors disabled:opacity-50"
+                      >
+                        <RefreshCcw size={10} className={loadingAiAdvice ? 'animate-spin' : ''} />
+                      </button>
+                      <button onClick={() => setAiAdvice(null)} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors" title="Switch back to local heuristics">↩ Local</button>
+                    </div>
                   </div>
                   <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/50 px-3 py-2 rounded-lg border border-slate-700/50">
                     <span className="text-amber-400/80 mr-1">✦</span>{aiAdvice.reasoning}

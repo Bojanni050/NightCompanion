@@ -1,5 +1,4 @@
 Model Name,Category,Description,Art Quality,Realism Quality,Prompting Quality,Typography Quality,Cost
-Seedream 3.0,Image,A model by ByteDance with a focus on realistic detail,High,High,High,Medium,$$-$$$
 Flux 2 Dev,Image,Baseline Flux 2 good at everything and at reasonable cost,High,High,High,Medium,$$-$$$
 Qwen Image Edit Plus,Image,AKA Qwen Image Edit 2509 - An enhanced version of Qwen Image-Edit that supports regeneration,High,High,High,Medium,$$-$$$
 Seedance 1.0 Pro Fast,Image,Faster generated videos. Lower price. Cinematic results,High,High,High,Medium,$$-$$$
@@ -7,14 +6,11 @@ Z-Image Turbo,Image,An affordable model with great quality and fast low cost,Hig
 Flux 2 Klein 9B Fast,Image,FLUX 2 Klein 9B is a 4-step distilled image generation and editing model designed,High,High,High,Medium,$$-$$$
 HiDream 11 Dev,Image,Creates stunning artistic images with exceptional clarity and detail,High,Medium,High,Medium,$$-$$$
 Nano Banana Pro,Image,The next version of Nano Banana with improved capabilities and performance,High,High,High,Medium,$$$$$
-Seedream 4.0,Image,Next-gen multimodal AI model for ultra-fast image generation (2K-4K),High,High,High,Medium,$$-$$$
 HiDream 11 Fast,Image,Faster and cheaper version of HiDream great for artistic images,High,Medium,High,Medium,$$-$$$
 Flux 2 Klein 4B Fast,Image,The fastest variant in the Klein family. Built for interactive applications real time,High,High,High,Medium,$$-$$$
 Flux 2 Klein 9B,Image,Outstanding quality at sub-second speed. Great for real-time generation while retaining,High,High,High,Medium,$$-$$$
-Seedream 4.5,Image,An improved version of Seedream 4.0,High,High,High,Medium,$$$$$
 Nano Banana,Image,AKA Gemini Flash 2.5 - Google's latest model with first-class start image support,High,High,High,Medium,$$-$$$
 Flux,Image,A great general-purpose model at a low cost,High,High,High,Medium,$$-$$$
-Dreamina Lightning,Image,A fast low-cost model that's good at art and realism,High,High,High,Medium,$$$$$
 Google Imagen v4 Ultra,Image,A larger version of Imagen v4. Google's latest image model,High,High,High,Medium,$$$$$
 Flux PRO v1.1 Ultra,Image,An ultrahigh-resolution version of Flux by Black Forest Labs,High,High,High,Medium,$$$$$
 Flux Kontext,Image,Excellent at editing images using natural language prompts,High,High,High,Medium,$$-$$$

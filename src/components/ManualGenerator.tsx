@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Copy, Save, Check, Plus, Minus, Info, Shuffle, Sparkles, Loader2, X, Wand2, Coins } from 'lucide-react';
+import { Copy, Save, Check, Plus, Minus, Info, Shuffle, Sparkles, Loader2, X, Wand2, Coins, RefreshCcw, Compass } from 'lucide-react';
 import ChoiceModal from './ChoiceModal';
 import { db } from '../lib/api';
 import { toast } from 'sonner';
 import { generateRandomPrompt } from '../lib/prompt-fragments';
-import { generateRandomPromptAI, improvePromptWithNegative, optimizePromptForModel, generateNegativePrompt } from '../lib/ai-service';
-import { analyzePrompt, supportsNegativePrompt, ModelInfo } from '../lib/models-data';
+import { generateRandomPromptAI, improvePromptWithNegative, optimizePromptForModel, generateNegativePrompt, listModels, ModelListItem, recommendModels } from '../lib/ai-service';
+import { analyzePrompt, supportsNegativePrompt, getTopCandidates, ModelInfo } from '../lib/models-data';
 import { handleAIError } from '../lib/error-handler';
 import { getDefaultModelForProvider, ModelOption } from '../lib/provider-models';
-import { listModels, ModelListItem } from '../lib/ai-service';
 import { listApiKeys } from '../lib/api-keys-service';
 import { estimateLLMCost } from '../lib/pricing';
 import { useTaskModels } from '../hooks/useTaskModels';
@@ -53,6 +52,15 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
     const [suggestedModel, setSuggestedModel] = useState<ModelInfo | null>(null);
     const [, setActiveModel] = useState<string>('');
     const [activeModelPricing, setActiveModelPricing] = useState<{ prompt: string, completion: string } | undefined>(undefined);
+
+    const [aiAdvice, setAiAdvice] = useState<{ id: string; name: string; reasoning: string; tips: string[]; preset?: string } | null>(() => {
+        try {
+            const saved = localStorage.getItem('nightcompanion_manual_ai_advice');
+            if (saved) return JSON.parse(saved);
+        } catch { /* ignore */ }
+        return null;
+    });
+    const [loadingAiAdvice, setLoadingAiAdvice] = useState(false);
 
     // Modal State
     const [showClearModal, setShowClearModal] = useState(false);
@@ -99,6 +107,38 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
 
         return () => clearTimeout(timeout);
     }, [positivePrompt]);
+
+    // Persist AI advice
+    useEffect(() => {
+        if (aiAdvice) {
+            localStorage.setItem('nightcompanion_manual_ai_advice', JSON.stringify(aiAdvice));
+        } else {
+            localStorage.removeItem('nightcompanion_manual_ai_advice');
+        }
+    }, [aiAdvice]);
+
+    async function handleGetAIAdvice() {
+        if (!positivePrompt.trim()) return;
+        setLoadingAiAdvice(true);
+        try {
+            const candidates = getTopCandidates(positivePrompt, 5);
+            const result = await recommendModels(positivePrompt, { candidates });
+            const top = result.recommendations[0];
+            if (top) {
+                setAiAdvice({
+                    id: top.modelId,
+                    name: top.modelName,
+                    reasoning: top.reasoning,
+                    tips: top.tips || [],
+                    ...(top.recommendedPreset ? { preset: top.recommendedPreset } : {}),
+                });
+            }
+        } catch (e) {
+            handleAIError(e);
+        } finally {
+            setLoadingAiAdvice(false);
+        }
+    }
 
     const fetchActiveModel = useCallback(async () => {
         try {
@@ -554,6 +594,55 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
                                 {optimizing ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
                                 Optimize for {suggestedModel?.name}
                             </button>
+                            {!aiAdvice ? (
+                                <button
+                                    onClick={handleGetAIAdvice}
+                                    disabled={loadingAiAdvice}
+                                    className="flex items-center gap-2 px-4 py-2 bg-teal-500/10 text-teal-400 text-xs font-medium rounded-lg border border-teal-500/20 hover:bg-teal-500/20 transition-all disabled:opacity-50 mt-2"
+                                >
+                                    {loadingAiAdvice ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                    Upgrade to AI Advice
+                                </button>
+                            ) : (
+                                <div className="mt-4 pt-4 border-t border-slate-700/50 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Compass size={13} className="text-amber-400" />
+                                            <span className="text-xs font-semibold text-white">{aiAdvice.name}</span>
+                                            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded text-amber-300">AI Verified</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={handleGetAIAdvice}
+                                                disabled={loadingAiAdvice}
+                                                title="Rerun AI Advice"
+                                                className="p-1 text-slate-500 hover:text-teal-400 transition-colors disabled:opacity-50"
+                                            >
+                                                <RefreshCcw size={10} className={loadingAiAdvice ? 'animate-spin' : ''} />
+                                            </button>
+                                            <button onClick={() => setAiAdvice(null)} className="text-[10px] text-slate-500 hover:text-slate-300 transition-colors" title="Switch back to local heuristics">↩ Local</button>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-slate-300 leading-relaxed bg-slate-900/50 px-3 py-2 rounded-lg border border-slate-700/50">
+                                        <span className="text-amber-400/80 mr-1">✦</span>{aiAdvice.reasoning}
+                                    </p>
+                                    {aiAdvice.tips.length > 0 && (
+                                        <ul className="space-y-1">
+                                            {aiAdvice.tips.map((tip, i) => (
+                                                <li key={i} className="flex items-start gap-1.5 text-[11px] text-slate-400">
+                                                    <span className="text-amber-500 mt-0.5 shrink-0">💡</span>{tip}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                    {aiAdvice.preset && (
+                                        <div className="flex items-center gap-1.5 text-[11px] text-teal-400 bg-teal-950/30 border border-teal-900/50 w-fit px-2 py-1 rounded-md">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-teal-500" />
+                                            Suggested Preset: <span className="font-semibold">{aiAdvice.preset}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <>
