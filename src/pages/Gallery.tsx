@@ -442,12 +442,6 @@ export default function Gallery() {
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   // Handle URL query parameter to open lightbox
   useEffect(() => {
     const openId = searchParams.get('open');
