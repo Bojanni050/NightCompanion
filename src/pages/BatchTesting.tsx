@@ -145,13 +145,19 @@ export default function BatchTesting() {
     }
   }
 
-  async function generateVariations() {
+  async function generateVariations(selectedVariations: { type: string; prompt: string }[]) {
     if (!selectedTest) return;
 
     setGenerating(true);
     try {
       const token = '';
-      const variations = await generatePromptVariations(selectedTest.base_prompt, token);
+      const selectedTypes = selectedVariations.map(v => v.type);
+
+      // Use the first type if multiple are selected, or default to mixed
+      // Ideally we'd loop through each type or have the service handle an array
+      const strategy = selectedTypes.length > 0 ? selectedTypes[0] : 'mixed';
+
+      const variations = await generatePromptVariations(selectedTest.base_prompt, token, selectedTypes.length || 5, strategy);
 
       const existingCount = selectedTest.prompts?.length || 1;
       const promptsToInsert = variations.map((v, i) => ({

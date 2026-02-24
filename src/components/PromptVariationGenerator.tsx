@@ -68,11 +68,10 @@ export default function PromptVariationGenerator({
               key={type.id}
               onClick={() => toggleType(type.id)}
               disabled={isGenerating}
-              className={`p-3 rounded-lg border text-left transition-all ${
-                selectedTypes.includes(type.id)
+              className={`p-3 rounded-lg border text-left transition-all ${selectedTypes.includes(type.id)
                   ? 'bg-amber-500/10 border-amber-500/30 text-white'
                   : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:border-slate-600'
-              } disabled:opacity-50`}
+                } disabled:opacity-50`}
             >
               <div className="text-xs font-medium">{type.name}</div>
               <div className="text-[10px] text-slate-500 mt-0.5">{type.description}</div>
@@ -82,7 +81,7 @@ export default function PromptVariationGenerator({
       </div>
 
       <button
-        onClick={() => onVariationsGenerated([])}
+        onClick={() => onVariationsGenerated(selectedTypes.map(t => ({ type: t, prompt: '' })))}
         disabled={isGenerating || !basePrompt || selectedTypes.length === 0}
         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm font-medium rounded-lg hover:opacity-90 transition-all disabled:opacity-50 shadow-lg"
       >

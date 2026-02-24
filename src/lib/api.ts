@@ -72,6 +72,29 @@ class LocalApiClient {
             return { data: null, error };
         }
     }
+
+    /**
+     * Finds prompts similar to the provided content using pg_trgm similarity
+     */
+    async findSimilarPrompts(content: string, limit = 5, threshold = 0.5) {
+        try {
+            const params = new URLSearchParams({
+                content,
+                limit: limit.toString(),
+                threshold: threshold.toString()
+            });
+            const res = await fetch(`${API_URL}/prompts/similar?${params.toString()}`);
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Failed to find similar prompts');
+            }
+            const data = await res.json();
+            return { data, error: null };
+        } catch (error: any) {
+            console.error('Similarity search error:', error);
+            return { data: null, error };
+        }
+    }
 }
 
 class QueryBuilder {
@@ -91,7 +114,7 @@ class QueryBuilder {
         this.url = `${API_URL}/${table}`;
     }
 
-    select(_columns = '*', _options?: unknown) {
+    select(_columns = '*', _options?: Record<string, unknown>) {
         if (this.method === 'POST' || this.method === 'PUT' || this.method === 'DELETE') {
             return this;
         }

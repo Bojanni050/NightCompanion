@@ -24,19 +24,18 @@ const localEndpointsRouter = require('./routes/local-endpoints');
 // Custom Prompts Endpoint for Similarity Search
 app.get('/api/prompts/similar', async (req, res, next) => {
   try {
-    const { content } = req.query;
+    const { content, limit = 5, threshold = 0.5 } = req.query;
     if (!content) {
       return res.status(400).json({ error: 'content query parameter is required' });
     }
     // PostgreSQL pg_trgm similarity() function returns a value from 0 to 1
-    // The % operator uses the pg_trgm.similarity_threshold which we can set, or we can just filter by similarity()
     const result = await pool.query(`
             SELECT id, title, content, similarity(content, $1) as sim 
             FROM prompts 
-            WHERE similarity(content, $1) > 0.85
+            WHERE similarity(content, $1) > $2
             ORDER BY sim DESC 
-            LIMIT 5
-        `, [content]);
+            LIMIT $3
+        `, [content, parseFloat(threshold), parseInt(limit)]);
     res.json(result.rows);
   } catch (err) {
     next(handlePgError(err));
