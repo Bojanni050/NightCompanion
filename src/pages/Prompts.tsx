@@ -94,12 +94,14 @@ function ImageCarousel({ images, onUnlink, onImageClick, t }: { images: GalleryI
       <div className="absolute inset-0 flex items-center justify-between px-2 opacity-0 group-hover/carousel:opacity-100 transition-opacity z-10 pointer-events-none">
         <button
           onClick={handlePrevious}
+          aria-label="Previous image"
           className="p-1.5 rounded-full bg-black/50 text-white hover:bg-black/80 backdrop-blur-sm transition-all pointer-events-auto"
         >
           <ChevronLeft size={14} />
         </button>
         <button
           onClick={handleNext}
+          aria-label="Next image"
           className="p-1.5 rounded-full bg-black/50 text-white hover:bg-black/80 backdrop-blur-sm transition-all pointer-events-auto"
         >
           <ChevronRight size={14} />

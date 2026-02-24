@@ -37,7 +37,7 @@ function generateModelStats(id: string, tags: string[], provider: string) {
 }
 
 function StatBar({ label, value }: { label: string, value: number }) {
-    const percentage = (value / 10) * 100;
+    const percentage = (value / 5) * 100; // Rating is 0-5
 
     return (
         <div className="flex items-center gap-2 mt-1">
@@ -56,13 +56,16 @@ export default function NCModels() {
     const [searchTerm, setSearchTerm] = useState('');
 
     const ncModels = useMemo(() => {
-        return MODELS.filter(m =>
-            m.provider === 'NightCafe' || m.provider === 'Community' ||
-            m.id.startsWith('juggernaut') || m.id.startsWith('realvis') ||
-            m.id.startsWith('flux') || m.id.includes('dalle3') || m.id.startsWith('ideogram') || m.id.startsWith('gpt')
-        ).map(m => {
-            const stats = generateModelStats(m.id, m.styleTags.concat(m.keywords), m.provider);
-            return { ...m, ...stats };
+        return MODELS.map(m => {
+            return {
+                ...m,
+                art: m.artRating || m.qualityRating || 3,
+                prompting: m.promptingRating || 3,
+                realism: m.realismRating || 3,
+                typography: m.typographyRating || 1,
+                costStr: m.costLevel ? '$'.repeat(m.costLevel) : 'Free',
+                isPro: (m.costLevel || 0) >= 4 || m.id.includes('pro')
+            };
         });
     }, []);
 
@@ -109,7 +112,7 @@ export default function NCModels() {
                             </div>
 
                             {/* Generative art pattern placeholder */}
-                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+                            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_2px_2px,rgba(255,255,255,0.15)_1px,transparent_0)] bg-[length:20px_20px]" />
 
                             <div className="absolute top-2 left-2 flex gap-1">
                                 {model.id.includes('lightning') || model.id.includes('turbo') || model.id.includes('fast') ? (

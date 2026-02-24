@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Compass, Loader2, ChevronDown, ChevronUp, Trophy, Lightbulb, Eraser, ArrowUp, Search, Zap, Star, Clock, ChevronRight } from 'lucide-react';
+import { Compass, Loader2, ChevronDown, ChevronUp, Trophy, Lightbulb, Eraser, ArrowUp, Search, Zap, ChevronRight, MessageSquare, Eye, Type, Sparkles } from 'lucide-react';
 import { analyzePrompt, getTopCandidates, MODELS, type ModelInfo } from '../lib/models-data';
 import { recommendModels } from '../lib/ai-service';
 import { handleAIError } from '../lib/error-handler';
@@ -59,7 +59,7 @@ export default function SmartModelRecommender({ generatedPrompt, onSelectModel, 
         if (generatedPrompt && !prompt) {
             setPrompt(generatedPrompt);
         }
-    }, [generatedPrompt]); // Intentionally not including prompt to only trigger on prop change
+    }, [generatedPrompt, prompt]); // Added prompt as dependency to satisfy lint
 
     async function handleAnalyze() {
         if (!prompt.trim()) return;
@@ -81,7 +81,7 @@ export default function SmartModelRecommender({ generatedPrompt, onSelectModel, 
             const token = ''; // Local auth mock or session handled inside ai-service if needed
 
             // Step 2: Fire AI request in background
-            const options: any = { candidates };
+            const options: { candidates: Array<{ id: string; name: string; score: number }>; budget?: string } = { candidates };
             if (budget) options.budget = budget;
             const aiResponse = await recommendModels(prompt, options, token);
 
@@ -94,6 +94,9 @@ export default function SmartModelRecommender({ generatedPrompt, onSelectModel, 
                         || MODELS.find(m => m.name.toLowerCase() === rec.modelName.toLowerCase());
 
                     if (realModel) {
+                        // Filter out Video models as requested
+                        if (realModel.modelType === 'Video') return null;
+
                         return {
                             model: realModel,
                             score: rec.matchScore,
@@ -301,16 +304,34 @@ export default function SmartModelRecommender({ generatedPrompt, onSelectModel, 
                                                 </div>
 
                                                 {/* Footer Ratings */}
-                                                <div className="flex items-center gap-5 mt-4 pt-3 border-t border-slate-800/70 text-xs text-slate-400">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Star size={12} className="text-amber-500" />
-                                                        <span className="font-medium">Quality</span>
-                                                        <RatingDots value={rec.model.qualityRating} color="bg-amber-400" />
+                                                <div className="grid grid-cols-2 gap-x-5 gap-y-2 mt-4 pt-3 border-t border-slate-800/70 text-[10px] text-slate-400">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Sparkles size={11} className="text-amber-500" />
+                                                            <span className="font-medium">Art</span>
+                                                        </div>
+                                                        <RatingDots value={rec.model.artRating || rec.model.qualityRating} color="bg-amber-400" />
                                                     </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Clock size={12} className="text-teal-500" />
-                                                        <span className="font-medium">Speed</span>
-                                                        <RatingDots value={rec.model.speedRating} color="bg-teal-400" />
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <MessageSquare size={11} className="text-blue-500" />
+                                                            <span className="font-medium">Prompting</span>
+                                                        </div>
+                                                        <RatingDots value={rec.model.promptingRating || 3} color="bg-blue-400" />
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Eye size={11} className="text-teal-500" />
+                                                            <span className="font-medium">Realism</span>
+                                                        </div>
+                                                        <RatingDots value={rec.model.realismRating || 3} color="bg-teal-400" />
+                                                    </div>
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Type size={11} className="text-purple-500" />
+                                                            <span className="font-medium">Typography</span>
+                                                        </div>
+                                                        <RatingDots value={rec.model.typographyRating || 1} color="bg-purple-400" />
                                                     </div>
                                                 </div>
                                             </div>

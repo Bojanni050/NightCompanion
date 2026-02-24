@@ -95,13 +95,12 @@ export default function GalleryLightbox({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center top-0 left-0 right-0 bottom-0"
             onTouchStart={onTouchStart}
             onTouchEnd={onTouchEnd}
         >
             {/* ── Layer 1: blurred background ──────────────────────────────── */}
-            <div style={{ position: 'absolute', inset: 0, overflow: 'clip', background: '#0f172a' }}>
+            <div className="absolute inset-0 overflow-clip bg-slate-950">
                 {!imgError && imageUrl && (
                     <img
                         key={currentIndex}
@@ -109,17 +108,7 @@ export default function GalleryLightbox({
                         alt=""
                         aria-hidden
                         onError={() => setImgError(true)}
-                        style={{
-                            position: 'absolute',
-                            top: -80,
-                            right: -60,
-                            bottom: -60,
-                            left: -60,
-                            width: 'calc(100% + 120px)',
-                            height: 'calc(100% + 120px)',
-                            objectFit: 'cover',
-                            filter: 'blur(40px) brightness(0.35) saturate(1.4)',
-                        }}
+                        className="absolute -top-20 -right-16 -bottom-16 -left-16 w-[calc(100%+120px)] h-[calc(100%+120px)] object-cover blur-[40px] brightness-[0.35] saturate-[1.4]"
                     />
                 )}
             </div>
@@ -202,6 +191,7 @@ export default function GalleryLightbox({
                                                 key={star}
                                                 onClick={() => onUpdateRating(current, star === current.rating ? 0 : star)}
                                                 className="p-0.5 hover:scale-110 transition-transform"
+                                                aria-label={`Rate ${star} stars`}
                                             >
                                                 <Star
                                                     size={14}
