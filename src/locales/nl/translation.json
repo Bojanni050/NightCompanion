@@ -17,7 +17,9 @@
         "pause": "Pauzeren",
         "copy_prompt": "Prompt Kopiëren",
         "show_less": "Minder Weergeven",
-        "show_more": "Meer Weergeven"
+        "show_more": "Meer Weergeven",
+        "fullscreen": "Volledig scherm",
+        "exit_fullscreen": "Volledig scherm sluiten"
     },
     "nav": {
         "dashboard": "Dashboard",
@@ -152,7 +154,12 @@
         "new_collection": "Nieuwe Collectie",
         "add_item": "Afbeelding Toevoegen",
         "items_count": "{{count}} items in je collectie",
-        "slideshow": "Diashow"
+        "slideshow": "Diashow",
+        "display_options": "Weergaveopties",
+        "show_title": "Titel tonen",
+        "show_rating": "Beoordeling tonen",
+        "show_prompt": "Prompt tonen",
+        "show_model": "Model tonen"
     },
     "aiTools": {
         "title": "AI Tools",

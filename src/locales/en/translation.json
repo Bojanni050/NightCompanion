@@ -17,7 +17,9 @@
         "pause": "Pause",
         "copy_prompt": "Copy Prompt",
         "show_less": "Show Less",
-        "show_more": "Show More"
+        "show_more": "Show More",
+        "fullscreen": "Fullscreen",
+        "exit_fullscreen": "Exit Fullscreen"
     },
     "nav": {
         "dashboard": "Dashboard",
@@ -153,7 +155,12 @@
         "new_collection": "New Collection",
         "add_item": "Add Image",
         "items_count": "{{count}} items in your collection",
-        "slideshow": "Slideshow"
+        "slideshow": "Slideshow",
+        "display_options": "Display Options",
+        "show_title": "Show Title",
+        "show_rating": "Show Rating",
+        "show_prompt": "Show Prompt",
+        "show_model": "Show Model"
     },
     "aiTools": {
         "title": "AI Tools",
