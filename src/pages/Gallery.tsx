@@ -687,10 +687,8 @@ export default function Gallery() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <GallerySkeleton key={i} />
-          ))}
+        <div className="flex items-center justify-center py-32">
+          <Loader2 size={32} className="text-teal-400 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl">

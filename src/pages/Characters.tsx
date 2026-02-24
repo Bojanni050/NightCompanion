@@ -419,10 +419,8 @@ export default function Characters() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="h-64 bg-slate-900 border border-slate-800 animate-pulse rounded-xl" />
-          ))}
+        <div className="flex items-center justify-center py-32">
+          <Loader2 size={32} className="text-teal-400 animate-spin" />
         </div>
       ) : characters.length === 0 ? (
         <div className="text-center py-20 bg-slate-900/50 rounded-xl border border-dashed border-slate-800">

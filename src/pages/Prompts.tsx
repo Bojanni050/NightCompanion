@@ -6,7 +6,6 @@ import { db } from '../lib/api';
 import type { Prompt, GalleryItem } from '../lib/types';
 import { MODELS, type ModelInfo } from '../lib/models-data';
 import Modal from '../components/Modal';
-import { PromptSkeleton } from '../components/PromptSkeleton';
 import PromptEditor from '../components/PromptEditor';
 import VariationGenerator from '../components/VariationGenerator';
 import { PromptHistory } from '../components/PromptHistory';
@@ -540,10 +539,8 @@ export default function Prompts() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <PromptSkeleton key={i} />
-          ))}
+        <div className="flex items-center justify-center py-32">
+          <Loader2 size={32} className="text-teal-400 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-slate-900 border border-slate-800 rounded-2xl">
