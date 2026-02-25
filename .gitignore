@@ -26,3 +26,4 @@ dist-ssr
 .bolt/*
 .claude/*
 .qwen/*
+.llm-chat-history/*
