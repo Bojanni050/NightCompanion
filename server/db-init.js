@@ -52,23 +52,15 @@ async function initSchema() {
 
         // --- Core Tables ---
 
-        // User Profiles - Drop and recreate to ensure correct schema for mock auth
-        await pool.query('DROP TABLE IF EXISTS user_profiles CASCADE');
+        // User Profiles
         await pool.query(`
-            CREATE TABLE user_profiles (
+            CREATE TABLE IF NOT EXISTS user_profiles (
                 id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
                 email TEXT UNIQUE NOT NULL,
                 user_metadata JSONB DEFAULT '{}',
                 language TEXT DEFAULT 'nl'
             );
         `);
-        // Ensure columns exist (evolution) - No longer needed since we force create, but keeping for reference if shared with other tables
-        // await addColumn(pool, 'user_profiles', 'email', 'TEXT UNIQUE NOT NULL');
-        // await addColumn(pool, 'user_profiles', 'user_metadata', "JSONB DEFAULT '{}'");
-        // Ensure columns exist (evolution)
-        await addColumn(pool, 'user_profiles', 'email', 'TEXT UNIQUE NOT NULL');
-        await addColumn(pool, 'user_profiles', 'user_metadata', "JSONB DEFAULT '{}'");
-        await addColumn(pool, 'user_profiles', 'language', "TEXT DEFAULT 'nl'");
 
 
         // Prompts
@@ -254,13 +246,7 @@ async function initSchema() {
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
         `);
-        // Evolution for new columns
-        await addColumn(pool, 'user_api_keys', 'model_gen', 'TEXT');
-        await addColumn(pool, 'user_api_keys', 'model_improve', 'TEXT');
-        await addColumn(pool, 'user_api_keys', 'model_vision', 'TEXT');
-        await addColumn(pool, 'user_api_keys', 'is_active_gen', 'BOOLEAN DEFAULT FALSE');
-        await addColumn(pool, 'user_api_keys', 'is_active_improve', 'BOOLEAN DEFAULT FALSE');
-        await addColumn(pool, 'user_api_keys', 'is_active_vision', 'BOOLEAN DEFAULT FALSE');
+
 
         // Local Endpoints
         await pool.query(`
@@ -281,12 +267,6 @@ async function initSchema() {
                 updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
             );
         `);
-        await addColumn(pool, 'user_local_endpoints', 'model_gen', 'TEXT');
-        await addColumn(pool, 'user_local_endpoints', 'model_improve', 'TEXT');
-        await addColumn(pool, 'user_local_endpoints', 'model_vision', 'TEXT');
-        await addColumn(pool, 'user_local_endpoints', 'is_active_gen', 'BOOLEAN DEFAULT FALSE');
-        await addColumn(pool, 'user_local_endpoints', 'is_active_improve', 'BOOLEAN DEFAULT FALSE');
-        await addColumn(pool, 'user_local_endpoints', 'is_active_vision', 'BOOLEAN DEFAULT FALSE');
 
 
         // Style Profiles
