@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 interface ChoiceModalProps {
@@ -8,18 +8,22 @@ interface ChoiceModalProps {
     title: string;
     message: React.ReactNode;
     choices: {
-        label: string;
-        onClick: () => void;
+        label: React.ReactNode;
+        onClick: () => void | Promise<void>;
         variant?: 'primary' | 'secondary' | 'danger' | 'default';
+        disabled?: boolean;
     }[];
 }
 
 export default function ChoiceModal({ isOpen, onClose, title, message, choices }: ChoiceModalProps) {
+    const [loadingIndex, setLoadingIndex] = useState<number | null>(null);
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
+            setLoadingIndex(null);
         } else {
             document.body.style.overflow = 'unset';
+            setLoadingIndex(null);
         }
         return () => {
             document.body.style.overflow = 'unset';
@@ -51,19 +55,26 @@ export default function ChoiceModal({ isOpen, onClose, title, message, choices }
                         {choices.map((choice, index) => (
                             <button
                                 key={index}
-                                onClick={() => {
-                                    choice.onClick();
-                                    onClose();
+                                disabled={choice.disabled || loadingIndex !== null}
+                                onClick={async () => {
+                                    setLoadingIndex(index);
+                                    try {
+                                        await choice.onClick();
+                                    } finally {
+                                        setLoadingIndex(null);
+                                        onClose();
+                                    }
                                 }}
-                                className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all border ${choice.variant === 'primary'
-                                    ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 shadow-lg shadow-amber-500/20'
+                                className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all border flex items-center justify-center gap-2 ${choice.variant === 'primary'
+                                    ? 'bg-amber-500 text-white border-amber-600 hover:bg-amber-600 shadow-lg shadow-amber-500/20 disabled:opacity-50'
                                     : choice.variant === 'danger'
-                                        ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
+                                        ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20 disabled:opacity-50'
                                         : choice.variant === 'secondary'
-                                            ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white'
-                                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                                            ? 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 hover:text-white disabled:opacity-50'
+                                            : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700 disabled:opacity-50'
                                     }`}
                             >
+                                {loadingIndex === index && <Loader2 size={16} className="animate-spin" />}
                                 {choice.label}
                             </button>
                         ))}

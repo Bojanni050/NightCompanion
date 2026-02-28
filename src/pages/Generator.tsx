@@ -179,7 +179,6 @@ export default function Generator() {
     if (aiToolsRef.current) {
       aiToolsRef.current.clearContent();
     }
-    toast.success(t('generator.tooltips.clearAll'));
   }
 
   // Modal State for External Checks (Improve Tab)
@@ -599,10 +598,10 @@ export default function Generator() {
         choices={[
           {
             label: t('generator.buttons.proceed'),
-            onClick: () => {
-              // Clear EVERYTHING
-              if (aiToolsRef.current) aiToolsRef.current.clearContent();
-              if (pendingExternalAction) pendingExternalAction(false); // keepNegative = false
+            onClick: async () => {
+              // Clear EVERYTHING before proceeding
+              handleClearAll();
+              if (pendingExternalAction) await pendingExternalAction(false); // keepNegative = false
               setShowExternalClearModal(false);
               setPendingExternalAction(null);
             },
