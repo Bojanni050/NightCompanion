@@ -51,8 +51,13 @@ export default function MagicPromptInput({ onGenerate, maxWords, className, grey
                     onGenerate(generated);
                     toast.success('Prompt expanded successfully!');
                 }
-            } catch (err) {
-                handleAIError(err);
+            } catch (err: unknown) {
+                console.error(err);
+                if (err instanceof Error) {
+                    toast.error(err.message);
+                } else {
+                    toast.error("Failed to generate prompt. Please try again.");
+                }
             } finally {
                 setLoading(false);
             }
@@ -69,8 +74,8 @@ export default function MagicPromptInput({ onGenerate, maxWords, className, grey
         <div className={`bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm overflow-hidden relative group flex flex-col ${className}`}>
             {/* Subtle background glow */}
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-teal-500/10 blur-3xl rounded-full group-hover:bg-teal-500/20 transition-colors duration-500 pointer-events-none" />
-
             <div className="relative space-y-4 flex-1 flex flex-col">
+                <div className="flex items-center justify-between flex-shrink-0">
                     <div className="flex gap-2 mb-2 w-full justify-between items-center px-1">
                         <div className="flex items-center gap-2">
                             <Sparkles className="text-teal-400" size={16} />

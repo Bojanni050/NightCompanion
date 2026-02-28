@@ -112,7 +112,11 @@ const PROVIDER_PRICING = {
     },
 };
 
-function estimateCostUsd(provider, model, promptTokens, completionTokens) {
+function estimateCostUsd(provider, model, promptTokens, completionTokens, costHintFromClient = null) {
+    if (costHintFromClient !== null && typeof costHintFromClient === 'number') {
+        return costHintFromClient;
+    }
+
     const providerPricing = PROVIDER_PRICING[provider] || {};
     // Try exact match first, then prefix match
     let pricing = providerPricing[model];
@@ -868,12 +872,16 @@ router.post('/', async (req, res) => {
         }
 
         // Log token usage to DB (fire and forget)
-        const promptTokens = usage.prompt_tokens || usage.input_tokens || 0;
-        const completionTokens = usage.completion_tokens || usage.output_tokens || 0;
+        const costHint = payload.apiPreferences?.pricing ? (
+            promptTokens * (parseFloat(payload.apiPreferences.pricing.prompt) || 0) +
+            completionTokens * (parseFloat(payload.apiPreferences.pricing.completion) || 0)
+        ) : null;
+
         const cost = estimateCostUsd(
             provider.provider || provider.type,
             provider.modelName || provider.model_name || '',
-            promptTokens, completionTokens
+            promptTokens, completionTokens,
+            costHint
         );
         logUsage(pool, {
             sessionId: req.headers['x-session-id'] || null,
