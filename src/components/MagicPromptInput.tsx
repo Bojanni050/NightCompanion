@@ -1,24 +1,25 @@
-import { useState } from 'react';
-import { Sparkles, Loader2, Sparkle, User } from 'lucide-react';
+import { Sparkles, Loader2, User } from 'lucide-react';
 import { generateFromDescription } from '../lib/ai-service';
 import { db } from '../lib/api';
 import { handleAIError } from '../lib/error-handler';
 import { toast } from 'sonner';
 import CharacterPicker from './CharacterPicker';
 import { useCharacters } from '../hooks/useCharacters';
+import { supabase } from '../lib/supabase';
 
 interface MagicPromptInputProps {
-    onPromptGenerated: (prompt: string) => void;
+    onGenerate: (prompt: string) => void;
     maxWords: number;
     className?: string;
-    greylist?: string[];
-    onCheckBeforeGenerate?: (proceed: () => void) => void;
+    greylist: string[];
+    onCheckBeforeGenerate: (proceed: () => void) => void;
 }
 
-export default function MagicPromptInput({ onPromptGenerated, maxWords, className, greylist, onCheckBeforeGenerate }: MagicPromptInputProps) {
+export default function MagicPromptInput({ onGenerate, maxWords, className, greylist, onCheckBeforeGenerate }: MagicPromptInputProps) {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPicker, setShowPicker] = useState(false);
+    const [creativityLevel, setCreativityLevel] = useState<'focused' | 'balanced' | 'wild'>('balanced');
 
     // Check for characters
     const { data } = useCharacters(0);
@@ -34,31 +35,21 @@ export default function MagicPromptInput({ onPromptGenerated, maxWords, classNam
                 const token = '';
 
                 // Get successful prompts for better generation context
-                const topPromptsRes = await db
-                    .from('prompts')
-                    .select('content')
-                    .gte('rating', 4)
-                    .order('rating', { ascending: false })
-                    .limit(3);
+                const { data } = await supabase.from('prompts').select('content').limit(5);
+                const recentPrompts = data?.map((p: { content: string }) => p.content) || [];
 
-                const successfulPrompts = topPromptsRes.data?.map((p: { content: string }) => p.content) ?? [];
-                const context = successfulPrompts.length > 0 ? `Style Examples: ${successfulPrompts.join(' | ')}` : undefined;
-
-                const result = await generateFromDescription(
-                    input,
+                const generated = await generateFromDescription(
+                    input.trim(),
                     {
-                        context: context || undefined,
-                        preferences: {
-                            maxWords,
-                        },
-                        successfulPrompts: successfulPrompts.length > 0 ? successfulPrompts : undefined,
-                        greylist,
+                        preferences: { maxWords: maxWords || 75, creativity: creativityLevel },
+                        successfulPrompts: recentPrompts,
+                        greylist
                     },
                     token
                 );
 
-                if (result) {
-                    onPromptGenerated(result);
+                if (generated) {
+                    onGenerate(generated);
                     toast.success('Prompt expanded successfully!');
                 }
             } catch (err) {
@@ -142,6 +133,35 @@ export default function MagicPromptInput({ onPromptGenerated, maxWords, classNam
                     }}
                 />
             )}
+            <div className="mt-4 pt-4 border-t border-slate-700/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex-1 max-w-sm w-full">
+                    <div className="mb-2 flex items-center justify-between">
+                        <label className="text-sm font-medium text-slate-200">
+                            Creativity Level
+                        </label>
+                        <span className="text-xs text-slate-400 capitalize bg-slate-800 px-2 py-0.5 rounded">
+                            {creativityLevel}
+                        </span>
+                    </div>
+                    <input
+                        title="creativity"
+                        type="range"
+                        min="0"
+                        max="2"
+                        value={['focused', 'balanced', 'wild'].indexOf(creativityLevel)}
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            setCreativityLevel(val === 0 ? 'focused' : val === 1 ? 'balanced' : 'wild');
+                        }}
+                        className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-teal-500 hover:accent-teal-400"
+                    />
+                    <div className="mt-1 flex justify-between text-[10px] text-slate-500 font-medium">
+                        <span>Focused</span>
+                        <span>Balanced</span>
+                        <span>Wild</span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

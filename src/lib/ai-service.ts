@@ -143,6 +143,7 @@ export interface GeneratePreferences {
   mood?: string | undefined;
   subject?: string | undefined;
   maxWords?: number | undefined;
+  creativity?: string | undefined;
 }
 
 export async function generateFromDescription(
