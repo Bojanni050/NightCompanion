@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { Pool } = require('pg');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+const { pool } = require('../db');
 
 // Check if CSV file exists
 function csvFileExists() {
@@ -17,11 +17,8 @@ async function importModels(force = false) {
     return;
   }
   
-  // Connect to database
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/nightcompanion',
-  });
-
+  // Using pool from ../db.js so it handles proper authentication parameters
+  
   try {
     // Check if models table exists, create if not
 
@@ -219,8 +216,6 @@ async function importModels(force = false) {
   } catch (error) {
     console.error('Error:', error.message);
     throw error;
-  } finally {
-    await pool.end();
   }
 }
 
