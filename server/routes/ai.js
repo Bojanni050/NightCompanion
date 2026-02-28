@@ -573,9 +573,18 @@ router.post('/', async (req, res) => {
             userPrompt = `Analyze these prompts:\n${payload.prompts.join('\n')}`;
         } else if (action === 'generate') {
             const maxWords = payload.preferences?.maxWords || 70;
+            const creativity = payload.preferences?.creativity || 'balanced';
+            const tempMap = { 'focused': 0.8, 'balanced': 1.0, 'wild': 1.3 };
+            temperature = tempMap[creativity] || 1.0;
+
             userPrompt = `Description: ${payload.description}\n\n`;
             userPrompt += `System Rule: Limit response to ${maxWords} words maximum.\n`;
-            if (payload.preferences) userPrompt += `Prefs: ${JSON.stringify(payload.preferences)}\n`;
+            if (payload.preferences) {
+                // omit creativity from the prompt string if we're setting it via temperature
+                const safePrefs = { ...payload.preferences };
+                delete safePrefs.creativity;
+                userPrompt += `Prefs: ${JSON.stringify(safePrefs)}\n`;
+            }
             if (payload.context) userPrompt += `Context: ${payload.context}`;
             if (payload.greylist && payload.greylist.length > 0) {
                 userPrompt += `\nAvoid using the following words or subjects if possible: ${payload.greylist.join(', ')}.`;
