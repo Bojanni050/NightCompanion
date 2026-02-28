@@ -3,7 +3,9 @@ const path = require('path');
 const isDev = process.env.NODE_ENV === 'development';
 
 // Disable dangling pointer detector which causes crashes in some Electron versions
-app.commandLine.appendSwitch('disable-features', 'DanglingPointerDetector');
+if (app && app.commandLine) {
+    app.commandLine.appendSwitch('disable-features', 'DanglingPointerDetector');
+}
 
 let mainWindow;
 let serverProcess;
