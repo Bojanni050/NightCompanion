@@ -1,7 +1,6 @@
+import { useState } from 'react';
 import { Sparkles, Loader2, User } from 'lucide-react';
 import { generateFromDescription } from '../lib/ai-service';
-import { db } from '../lib/api';
-import { handleAIError } from '../lib/error-handler';
 import { toast } from 'sonner';
 import CharacterPicker from './CharacterPicker';
 import { useCharacters } from '../hooks/useCharacters';
@@ -72,10 +71,9 @@ export default function MagicPromptInput({ onGenerate, maxWords, className, grey
             <div className="absolute -top-4 -right-4 w-24 h-24 bg-teal-500/10 blur-3xl rounded-full group-hover:bg-teal-500/20 transition-colors duration-500 pointer-events-none" />
 
             <div className="relative space-y-4 flex-1 flex flex-col">
-                <div className="flex items-center justify-between flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-teal-500/15 rounded-lg flex items-center justify-center">
-                            <Sparkle size={16} className="text-teal-400" />
+                    <div className="flex gap-2 mb-2 w-full justify-between items-center px-1">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="text-teal-400" size={16} />
                         </div>
                         <div>
                             <h3 className="text-sm font-semibold text-white">Magic Quick Start</h3>
@@ -127,7 +125,7 @@ export default function MagicPromptInput({ onGenerate, maxWords, className, grey
                     onClose={() => setShowPicker(false)}
                     onSelect={(char) => {
                         const charText = `Character: ${char.name}. ${char.description || ''}`;
-                        setInput(prev => prev ? `${prev}\n\n${charText}` : charText);
+                        setInput((prev: string) => prev ? `${prev}\n\n${charText}` : charText);
                         setShowPicker(false);
                         toast.success(`added ${char.name} to prompt`);
                     }}
