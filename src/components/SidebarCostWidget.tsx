@@ -47,7 +47,7 @@ interface Props {
 export default function SidebarCostWidget({ collapsed }: Props) {
     const { stats } = useSessionStats();
     const [open, setOpen] = useState(false);
-    const [period, setPeriod] = useState<Period>('month');
+    const [period, setPeriod] = useState<Period>('today');
     const [customFrom, setCustomFrom] = useState('');
     const [customTo, setCustomTo] = useState('');
 

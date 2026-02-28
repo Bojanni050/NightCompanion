@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Activity } from 'lucide-react';
+import { useUsageStats } from '../hooks/useUsageStats';
 
 interface RateLimitData {
     remaining: number | null;
@@ -9,18 +10,35 @@ interface RateLimitData {
 export function RateLimitWidget({ collapsed }: { collapsed: boolean }) {
     const [data, setData] = useState<RateLimitData>({ remaining: null, reset: null });
 
+    const { from, to } = useMemo(() => {
+        const now = new Date();
+        const toDate = new Date(now);
+        toDate.setHours(23, 59, 59, 999);
+        const fromDate = new Date(now);
+        fromDate.setDate(1);
+        fromDate.setHours(0, 0, 0, 0);
+        return { from: fromDate.toISOString(), to: toDate.toISOString() };
+    }, []);
+
+    const { data: usageData, reload } = useUsageStats(from, to);
+
     useEffect(() => {
         const handleUpdate = (e: Event) => {
             const customEvent = e as CustomEvent<RateLimitData>;
             setData(customEvent.detail);
         };
+        const handleUsageUpdate = () => reload();
 
         window.addEventListener('nc-rate-limit-update', handleUpdate);
-        return () => window.removeEventListener('nc-rate-limit-update', handleUpdate);
-    }, []);
+        window.addEventListener('nc-usage-update', handleUsageUpdate);
+        return () => {
+            window.removeEventListener('nc-rate-limit-update', handleUpdate);
+            window.removeEventListener('nc-usage-update', handleUsageUpdate);
+        };
+    }, [reload]);
 
     // Show default state on startup instead of returning null
-    const displayRemaining = data.remaining !== null ? data.remaining : 5000;
+    const displayRemaining = data.remaining !== null ? data.remaining : Math.max(0, 5000 - (usageData.totals.calls || 0));
 
     const isLow = displayRemaining < 50;
     const isCritical = displayRemaining < 10;
