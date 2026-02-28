@@ -159,13 +159,8 @@ router.get('/dashboard', async (req, res) => {
         const projected_month_end_usd = daysPassed > 0 ? (current_spend_usd / daysPassed) * daysInMonth : 0;
 
         // Debug: Log the data being returned
-        console.log('Usage Dashboard Response:', {
-            rangeTotals: rangeTotalsRes.rows[0],
-            todayTotals: todayTotalsRes.rows[0],
-            providersCount: providers.length,
-            providers
-        });
-
+        // console.log('Usage Dashboard Response:', ...);
+        
         res.json({
             providers,
             totals: {
@@ -228,6 +223,38 @@ router.get('/history', async (req, res) => {
 
     } catch (err) {
         logger.error('History stats error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/usage/by-action
+router.get('/by-action', async (req, res) => {
+    try {
+        const { period = '30d' } = req.query;
+        let days = 30;
+        if (period === '7d') days = 7;
+        if (period === '90d') days = 90;
+
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+
+        const result = await pool.query(`
+            SELECT 
+                action,
+                COUNT(*)::int as requests,
+                COALESCE(SUM(estimated_cost_usd), 0) as cost_usd,
+                COALESCE(SUM(prompt_tokens), 0)::int as prompt_tokens,
+                COALESCE(SUM(completion_tokens), 0)::int as completion_tokens
+            FROM api_usage_log
+            WHERE created_at >= $1
+              AND action IS NOT NULL
+            GROUP BY action
+            ORDER BY cost_usd DESC
+        `, [startDate.toISOString()]);
+
+        res.json(result.rows);
+    } catch (err) {
+        logger.error('By-action stats error:', err.message);
         res.status(500).json({ error: err.message });
     }
 });

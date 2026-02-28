@@ -3,7 +3,7 @@ import {
     BarChart2, Activity, Settings, AlertTriangle,
     TrendingUp, CreditCard, Clock, Zap, Target, LucideIcon
 } from 'lucide-react';
-import { useUsageDashboard, useUpdateBudget, useUsageHistory } from '../hooks/useUsage';
+import { useUsageDashboard, useUpdateBudget, useUsageHistory, useUsageByAction } from '../hooks/useUsage';
 import { toast } from 'sonner';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import type { ProviderUsage, BudgetSettings } from '../types/usage';
@@ -194,6 +194,10 @@ export default function UsageDashboard() {
                 </div>
             )}
 
+            {/* By Action Breakdown */}
+            <h3 className="text-xl font-bold text-white mt-12 mb-6">Kosten per actie</h3>
+            <ActionUsageSection />
+
             {/* Config Modal */}
             {showBudgetModal && <BudgetConfigModal initial={budget} onClose={() => setShowBudgetModal(false)} />}
 
@@ -352,3 +356,82 @@ function BudgetConfigModal({ initial, onClose }: { initial: BudgetSettings, onCl
         </div >
     );
 }
+
+const ACTION_LABELS: Record<string, string> = {
+    'improve': 'Prompt verbeteren',
+    'improve-detailed': 'Uitgebreid verbeteren',
+    'improve-with-negative': 'Verbeteren + negatief',
+    'analyze-style': 'Stijl analyseren',
+    'diagnose': 'Diagnose',
+    'random': 'Willekeurige prompt',
+    'generate': 'Prompt genereren',
+    'generate-variations': 'Variaties genereren',
+    'recommend-models': 'Model aanbevelen',
+    'optimize-for-model': 'Optimaliseren voor model',
+    'describe-character': 'Karakter beschrijven',
+    'suggest-tags': 'Tags voorstellen',
+    'vision': 'Afbeelding analyseren',
+};
+
+function ActionUsageSection() {
+    const { data: rows, isLoading } = useUsageByAction('30d');
+
+    if (isLoading) {
+        return <div className="text-center py-6 text-slate-500"><Activity className="animate-spin inline mr-2" size={20} /> Laden...</div>;
+    }
+
+    if (!rows || rows.length === 0) {
+        return <div className="text-center py-12 p-6 rounded-2xl border border-slate-800 border-dashed text-slate-500">Geen data beschikbaar</div>;
+    }
+
+    const maxCost = Math.max(...rows.map(r => r.cost_usd));
+
+    return (
+        <div className="bg-slate-900/40 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="border-b border-slate-800/60 bg-slate-900/60 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                            <th className="p-4 w-1/3">Actie</th>
+                            <th className="p-4 w-1/4">Kosten</th>
+                            <th className="p-4 text-right">Verzoeken</th>
+                            <th className="p-4 text-right hidden sm:table-cell">Tokens</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/30">
+                        {rows.map((row) => {
+                            const label = ACTION_LABELS[row.action] || (row.action.charAt(0).toUpperCase() + row.action.slice(1));
+                            const percent = maxCost > 0 ? (row.cost_usd / maxCost) * 100 : 0;
+                            return (
+                                <tr key={row.action} className="hover:bg-slate-800/30 transition-colors group">
+                                    <td className="p-4">
+                                        <div className="font-medium text-slate-300">{label}</div>
+                                        <div className="text-[10px] text-slate-500 font-mono mt-0.5">{row.action}</div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex flex-col gap-1.5">
+                                            <span className="font-bold text-teal-400 tabular-nums">${Number(row.cost_usd).toFixed(4)}</span>
+                                            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-teal-500/50 rounded-full" 
+                                                    style={{ width: `${percent}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-4 text-right font-medium text-slate-300 tabular-nums">
+                                        {row.requests.toLocaleString()}
+                                    </td>
+                                    <td className="p-4 text-right text-sm text-slate-400 tabular-nums hidden sm:table-cell">
+                                        {(row.prompt_tokens + row.completion_tokens).toLocaleString()}
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}
+

@@ -61,3 +61,11 @@ export interface UsageHistoryPoint {
     cost_usd: number;
     tokens: number;
 }
+
+export interface ActionUsageRow {
+    action: string;
+    requests: number;
+    cost_usd: number;
+    prompt_tokens: number;
+    completion_tokens: number;
+}

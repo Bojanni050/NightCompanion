@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { UsageDashboardData, UsageHistoryPoint } from '../types/usage';
+import type { UsageDashboardData, UsageHistoryPoint, ActionUsageRow } from '../types/usage';
 import { API_BASE_URL } from '../lib/constants';
 
 const API_BASE = `${API_BASE_URL}/api/usage`;
@@ -25,6 +25,17 @@ export function useUsageHistory(provider = 'all', period = '30d') {
             const res = await fetch(`${API_BASE}/history?provider=${encodeURIComponent(provider)}&period=${encodeURIComponent(period)}`);
             if (!res.ok) throw new Error('Failed to load usage history');
             return res.json();
+        },
+    });
+}
+
+export function useUsageByAction(period = '30d') {
+    return useQuery({
+        queryKey: ['usage', 'by-action', period],
+        queryFn: async () => {
+            const res = await fetch(`${API_BASE}/by-action?period=${period}`);
+            if (!res.ok) throw new Error('Failed to load action breakdown');
+            return res.json() as Promise<ActionUsageRow[]>;
         },
     });
 }
