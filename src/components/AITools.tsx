@@ -224,13 +224,16 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onRequestSavePrompt, onP
       } catch (e) { }
 
       if (!supportsNegativePrompt(suggestedModel?.id || '')) {
-        const result = await optimizePromptForModel(improveInput, suggestedModel?.name ?? 'DALL-E 3', token, negativeInput, apiPreferences);
-        setImproveResult(result.optimizedPrompt);
+        const result: any = await optimizePromptForModel(improveInput, suggestedModel?.name ?? 'DALL-E 3', token, negativeInput, apiPreferences);
+        const improvedText = result.optimizedPrompt || result.improved || result.prompt || result.raw || (typeof result === 'string' ? result : '');
+        setImproveResult(improvedText);
         setNegativeResult(result.negativePrompt || '');
       } else {
         const tips = useModelTips ? modelTips : undefined;
-        const result = await improvePromptWithNegative(improveInput, negativeInput.trim(), token, apiPreferences, taskImproveModel, tips);
-        setImproveResult(result.improved); setNegativeResult(result.negativePrompt);
+        const result: any = await improvePromptWithNegative(improveInput, negativeInput.trim(), token, apiPreferences, taskImproveModel, tips);
+        const improvedText = result.improved || result.optimizedPrompt || result.prompt || result.raw || (typeof result === 'string' ? result : '');
+        setImproveResult(improvedText);
+        setNegativeResult(result.negativePrompt || '');
       }
     } catch (e) { handleAIError(e); } finally { setLoading(false); }
   }
