@@ -1,13 +1,21 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const { pool } = require('../db');
-const { decrypt } = require('../lib/crypto');
+const encryption = require('../lib/encryption');
 
 const SYSTEM_PROMPT = `Extract 5-10 keywords from this image prompt. Focus on: subject, style, mood, setting, color palette, art technique. Return ONLY a JSON array of lowercase single words or short phrases. Example: ["portrait", "neon", "cyberpunk", "rain", "dramatic lighting"]`;
 
 async function getOpenRouterKey() {
-    const { rows } = await pool.query(`SELECT hash, iv FROM api_keys WHERE provider = 'openrouter' AND is_active = true LIMIT 1`);
+    if (process.env.OPENROUTER_API_KEY) {
+        return process.env.OPENROUTER_API_KEY;
+    }
+    const { rows } = await pool.query(`SELECT encrypted_key, iv, auth_tag FROM public.user_api_keys WHERE provider = 'openrouter' AND is_active = true LIMIT 1`);
     if (rows.length === 0) return null;
-    return decrypt(rows[0].hash, rows[0].iv);
+    try {
+        return encryption.decrypt(rows[0].encrypted_key, rows[0].iv, rows[0].auth_tag);
+    } catch (e) {
+        console.error("Failed to decrypt OpenRouter API key from DB. Please provide OPENROUTER_API_KEY environment variable.");
+        return null;
+    }
 }
 
 async function extractKeywords(promptText, apiKey) {
@@ -67,7 +75,7 @@ async function migrate() {
         // Get prompts missing keywords
         const { rows: prompts } = await pool.query(`
             SELECT id, content 
-            FROM prompts 
+            FROM public.prompts 
             WHERE auto_keywords IS NULL 
               AND content IS NOT NULL
               AND trim(content) != ''
@@ -75,7 +83,7 @@ async function migrate() {
 
         console.log(`📋 Found ${prompts.length} prompts to backfill.`);
 
-        const BATCH_SIZE = 10;
+        const BATCH_SIZE = 5;
         let processed = 0;
         let updatedCount = 0;
 
@@ -89,7 +97,7 @@ async function migrate() {
                     if (keywords && keywords.length > 0) {
                         // Store formatted PG array format: {"kw1","kw2"}
                         const pgArrayStr = `{${keywords.map(k => `"${k.replace(/"/g, '\\"')}"`).join(',')}}`;
-                        await pool.query(`UPDATE prompts SET auto_keywords = $1 WHERE id = $2`, [pgArrayStr, prompt.id]);
+                        await pool.query(`UPDATE public.prompts SET auto_keywords = $1 WHERE id = $2`, [pgArrayStr, prompt.id]);
                         updatedCount++;
                     }
                 } catch (e) {
