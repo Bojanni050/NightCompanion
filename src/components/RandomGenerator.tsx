@@ -7,7 +7,7 @@ import { generateRandomPrompt } from '../lib/prompt-fragments';
 import { analyzePrompt, supportsNegativePrompt, getTopCandidates } from '../lib/models-data';
 import { recommendNCModel } from '../lib/nc-model-recommender';
 import { db } from '../lib/api';
-import { generateRandomPromptAI, listModels, ModelListItem, recommendModels } from '../lib/ai-service';
+import { generateRandomPromptAI, listModels, ModelListItem, recommendModels, triggerKeywordExtraction } from '../lib/ai-service';
 import { listApiKeys } from '../lib/api-keys-service';
 import { getDefaultModelForProvider, ModelOption } from '../lib/provider-models';
 import { estimateLLMCost } from '../lib/pricing';
@@ -301,7 +301,7 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
       return;
     }
 
-    await db.from('prompts').insert({
+    const { data: newPrompt, error } = await db.from('prompts').insert({
       title: (prompt.split(',')[0] || 'Untitled').trim().slice(0, 160),
       content: fullContent,
       notes: (generatedStyle ? `Style: ${generatedStyle}` : '') + ncModelNote || undefined,
@@ -311,7 +311,12 @@ export default function RandomGenerator({ onSwitchToGuided, onSwitchToManual, on
       is_favorite: false,
       model: activeModel,
       suggested_model: suggestedModelIdToSave
-    });
+    }).select().single();
+    
+    if (newPrompt && !error) {
+      triggerKeywordExtraction(newPrompt.id, newPrompt.content);
+    }
+    
     setSaving(false);
     onSaved();
   }

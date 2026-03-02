@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sparkles, Copy, Check, Loader2, ChevronRight, Lightbulb, Wand2 } from 'lucide-react';
-import { improvePromptDetailed, DetailedImprovement } from '../lib/ai-service';
+import { improvePromptDetailed, DetailedImprovement, triggerKeywordExtraction } from '../lib/ai-service';
 import { handleAIError } from '../lib/error-handler';
 import { toast } from 'sonner';
 import { db } from '../lib/api';
@@ -64,14 +64,19 @@ export function PromptImprover({ prompt, onApply }: PromptImproverProps) {
     try {
       await db.auth.getUser(); // Get user for later just in case
       // Local DB insert
-      await db.from('prompts').insert({
+      const { data: newPrompt, error } = await db.from('prompts').insert({
         title: 'Improved: ' + (text.split(',')[0] || 'Untitled').slice(0, 30),
         content: text,
         notes: 'Created via AI Prompt Improver',
         rating: 0,
         is_template: false,
         is_favorite: false,
-      });
+      }).select().single();
+      
+      if (newPrompt && !error) {
+        triggerKeywordExtraction(newPrompt.id, newPrompt.content);
+      }
+      
       // Show success (simple alert/console for now if toast not available in this context, but better to use toast if possible)
       // Assuming toast is available or we can just change button state briefly
       const btn = document.getElementById('save-btn-' + text.length);

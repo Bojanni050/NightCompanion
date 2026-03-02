@@ -4,7 +4,7 @@ import ChoiceModal from './ChoiceModal';
 import { db } from '../lib/api';
 import { toast } from 'sonner';
 import { generateRandomPrompt } from '../lib/prompt-fragments';
-import { generateRandomPromptAI, improvePromptWithNegative, optimizePromptForModel, generateNegativePrompt, listModels, ModelListItem, recommendModels } from '../lib/ai-service';
+import { generateRandomPromptAI, improvePromptWithNegative, optimizePromptForModel, generateNegativePrompt, listModels, ModelListItem, recommendModels, triggerKeywordExtraction } from '../lib/ai-service';
 import { analyzePrompt, supportsNegativePrompt, getTopCandidates, ModelInfo } from '../lib/models-data';
 import { recommendNCModel } from '../lib/nc-model-recommender';
 import { handleAIError } from '../lib/error-handler';
@@ -454,7 +454,7 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
             const topSuggestion = analyzePrompt(fullPrompt)[0];
             const suggestedModelIdToSave = topSuggestion ? topSuggestion.model.id : undefined;
 
-            await db.from('prompts').insert({
+            const { data: newPrompt, error } = await db.from('prompts').insert({
                 title: (prompts[0] || 'Untitled').trim().slice(0, 160),
                 content: fullPrompt,
                 generation_journey: journeySteps,
@@ -462,7 +462,12 @@ export default function ManualGenerator({ onSaved, maxWords, initialPrompts, ini
                 is_template: false,
                 is_favorite: false,
                 suggested_model: suggestedModelIdToSave
-            });
+            }).select().single();
+            
+            if (newPrompt && !error) {
+                triggerKeywordExtraction(newPrompt.id, newPrompt.content);
+            }
+            
             toast.success('Prompt saved to library');
             onSaved();
         } catch (e) {

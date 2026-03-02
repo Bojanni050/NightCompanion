@@ -5,10 +5,10 @@ import {
 } from 'lucide-react';
 import { GUIDED_STEPS, OPTIONAL_ADDITIONS, buildGuidedPrompt } from '../lib/prompt-fragments';
 import { analyzePrompt, getTopCandidates } from '../lib/models-data';
-import { generateFromDescription, recommendModels } from '../lib/ai-service';
+import { generateFromDescription, recommendModels, triggerKeywordExtraction } from '../lib/ai-service';
 import { db } from '../lib/api';
 import { toast } from 'sonner';
-import type { Prompt } from '../lib/types';
+import { handleAIError } from '../lib/error-handler';
 
 interface GuidedBuilderProps {
   initialPrompt?: string;
@@ -196,7 +196,7 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
     const suggestion = analyzePrompt(generatedPrompt)[0];
     const suggestedModelIdToSave = aiAdvice ? aiAdvice.id : (suggestion ? suggestion.model.id : undefined);
 
-    await db.from('prompts').insert({
+    const { data: newPrompt, error } = await db.from('prompts').insert({
       title: (generatedPrompt.split(',')[0] || 'Untitled').trim().slice(0, 160),
       content: generatedPrompt,
       notes: 'Built with Guided mode' + (selectedNightCafePreset ? ` [NC Preset: ${selectedNightCafePreset}]` : ''),
@@ -204,7 +204,12 @@ export default function GuidedBuilder({ initialPrompt, onSaved, maxWords, select
       is_template: false,
       is_favorite: false,
       suggested_model: suggestedModelIdToSave
-    });
+    }).select().single();
+    
+    if (newPrompt && !error) {
+      triggerKeywordExtraction(newPrompt.id, newPrompt.content);
+    }
+    
     setSaving(false);
     onSaved();
   }

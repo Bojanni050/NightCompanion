@@ -7,7 +7,7 @@ import { db } from '../lib/api';
 import { API_BASE_URL } from '../lib/constants';
 import { trackKeywordsFromPrompt } from '../lib/style-analysis';
 import { PromptSchema } from '../lib/validation-schemas';
-import { generateTitle, suggestTags } from '../lib/ai-service';
+import { generateTitle, suggestTags, triggerKeywordExtraction } from '../lib/ai-service';
 import { handleAIError } from '../lib/error-handler';
 import { MODELS, analyzePrompt } from '../lib/models-data';
 import ModelSelector from './ModelSelector';
@@ -461,6 +461,9 @@ export default function PromptEditor({ prompt, initialData, isLinked = false, mo
 
       if (validated.content.trim()) {
         trackKeywordsFromPrompt(validated.content).catch(() => { });
+        if (promptId) {
+          triggerKeywordExtraction(promptId, validated.content);
+        }
       }
 
       setSaving(false);

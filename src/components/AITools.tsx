@@ -8,7 +8,7 @@ import {
 import { toast } from 'sonner';
 import { diffWords } from '../lib/diff-utils';
 import { handleAIError } from '../lib/error-handler';
-import { improvePromptWithNegative, analyzeStyle, generateFromDescription, diagnosePrompt, optimizePromptForModel } from '../lib/ai-service';
+import { improvePromptWithNegative, analyzeStyle, generateFromDescription, diagnosePrompt, optimizePromptForModel, triggerKeywordExtraction } from '../lib/ai-service';
 import { analyzePrompt, supportsNegativePrompt } from '../lib/models-data';
 import { recommendNCModel } from '../lib/nc-model-recommender';
 import type { StyleAnalysis, Diagnosis, GeneratePreferences } from '../lib/ai-service';
@@ -316,13 +316,18 @@ const AITools = forwardRef<AIToolsRef, AIToolsProps>(({ onRequestSavePrompt, onP
         }
       } catch (e) { }
 
-      const { error } = await db.from('prompts').insert({
+      const { data: newPrompt, error } = await db.from('prompts').insert({
         title, content: text, notes: 'Generated with AI Tools' + ncModelNote, generation_journey: journeySteps,
         rating: 0, is_template: false, is_favorite: false, suggested_model: suggestedModelIdToSave,
         negative_prompt: options?.negativePrompt || null
-      });
+      }).select().single();
 
       if (error) throw error;
+      
+      if (newPrompt) {
+        triggerKeywordExtraction(newPrompt.id, newPrompt.content);
+      }
+      
       toast.success('Prompt saved'); if (onSaved) onSaved();
     } catch (e) { toast.error('Failed to save prompt'); } finally { setSaving(''); }
   }

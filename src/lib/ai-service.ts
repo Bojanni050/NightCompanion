@@ -1,4 +1,5 @@
 import { API_BASE_URL } from './constants';
+import { db } from './api';
 
 const API_URL = `${API_BASE_URL}/api/ai`;
 
@@ -81,6 +82,38 @@ export async function improvePrompt(prompt: string, token: string, apiPreference
   if (prefs) payload.apiPreferences = prefs;
   if (modelTips && modelTips.length > 0) payload.modelTips = modelTips;
   return callAI('improve', payload, token);
+}
+
+export async function extractKeywords(prompt: string, token: string): Promise<string[]> {
+  try {
+    const rawResult = await callAI('extract-keywords', { prompt }, token);
+    
+    if (typeof rawResult === 'string') {
+      // In case the AI returns a markdown block like ```json ["word"] ```
+      let cleanString = rawResult;
+      if (cleanString.startsWith('```json')) {
+        cleanString = cleanString.replace(/```json/g, '').replace(/```/g, '').trim();
+      } else if (cleanString.startsWith('```')) {
+        cleanString = cleanString.replace(/```/g, '').trim();
+      }
+
+      try {
+        return JSON.parse(cleanString);
+      } catch {
+        // Fallback if the AI returns a string that isn't valid JSON (e.g. comma separated)
+        return cleanString.replace(/[[\]"]/g, '').split(',').map(k => k.trim()).filter(Boolean).slice(0, 10);
+      }
+    }
+    
+    if (Array.isArray(rawResult)) {
+      return rawResult;
+    }
+    
+    return [];
+  } catch (error) {
+    console.error('Failed to extract keywords:', error);
+    return []; // Fail gracefully as per requirements
+  }
 }
 
 export async function improvePromptWithNegative(
@@ -394,3 +427,12 @@ export async function listModels(
   return callAI('list-models', payload, token);
 }
 
+export function triggerKeywordExtraction(promptId: string, content: string, token: string = '') {
+  extractKeywords(content, token).then(async (keywords) => {
+    if (keywords && Array.isArray(keywords) && keywords.length > 0) {
+      await db.from('prompts').update({ auto_keywords: keywords }).eq('id', promptId);
+    }
+  }).catch((err) => {
+    console.error('Background keyword extraction failed:', err);
+  });
+}

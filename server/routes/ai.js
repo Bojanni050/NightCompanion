@@ -89,7 +89,9 @@ const SYSTEM_PROMPTS = {
     - Rendering: oversaturated, underexposed, overexposed, amateur
 
     Generate a negative prompt of between 5 and 15 words.
-    STOP after 15 words max.`
+    STOP after 15 words max.`,
+
+    'extract-keywords': `Extract 5-10 keywords from this image prompt. Focus on: subject, style, mood, setting, color palette, art technique. Return ONLY a JSON array of lowercase single words or short phrases. Example: ["portrait", "neon", "cyberpunk", "rain", "dramatic lighting"]`
 };
 
 // ─── LLM pricing (USD per 1M tokens) ────────────────────────────────────────
@@ -728,6 +730,13 @@ router.post('/', async (req, res) => {
         } else if (action === 'generate-negative-prompt') {
             userPrompt = "Generate a negative prompt based on the standard structure.";
             maxTokens = 200;
+
+        } else if (action === 'extract-keywords') {
+            if (!payload.prompt) {
+                return res.status(400).json({ error: 'Missing prompt text for keyword extraction' });
+            }
+            userPrompt = `Prompt: "${payload.prompt}"`;
+            maxTokens = 150;
 
         } else if (action === 'test-connection') {
             // Bypass AI call for test, just check provider availability

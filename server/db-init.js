@@ -75,7 +75,8 @@ async function initSchema() {
                 is_favorite BOOLEAN DEFAULT FALSE,
                 is_template BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                auto_keywords TEXT[]
             );
         `);
         await addColumn(pool, 'prompts', 'rating', 'NUMERIC(3,1) DEFAULT 0');
@@ -92,6 +93,7 @@ async function initSchema() {
         await addColumn(pool, 'prompts', 'last_used_at', 'TIMESTAMP WITH TIME ZONE');
         await addColumn(pool, 'prompts', 'suggested_model', 'TEXT');
         await addColumn(pool, 'prompts', 'generation_journey', "JSONB DEFAULT '[]'");
+        await addColumn(pool, 'prompts', 'auto_keywords', 'TEXT[]');
 
         // Add pg_trgm index for similarity search
         await pool.query(`

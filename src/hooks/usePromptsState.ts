@@ -5,6 +5,7 @@ import type { Prompt, Tag } from '../lib/types';
 import { handleError, showSuccess } from '../lib/error-handler';
 import { toast } from 'sonner';
 import { mapNightcafeAlgorithmToModelId } from '../lib/nightcafe-parser';
+import { triggerKeywordExtraction } from '../lib/ai-service';
 
 const PAGE_SIZE = 20;
 
@@ -202,6 +203,10 @@ export function usePromptsState() {
 
             const { data: insertedPrompt, error: promptError } = await db.from('prompts').insert([newPromptData]).select().single();
             if (promptError) throw promptError;
+
+            if (insertedPrompt) {
+                triggerKeywordExtraction(insertedPrompt.id, insertedPrompt.content);
+            }
 
             // Insert Gallery Item (since NC creations have images)
             if (insertedPrompt && data.imageUrl) {

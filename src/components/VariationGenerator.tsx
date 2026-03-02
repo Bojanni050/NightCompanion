@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Wand2, Copy, Check, Save, Sparkles, Loader2, Bot } from 'lucide-react';
 import { db } from '../lib/api';
-import { generatePromptVariations } from '../lib/ai-service';
+import { generatePromptVariations, triggerKeywordExtraction } from '../lib/ai-service';
 import { toast } from 'sonner';
 import { handleAIError } from '../lib/error-handler';
 import { analyzePrompt } from '../lib/models-data';
@@ -136,7 +136,7 @@ export default function VariationGenerator({ basePrompt, onSaved }: VariationGen
     const suggestedModelIdToSave = suggestion ? suggestion.model.id : undefined;
 
     const strategyLabel = VARIATION_STRATEGIES.find((s) => s.id === strategy)?.label ?? strategy;
-    await db.from('prompts').insert({
+    const { data: newPrompt, error } = await db.from('prompts').insert({
       title: `Variation: ${strategyLabel} #${idx + 1}`,
       content: text,
       notes: `Generated variation from: "${basePrompt.slice(0, 100)}..."`,
@@ -144,7 +144,12 @@ export default function VariationGenerator({ basePrompt, onSaved }: VariationGen
       is_template: false,
       is_favorite: false,
       suggested_model: suggestedModelIdToSave
-    });
+    }).select().single();
+
+    if (newPrompt && !error) {
+      triggerKeywordExtraction(newPrompt.id, newPrompt.content);
+    }
+    
     setSavingIdx(null);
     onSaved();
   }
