@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useReducer, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface UsageEntry {
     action: string;
@@ -75,6 +76,7 @@ const SessionStatsContext = createContext<SessionStatsContextValue | undefined>(
 
 export function SessionStatsProvider({ children }: { children: React.ReactNode }) {
     const [stats, dispatch] = useReducer(reducer, initialState);
+    const queryClient = useQueryClient();
 
     const value = useMemo<SessionStatsContextValue>(() => ({
         stats,
@@ -96,12 +98,13 @@ export function SessionStatsProvider({ children }: { children: React.ReactNode }
                     completionTokens: usage.completion_tokens || 0,
                     estimatedCostUsd: usage.estimated_cost_usd || 0,
                 });
+                queryClient.invalidateQueries({ queryKey: ['usage'] });
             }
         };
 
         window.addEventListener('nc-usage-update', handler);
         return () => window.removeEventListener('nc-usage-update', handler);
-    }, [value]);
+    }, [value, queryClient]);
 
     return (
         <SessionStatsContext.Provider value={value}>

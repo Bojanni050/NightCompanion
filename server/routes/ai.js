@@ -117,7 +117,35 @@ const PROVIDER_PRICING = {
         'gemini-2.0-flash': { input: 0.10, output: 0.40 },
         'gemini-2.5-pro': { input: 1.25, output: 10.00 }
     },
-    openrouter: {}
+    openrouter: {
+        'openai/gpt-4o': { input: 2.50, output: 10.00 },
+        'openai/gpt-4o-mini': { input: 0.15, output: 0.60 },
+        'anthropic/claude-3.5-sonnet': { input: 3.00, output: 15.00 },
+        'anthropic/claude-sonnet-4': { input: 3.00, output: 15.00 },
+        'google/gemini-2.0-flash-exp:free': { input: 0.00, output: 0.00 },
+        'meta-llama/llama-3.2-11b-vision-instruct': { input: 0.10, output: 0.10 },
+        'meta-llama/llama-3.2-90b-vision-instruct': { input: 0.35, output: 0.40 },
+        'meta-llama/llama-3.3-70b-instruct': { input: 0.13, output: 0.40 },
+        'qwen/qwen-2.5-72b-instruct': { input: 0.12, output: 0.40 },
+        'mistralai/mistral-large': { input: 2.00, output: 6.00 }
+    },
+    together: {
+        'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo': { input: 0.18, output: 0.18 },
+        'meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo': { input: 1.20, output: 1.20 },
+        'meta-llama/Llama-3.3-70B-Instruct-Turbo': { input: 0.88, output: 0.88 },
+        'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo': { input: 3.50, output: 3.50 },
+        'Qwen/Qwen2.5-72B-Instruct-Turbo': { input: 1.20, output: 1.20 },
+        'mistralai/Mixtral-8x22B-Instruct-v0.1': { input: 1.20, output: 1.20 },
+        'deepseek-ai/DeepSeek-V3': { input: 0.14, output: 0.28 },
+        'Gryphe/MythoMax-L2-13b': { input: 0.30, output: 0.30 }
+    },
+    deepinfra: {
+        'meta-llama/Llama-3.3-70B-Instruct': { input: 0.13, output: 0.40 },
+        'meta-llama/Meta-Llama-3.1-405B-Instruct': { input: 0.90, output: 0.90 },
+        'microsoft/WizardLM-2-8x22B': { input: 0.50, output: 0.50 },
+        'Qwen/Qwen2.5-72B-Instruct': { input: 0.12, output: 0.40 },
+        'deepseek-ai/DeepSeek-V3': { input: 0.14, output: 0.28 }
+    }
 };
 
 function estimateCostUsd(provider, model, promptTokens, completionTokens, costHintFromClient = null) {
