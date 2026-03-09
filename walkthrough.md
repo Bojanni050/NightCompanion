@@ -19,3 +19,8 @@
 - Findings: User ran `npm run electron:dev` but this script was not defined.
 - Conclusions: Add explicit Electron/Desktop script aliases to enforce desktop-focused startup commands.
 - Actions: Added `electron:dev`, `electron:start`, `desktop:dev`, and `desktop:start` scripts in `package.json`.
+
+## 2026-03-09 (Remove dev:vite from Flow)
+- Findings: User requested to remove `dev:vite` from the startup flow.
+- Conclusions: Desktop startup should remain single-command and avoid exposing separate browser-first script usage.
+- Actions: Refactored scripts so `electron:dev` runs `concurrently "vite" "npm run dev:electron"`, set `dev` and `desktop:dev` to `electron:dev`, and removed the `dev:vite` script entry.
