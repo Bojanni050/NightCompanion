@@ -2,7 +2,7 @@
   "name": "nightcompanion",
   "version": "0.1.0",
   "description": "Desktop companion app for NightCafe Studio — prompt library, style profiles, generation log",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
     "dev:vite": "vite",
