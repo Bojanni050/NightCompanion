@@ -34,3 +34,8 @@
 - Findings: Existing process on `5173` could not be terminated due to access denied.
 - Conclusions: Use an isolated desktop-dev port to avoid conflicts with stale/privileged processes.
 - Actions: Switched desktop dev port from `5173` to `5187` in `package.json` (`electron:dev`, `dev:electron`) and `electron/main.ts` dev `loadURL`.
+
+## 2026-03-09 (OpenRouter Model Cache + Settings Actions)
+- Findings: User requested model list retrieval from OpenRouter after saving key, DB persistence, dropdown selection, and explicit test/refresh actions.
+- Conclusions: Best flow is to cache models in Postgres (`openrouter_models`) and expose dedicated settings IPC methods for listing, refreshing, and testing.
+- Actions: Added schema + migration for `openrouter_models`; implemented `settings:listOpenRouterModels`, `settings:refreshOpenRouterModels`, and `settings:testOpenRouter`; updated Settings UI with model dropdown plus `Test verbinding` and `Refresh modellen` buttons.

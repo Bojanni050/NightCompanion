@@ -11,6 +11,9 @@ Key Principles
   - Use lowercase with dashes for directories (e.g., components/auth-wizard).
   - Favor named exports for components.
   - Use the Receive an Object, Return an Object (RORO) pattern.
+
+MCP
+  - always check context7 mcp for relevant information before responding. If context7 mcp is empty, ask the user for more details about the project and requirements before providing an answer.
   
 JavaScript
   - Use "function" keyword for pure functions. Omit semicolons.

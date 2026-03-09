@@ -14,6 +14,12 @@ export type OpenRouterSettings = {
   appName: string
 }
 
+export type OpenRouterModel = {
+  modelId: string
+  displayName: string
+  contextLength: number | null
+}
+
 export type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -56,6 +62,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('settings:getOpenRouter'),
     saveOpenRouter: (input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>> =>
       ipcRenderer.invoke('settings:saveOpenRouter', input),
+    listOpenRouterModels: (): Promise<IpcResult<OpenRouterModel[]>> =>
+      ipcRenderer.invoke('settings:listOpenRouterModels'),
+    refreshOpenRouterModels: (input?: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterModel[]>> =>
+      ipcRenderer.invoke('settings:refreshOpenRouterModels', input),
+    testOpenRouter: (input?: Partial<OpenRouterSettings>): Promise<IpcResult<{ ok: boolean; modelCount: number }>> =>
+      ipcRenderer.invoke('settings:testOpenRouter', input),
   },
   generator: {
     magicRandom: (input?: { theme?: string }): Promise<IpcResult<{ prompt: string }>> =>

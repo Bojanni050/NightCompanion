@@ -71,6 +71,23 @@ export const generationLog = pgTable(
   ]
 )
 
+// ─── OpenRouter Models Cache ─────────────────────────────────────────────────
+
+export const openRouterModels = pgTable(
+  'openrouter_models',
+  {
+    id: serial('id').primaryKey(),
+    modelId: varchar('model_id', { length: 255 }).notNull().unique(),
+    displayName: varchar('display_name', { length: 255 }).notNull(),
+    contextLength: integer('context_length'),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('openrouter_models_model_id_idx').on(table.modelId),
+    index('openrouter_models_updated_at_idx').on(table.updatedAt),
+  ]
+)
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type Prompt = typeof prompts.$inferSelect
@@ -81,3 +98,6 @@ export type NewStyleProfile = typeof styleProfiles.$inferInsert
 
 export type GenerationEntry = typeof generationLog.$inferSelect
 export type NewGenerationEntry = typeof generationLog.$inferInsert
+
+export type OpenRouterModel = typeof openRouterModels.$inferSelect
+export type NewOpenRouterModel = typeof openRouterModels.$inferInsert

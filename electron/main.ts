@@ -8,7 +8,7 @@ import { migrate } from 'drizzle-orm/postgres-js/migrator'
 import postgres from 'postgres'
 import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
 import * as schema from '../src/lib/schema'
-import { prompts, styleProfiles, generationLog } from '../src/lib/schema'
+import { prompts, styleProfiles, generationLog, openRouterModels } from '../src/lib/schema'
 import type { NewPrompt, NewStyleProfile, NewGenerationEntry } from '../src/lib/schema'
 
 // Keep Chromium disk caches in a writable temp location to avoid Windows access-denied startup errors.
@@ -87,6 +87,12 @@ type OpenRouterSettings = {
   appName: string
 }
 
+type OpenRouterModel = {
+  modelId: string
+  displayName: string
+  contextLength: number | null
+}
+
 const DEFAULT_OPENROUTER_MODEL = 'openai/gpt-4o-mini'
 
 function getSettingsFilePath() {
@@ -124,6 +130,105 @@ async function writeStoredSettings(settings: { openRouter: OpenRouterSettings })
 async function getOpenRouterSettings() {
   const stored = await readStoredSettings()
   return normalizeOpenRouterSettings(stored.openRouter)
+}
+
+async function listOpenRouterModelsFromDb() {
+  const data = await db
+    .select({
+      modelId: openRouterModels.modelId,
+      displayName: openRouterModels.displayName,
+      contextLength: openRouterModels.contextLength,
+    })
+    .from(openRouterModels)
+    .orderBy(openRouterModels.displayName)
+
+  return data
+}
+
+async function syncOpenRouterModels(settings: OpenRouterSettings) {
+  if (!settings.apiKey) {
+    await db.delete(openRouterModels)
+    return [] as OpenRouterModel[]
+  }
+
+  const response = await fetch('https://openrouter.ai/api/v1/models', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${settings.apiKey}`,
+      ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
+      ...(settings.appName ? { 'X-Title': settings.appName } : {}),
+    },
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`OpenRouter models request failed (${response.status}): ${errText.slice(0, 300)}`)
+  }
+
+  const payload = (await response.json()) as {
+    data?: Array<{
+      id?: string
+      name?: string
+      context_length?: number
+    }>
+  }
+
+  const normalized = (payload.data ?? [])
+    .map((item) => {
+      const modelId = item.id?.trim()
+      if (!modelId) return null
+
+      return {
+        modelId,
+        displayName: item.name?.trim() || modelId,
+        contextLength: typeof item.context_length === 'number' ? item.context_length : null,
+      }
+    })
+    .filter((item): item is OpenRouterModel => item !== null)
+
+  await db.delete(openRouterModels)
+
+  if (normalized.length > 0) {
+    await db.insert(openRouterModels).values(
+      normalized.map((item) => ({
+        modelId: item.modelId,
+        displayName: item.displayName,
+        contextLength: item.contextLength,
+        updatedAt: new Date(),
+      }))
+    )
+  }
+
+  return normalized
+}
+
+async function testOpenRouterConnection(settings: OpenRouterSettings) {
+  if (!settings.apiKey) {
+    throw new Error('OpenRouter API key is missing.')
+  }
+
+  const response = await fetch('https://openrouter.ai/api/v1/models', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${settings.apiKey}`,
+      ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
+      ...(settings.appName ? { 'X-Title': settings.appName } : {}),
+    },
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`OpenRouter connection test failed (${response.status}): ${errText.slice(0, 300)}`)
+  }
+
+  const payload = (await response.json()) as {
+    data?: Array<unknown>
+  }
+
+  return {
+    ok: true,
+    modelCount: payload.data?.length ?? 0,
+  }
 }
 
 ipcMain.handle('prompts:list', async (_, filters: PromptFilters = {}) => {
@@ -321,8 +426,44 @@ ipcMain.handle('settings:getOpenRouter', async () => {
 ipcMain.handle('settings:saveOpenRouter', async (_, input: Partial<OpenRouterSettings>) => {
   try {
     const data = normalizeOpenRouterSettings(input)
+
+    if (data.apiKey) {
+      await syncOpenRouterModels(data)
+    } else {
+      await db.delete(openRouterModels)
+    }
+
     await writeStoredSettings({ openRouter: data })
     return { data }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
+ipcMain.handle('settings:listOpenRouterModels', async () => {
+  try {
+    const data = await listOpenRouterModelsFromDb()
+    return { data }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
+ipcMain.handle('settings:refreshOpenRouterModels', async (_, input?: Partial<OpenRouterSettings>) => {
+  try {
+    const data = normalizeOpenRouterSettings(input)
+    const models = await syncOpenRouterModels(data)
+    return { data: models }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
+ipcMain.handle('settings:testOpenRouter', async (_, input?: Partial<OpenRouterSettings>) => {
+  try {
+    const data = normalizeOpenRouterSettings(input)
+    const result = await testOpenRouterConnection(data)
+    return { data: result }
   } catch (error) {
     return { error: String(error) }
   }

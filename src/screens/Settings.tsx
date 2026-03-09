@@ -7,6 +7,12 @@ type OpenRouterForm = {
   appName: string
 }
 
+type OpenRouterModel = {
+  modelId: string
+  displayName: string
+  contextLength: number | null
+}
+
 const DEFAULT_FORM: OpenRouterForm = {
   apiKey: '',
   model: 'openai/gpt-4o-mini',
@@ -16,24 +22,37 @@ const DEFAULT_FORM: OpenRouterForm = {
 
 export default function Settings() {
   const [form, setForm] = useState<OpenRouterForm>(DEFAULT_FORM)
+  const [models, setModels] = useState<OpenRouterModel[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [testing, setTesting] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
 
     const load = async () => {
-      const result = await window.electronAPI.settings.getOpenRouter()
+      const [settingsResult, modelsResult] = await Promise.all([
+        window.electronAPI.settings.getOpenRouter(),
+        window.electronAPI.settings.listOpenRouterModels(),
+      ])
       if (!active) return
 
-      if (result.error) {
-        setStatus(`Error: ${result.error}`)
-      } else if (result.data) {
-        setForm(result.data)
+      if (settingsResult.error) {
+        setStatus(`Error: ${settingsResult.error}`)
+      } else if (settingsResult.data) {
+        setForm(settingsResult.data)
       } else {
         setStatus('Error: Settings API returned no data.')
       }
+
+      if (modelsResult.error) {
+        setStatus(`Error: ${modelsResult.error}`)
+      } else if (modelsResult.data) {
+        setModels(modelsResult.data)
+      }
+
       setLoading(false)
     }
 
@@ -62,11 +81,63 @@ export default function Settings() {
 
     if (result.data) {
       setForm(result.data)
+
+      const modelsResult = await window.electronAPI.settings.listOpenRouterModels()
+      if (modelsResult.data) {
+        setModels(modelsResult.data)
+      }
+
       setStatus('Settings saved.')
       return
     }
 
     setStatus('Error: Settings API returned no data.')
+  }
+
+  const handleRefreshModels = async () => {
+    setStatus(null)
+    setRefreshing(true)
+
+    const result = await window.electronAPI.settings.refreshOpenRouterModels(form)
+    setRefreshing(false)
+
+    if (result.error) {
+      setStatus(`Error: ${result.error}`)
+      return
+    }
+
+    if (!result.data) {
+      setStatus('Error: Model refresh returned no data.')
+      return
+    }
+
+    setModels(result.data)
+
+    if (result.data.length > 0 && !result.data.some((m) => m.modelId === form.model)) {
+      setForm((prev) => ({ ...prev, model: result.data[0].modelId }))
+    }
+
+    setStatus(`Model list refreshed (${result.data.length} models).`)
+  }
+
+  const handleTestConnection = async () => {
+    setStatus(null)
+    setTesting(true)
+
+    const result = await window.electronAPI.settings.testOpenRouter(form)
+    setTesting(false)
+
+    if (result.error) {
+      setStatus(`Error: ${result.error}`)
+      return
+    }
+
+    if (!result.data) {
+      setStatus('Error: Connection test returned no data.')
+      return
+    }
+
+    setStatus(`Connection OK. OpenRouter returned ${result.data.modelCount} models.`)
   }
 
   if (loading) {
@@ -97,13 +168,28 @@ export default function Settings() {
 
           <div>
             <label className="label">Model</label>
-            <input
-              type="text"
+            <select
               value={form.model}
               onChange={(e) => update('model', e.target.value)}
               className="input"
-              placeholder="openai/gpt-4o-mini"
-            />
+              title="OpenRouter model"
+            >
+              {models.length === 0 && (
+                <option value={form.model || DEFAULT_FORM.model}>{form.model || DEFAULT_FORM.model}</option>
+              )}
+
+              {models.map((model) => (
+                <option key={model.modelId} value={model.modelId}>
+                  {model.displayName}
+                  {model.contextLength ? ` (${model.contextLength.toLocaleString()} ctx)` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-night-500">
+              {models.length > 0
+                ? `${models.length} models beschikbaar in lokale cache.`
+                : 'Geen modellen in cache. Gebruik Refresh modellen na het invullen van je API key.'}
+            </p>
           </div>
 
           <div>
@@ -128,9 +214,15 @@ export default function Settings() {
             />
           </div>
 
-          <div className="pt-2 flex items-center gap-3">
+          <div className="pt-2 flex items-center gap-3 flex-wrap">
             <button onClick={handleSave} disabled={saving} className="btn-primary">
               {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+            <button onClick={handleTestConnection} disabled={testing} className="btn-ghost border border-night-600/50">
+              {testing ? 'Testing...' : 'Test verbinding'}
+            </button>
+            <button onClick={handleRefreshModels} disabled={refreshing} className="btn-ghost border border-night-600/50">
+              {refreshing ? 'Refreshing...' : 'Refresh modellen'}
             </button>
             <span className="text-xs text-night-500">Stored locally on this machine.</span>
           </div>
