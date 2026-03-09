@@ -14,3 +14,8 @@
 - Findings: Local PostgreSQL login failed because `.env` used placeholder password text.
 - Conclusions: Connection string must use `postgres` password for the local setup.
 - Actions: Updated `DATABASE_URL` in `.env` and `.env.example` to `postgresql://postgres:postgres@localhost:5432/nightcompanion`.
+
+## 2026-03-09 (Desktop Scripts)
+- Findings: User ran `npm run electron:dev` but this script was not defined.
+- Conclusions: Add explicit Electron/Desktop script aliases to enforce desktop-focused startup commands.
+- Actions: Added `electron:dev`, `electron:start`, `desktop:dev`, and `desktop:start` scripts in `package.json`.
