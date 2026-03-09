@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-night-950 text-night-100 font-sans;
+    overflow: hidden;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Allow text selection in inputs and text areas */
+  input, textarea {
+    user-select: text;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-night-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-night-500;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-night-900 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-glow-purple hover:bg-purple-700 text-white focus:ring-glow-purple shadow-glow-sm hover:shadow-glow;
+  }
+
+  .btn-ghost {
+    @apply btn text-night-200 hover:bg-night-700 hover:text-white focus:ring-night-500;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-800/50 focus:ring-red-700;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 rounded-lg bg-night-800 border border-night-600 text-night-100 placeholder-night-400
+           focus:outline-none focus:ring-2 focus:ring-glow-purple/50 focus:border-glow-purple/70
+           transition-colors text-sm;
+  }
+
+  .textarea {
+    @apply input resize-none;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-night-300 mb-1.5 uppercase tracking-wide;
+  }
+
+  .card {
+    @apply bg-gradient-card border border-night-600/50 rounded-xl;
+  }
+
+  .tag {
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-night-700 text-night-200 border border-night-600/50;
+  }
+
+  .tag-removable {
+    @apply tag gap-1 pr-1;
+  }
+}

@@ -1,0 +1,33 @@
+import type { Prompt, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../lib/schema'
+
+type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
+type PromptFilters = { search?: string; tags?: string[]; model?: string }
+
+declare global {
+  interface Window {
+    electronAPI: {
+      prompts: {
+        list(filters?: PromptFilters): Promise<IpcResult<Prompt[]>>
+        get(id: number): Promise<IpcResult<Prompt | undefined>>
+        create(data: NewPrompt): Promise<IpcResult<Prompt>>
+        update(id: number, data: Partial<NewPrompt>): Promise<IpcResult<Prompt>>
+        delete(id: number): Promise<IpcResult<void>>
+      }
+      styleProfiles: {
+        list(): Promise<IpcResult<StyleProfile[]>>
+        get(id: number): Promise<IpcResult<StyleProfile | undefined>>
+        create(data: NewStyleProfile): Promise<IpcResult<StyleProfile>>
+        update(id: number, data: Partial<NewStyleProfile>): Promise<IpcResult<StyleProfile>>
+        delete(id: number): Promise<IpcResult<void>>
+      }
+      generationLog: {
+        list(): Promise<IpcResult<GenerationEntry[]>>
+        create(data: NewGenerationEntry): Promise<IpcResult<GenerationEntry>>
+        update(id: number, data: Partial<NewGenerationEntry>): Promise<IpcResult<GenerationEntry>>
+        delete(id: number): Promise<IpcResult<void>>
+      }
+    }
+  }
+}
+
+export {}
