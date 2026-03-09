@@ -7,6 +7,7 @@ import PromptBuilder from './screens/PromptBuilder'
 import Generator from './screens/Generator'
 import Settings from './screens/Settings'
 import type { Screen } from './types'
+import { Toaster } from 'sonner'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('library')
@@ -28,6 +29,8 @@ export default function App() {
           {screen === 'settings' && <Settings />}
         </div>
       </main>
+
+      <Toaster richColors position="bottom-right" />
     </div>
   )
 }

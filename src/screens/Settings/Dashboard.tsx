@@ -18,8 +18,8 @@ interface DashboardProps {
 
 function formatProvider(source?: ApiKeyInfo | LocalEndpoint) {
   if (!source) return 'Not configured'
-  if ('provider' in source) return `${source.provider} (${source.model})`
-  return `${source.name} (${source.model})`
+  if ('provider' in source && source.provider) return `${source.provider} (${source.model_name})`
+  return `${source.name} (${source.model_name})`
 }
 
 export function Dashboard({
@@ -70,7 +70,7 @@ export function Dashboard({
               <div key={key.id} className="rounded-lg border border-night-600/50 p-3 bg-night-900/40">
                 <p className="text-sm text-night-100">{key.provider}</p>
                 <p className="text-xs text-night-400">{key.apiKeyMasked}</p>
-                <p className="text-xs text-night-500">Model: {key.model}</p>
+                <p className="text-xs text-night-500">Model: {key.model_name}</p>
               </div>
             ))}
           </div>
@@ -84,7 +84,7 @@ export function Dashboard({
               <div key={endpoint.id} className="rounded-lg border border-night-600/50 p-3 bg-night-900/40">
                 <p className="text-sm text-night-100">{endpoint.name}</p>
                 <p className="text-xs text-night-400">{endpoint.baseUrl}</p>
-                <p className="text-xs text-night-500">Model: {endpoint.model}</p>
+                <p className="text-xs text-night-500">Model: {endpoint.model_name}</p>
               </div>
             ))}
           </div>

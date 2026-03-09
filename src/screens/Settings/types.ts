@@ -2,7 +2,12 @@ export interface ApiKeyInfo {
   id: string
   provider: string
   apiKeyMasked: string
-  model: string
+  key_hint?: string
+  model_name: string
+  model_gen?: string
+  model_improve?: string
+  model_vision?: string
+  is_active?: boolean
   is_active_gen: boolean
   is_active_improve: boolean
   is_active_vision: boolean
@@ -10,9 +15,14 @@ export interface ApiKeyInfo {
 
 export interface LocalEndpoint {
   id: string
+  provider?: string
   name: string
   baseUrl: string
-  model: string
+  model_name: string
+  model_gen?: string
+  model_improve?: string
+  model_vision?: string
+  is_active?: boolean
   is_active_gen: boolean
   is_active_improve: boolean
   is_active_vision: boolean
@@ -21,5 +31,8 @@ export interface LocalEndpoint {
 
 export interface ModelOption {
   id: string
-  label: string
+  name?: string
+  label?: string
+  provider?: string
+  capabilities?: string[]
 }
