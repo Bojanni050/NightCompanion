@@ -125,3 +125,9 @@
 - Findings: User requested prompt model selection to use models already stored in DB and sorted alphabetically.
 - Conclusions: Best implementation is a dedicated IPC list endpoint and loading dropdown options dynamically in `PromptForm`, filtered to `mediaType=image`.
 - Actions: Added `nightcafeModels:list` IPC in `electron/main.ts` (alphabetical `orderBy(modelName)` with optional mediaType filter), exposed in `electron/preload.ts` and typed in `src/types/electron.d.ts`; replaced static `COMMON_MODELS` in `src/components/PromptForm.tsx` with DB-driven options loaded from `window.electronAPI.nightcafeModels.list({ mediaType: 'image' })`; validated via `npm run build`.
+
+## 2026-03-10 (Generator Onder Dashboard In Sidebar)
+
+- Findings: User requested Generator navigation item directly under Dashboard in sidebar order.
+- Conclusions: Only sidebar item ordering needed adjustment; routing logic remains unchanged.
+- Actions: Reordered `NAV_ITEMS` in `src/components/Sidebar.tsx` so `generator` appears immediately after `dashboard`.

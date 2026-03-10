@@ -52,4 +52,4 @@ React
   
 Walkthrough.md
  - Always append your findings, conclusions and actions to the Walkthrough.md file in the rootfolder. Create the file if it not exists.
-    
+ - Refer to walkthrough.md for context and insight in earlier decisions and actions.  

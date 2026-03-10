@@ -15,6 +15,12 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Overview & quick actions',
   },
   {
+    id: 'generator',
+    label: 'Generator',
+    icon: '⚡',
+    description: 'Magic random (AI)',
+  },
+  {
     id: 'library',
     label: 'Prompt Library',
     icon: '✦',
@@ -37,12 +43,6 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Generation Log',
     icon: '⊞',
     description: 'Track your creations',
-  },
-  {
-    id: 'generator',
-    label: 'Generator',
-    icon: '⚡',
-    description: 'Magic random (AI)',
   },
   {
     id: 'settings',
