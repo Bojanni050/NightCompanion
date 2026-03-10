@@ -16,7 +16,7 @@ const DEFAULT_PARTS: Part[] = [
   { id: 'technical', label: 'Technical Details', placeholder: 'e.g. 8k, highly detailed, cinematic, trending on ArtStation', value: '' },
 ]
 
-export default function PromptBuilder() {
+export default function PromptBuilder({ embedded = false }: { embedded?: boolean }) {
   const [parts, setParts] = useState<Part[]>(DEFAULT_PARTS)
   const [separator, setSeparator] = useState<', ' | '. ' | ' | '>( ', ')
   const [copied, setCopied] = useState(false)
@@ -64,10 +64,10 @@ export default function PromptBuilder() {
   }
 
   return (
-    <div className="no-drag-region flex h-full">
+    <div className={`${embedded ? 'flex min-h-[560px]' : 'no-drag-region flex h-full'}`}>
       {/* Left: part inputs */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center justify-between px-8 pt-8 pb-5">
+        <div className={`flex items-center justify-between px-8 pb-5 ${embedded ? 'pt-5' : 'pt-8'}`}>
           <div>
             <h1 className="text-2xl font-semibold text-white tracking-tight">Prompt Builder</h1>
             <p className="text-sm text-night-400 mt-0.5">Compose prompts from modular parts</p>
@@ -79,6 +79,8 @@ export default function PromptBuilder() {
                 value={separator}
                 onChange={(e) => setSeparator(e.target.value as typeof separator)}
                 className="input w-28 text-xs"
+                aria-label="Prompt separator"
+                title="Prompt separator"
               >
                 <option value=", ">comma</option>
                 <option value=". ">period</option>

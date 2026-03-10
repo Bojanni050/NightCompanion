@@ -27,12 +27,6 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Track your creations',
   },
   {
-    id: 'prompt-builder',
-    label: 'Prompt Builder',
-    icon: '⊕',
-    description: 'Compose from parts',
-  },
-  {
     id: 'generator',
     label: 'Generator',
     icon: '⚡',

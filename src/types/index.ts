@@ -5,7 +5,6 @@ export type Screen =
   | 'library'
   | 'style-profiles'
   | 'generation-log'
-  | 'prompt-builder'
   | 'generator'
   | 'settings'
 

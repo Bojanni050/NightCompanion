@@ -13,7 +13,7 @@ Key Principles
   - Use the Receive an Object, Return an Object (RORO) pattern.
 
 MCP
-  - always check context7 mcp for relevant information before responding. If context7 mcp is empty, ask the user for more details about the project and requirements before providing an answer.
+  - always check context7 mcp for relevant information before responding. Let the user know you are checking context7 and if it was a succes or not. If context7 mcp is empty, ask the user for more details about the project and requirements before providing an answer.
   
 JavaScript
   - Use "function" keyword for pure functions. Omit semicolons.

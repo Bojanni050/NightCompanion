@@ -3,7 +3,6 @@ import Sidebar from './components/Sidebar'
 import Library from './screens/Library'
 import StyleProfiles from './screens/StyleProfiles'
 import GenerationLog from './screens/GenerationLog'
-import PromptBuilder from './screens/PromptBuilder'
 import Generator from './screens/Generator'
 import Settings from './screens/Settings'
 import type { Screen } from './types'
@@ -24,7 +23,6 @@ export default function App() {
           {screen === 'library' && <Library />}
           {screen === 'style-profiles' && <StyleProfiles />}
           {screen === 'generation-log' && <GenerationLog />}
-          {screen === 'prompt-builder' && <PromptBuilder />}
           {screen === 'generator' && <Generator />}
           {screen === 'settings' && <Settings />}
         </div>
