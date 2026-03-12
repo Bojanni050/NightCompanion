@@ -191,3 +191,9 @@
 - Findings: `electron/main.ts` had grown to a large monolithic file containing unrelated IPC handlers (prompts, style profiles, generation log, settings, AI generation, NightCafe, characters), reducing maintainability.
 - Conclusions: Domain-based IPC modules with explicit registration from `main.ts` keep responsibilities isolated while preserving existing channel contracts.
 - Actions: Added `electron/ipc/prompts.ts`, `electron/ipc/styleProfiles.ts`, `electron/ipc/generationLog.ts`, `electron/ipc/nightcafe.ts`, `electron/ipc/characters.ts`, `electron/ipc/settings.ts`, and `electron/ipc/ai.ts`; refactored `electron/main.ts` to central bootstrap + startup sync + `registerIpcHandlers()` only; kept all IPC channel names unchanged; validated successfully with `npm run build`.
+
+## 2026-03-12 (NightCafe Startup Sync Extracted To Service)
+
+- Findings: `electron/main.ts` still contained extensive NightCafe CSV discovery/parsing/upsert logic after IPC modularization.
+- Conclusions: Startup data-sync belongs in a dedicated service module so `main.ts` remains an orchestration entrypoint.
+- Actions: Added `electron/services/nightcafeSync.ts` with CSV read/parse/upsert+prune logic for models and presets; updated `electron/main.ts` to call `syncNightCafeData({ db })`; removed duplicated NightCafe helper functions/constants from `main.ts`; validated with `npm run build`.
