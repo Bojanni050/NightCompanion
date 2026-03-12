@@ -185,3 +185,9 @@
 - Findings: `localEndpoints` in AI configuration still used renderer `localStorage`, despite broader migration to main-process settings persistence.
 - Conclusions: Local provider endpoint configuration should be managed in the Electron settings store for consistency, backupability, and renderer storage independence.
 - Actions: Added `settings:getLocalEndpoints` and `settings:saveLocalEndpoints` IPC in `electron/main.ts` and exposed these methods/types in `electron/preload.ts` and `src/types/electron.d.ts`; updated `src/screens/AIConfig.tsx` to load endpoints from settings store with one-time migration from legacy `localStorage.localEndpoints`; refactored `src/screens/Settings/ConfigurationWizard.tsx` endpoint upsert/remove/toggle helpers to use settings IPC instead of localStorage writes.
+
+## 2026-03-12 (Electron IPC Modularized By Domain)
+
+- Findings: `electron/main.ts` had grown to a large monolithic file containing unrelated IPC handlers (prompts, style profiles, generation log, settings, AI generation, NightCafe, characters), reducing maintainability.
+- Conclusions: Domain-based IPC modules with explicit registration from `main.ts` keep responsibilities isolated while preserving existing channel contracts.
+- Actions: Added `electron/ipc/prompts.ts`, `electron/ipc/styleProfiles.ts`, `electron/ipc/generationLog.ts`, `electron/ipc/nightcafe.ts`, `electron/ipc/characters.ts`, `electron/ipc/settings.ts`, and `electron/ipc/ai.ts`; refactored `electron/main.ts` to central bootstrap + startup sync + `registerIpcHandlers()` only; kept all IPC channel names unchanged; validated successfully with `npm run build`.
