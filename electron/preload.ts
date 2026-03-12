@@ -14,6 +14,16 @@ export type OpenRouterSettings = {
   appName: string
 }
 
+export type ProviderMetaStore = {
+  model_gen: string
+  model_improve: string
+  model_vision: string
+  is_active: boolean
+  is_active_gen: boolean
+  is_active_improve: boolean
+  is_active_vision: boolean
+}
+
 export type OpenRouterModel = {
   modelId: string
   displayName: string
@@ -95,6 +105,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   settings: {
     getOpenRouter: (): Promise<IpcResult<OpenRouterSettings>> =>
       ipcRenderer.invoke('settings:getOpenRouter'),
+    getProviderMeta: (providerId: string, fallbackModel: string): Promise<IpcResult<ProviderMetaStore>> =>
+      ipcRenderer.invoke('settings:getProviderMeta', providerId, fallbackModel),
+    saveProviderMeta: (providerId: string, input: Partial<ProviderMetaStore>): Promise<IpcResult<ProviderMetaStore>> =>
+      ipcRenderer.invoke('settings:saveProviderMeta', providerId, input),
     saveOpenRouter: (input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>> =>
       ipcRenderer.invoke('settings:saveOpenRouter', input),
     listOpenRouterModels: (): Promise<IpcResult<OpenRouterModel[]>> =>

@@ -46,23 +46,6 @@ function getDefaultProviderMeta(modelName: string): ProviderMetaStore {
   }
 }
 
-function readProviderMeta(providerId: string, fallbackModel: string): ProviderMetaStore {
-  try {
-    const raw = localStorage.getItem('providerMeta')
-    const parsed = raw ? (JSON.parse(raw) as Record<string, ProviderMetaStore>) : {}
-    return parsed[providerId] || getDefaultProviderMeta(fallbackModel)
-  } catch {
-    return getDefaultProviderMeta(fallbackModel)
-  }
-}
-
-function writeProviderMeta(providerId: string, value: ProviderMetaStore) {
-  const raw = localStorage.getItem('providerMeta')
-  const parsed = raw ? (JSON.parse(raw) as Record<string, ProviderMetaStore>) : {}
-  parsed[providerId] = value
-  localStorage.setItem('providerMeta', JSON.stringify(parsed))
-}
-
 function normalizeModelOption(modelId: string): ModelOption {
   return {
     id: modelId,
@@ -89,15 +72,43 @@ export function ProviderConfigForm({
   const [selectedModelVision, setSelectedModelVision] = useState(keyInfo?.model_vision || keyInfo?.model_name || 'openai/gpt-4o-mini')
   const [showKey, setShowKey] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [providerMeta, setProviderMeta] = useState<ProviderMetaStore>(getDefaultProviderMeta(keyInfo?.model_name || 'openai/gpt-4o-mini'))
 
   useEffect(() => {
-    const defaultModel = keyInfo?.model_name || 'openai/gpt-4o-mini'
-    const meta = readProviderMeta(provider.id, defaultModel)
+    let active = true
 
-    setSelectedModelGen(keyInfo?.model_gen || meta.model_gen || defaultModel)
-    setSelectedModelImprove(keyInfo?.model_improve || meta.model_improve || defaultModel)
-    setSelectedModelVision(keyInfo?.model_vision || meta.model_vision || defaultModel)
+    const loadProviderMeta = async () => {
+      const defaultModel = keyInfo?.model_name || 'openai/gpt-4o-mini'
+      const metaResult = await window.electronAPI.settings.getProviderMeta(provider.id, defaultModel)
+      const nextMeta = metaResult.error || !metaResult.data
+        ? getDefaultProviderMeta(defaultModel)
+        : metaResult.data
+
+      if (!active)
+        return
+
+      setProviderMeta(nextMeta)
+      setSelectedModelGen(keyInfo?.model_gen || nextMeta.model_gen || defaultModel)
+      setSelectedModelImprove(keyInfo?.model_improve || nextMeta.model_improve || defaultModel)
+      setSelectedModelVision(keyInfo?.model_vision || nextMeta.model_vision || defaultModel)
+    }
+
+    void loadProviderMeta()
+
+    return () => {
+      active = false
+    }
   }, [provider.id, keyInfo])
+
+  async function persistProviderMeta(nextMeta: ProviderMetaStore) {
+    const result = await window.electronAPI.settings.saveProviderMeta(provider.id, nextMeta)
+    if (result.error || !result.data) {
+      throw new Error(result.error || 'Failed to save provider preferences')
+    }
+
+    setProviderMeta(result.data)
+    return result.data
+  }
 
   const allModels = dynamicModels.length > 0 ? dynamicModels : [normalizeModelOption(selectedModelGen)]
   const providersInfo = [{ id: provider.id, name: provider.name, type: 'cloud' as const }]
@@ -125,13 +136,13 @@ export function ProviderConfigForm({
 
       const defaultModel = saveResult.data.model || selectedModelGen
       const nextMeta = {
-        ...readProviderMeta(provider.id, defaultModel),
+        ...providerMeta,
         model_gen: selectedModelGen,
         model_improve: selectedModelImprove,
         model_vision: selectedModelVision,
       }
 
-      writeProviderMeta(provider.id, nextMeta)
+      await persistProviderMeta(nextMeta)
       const modelsResult = await window.electronAPI.settings.listOpenRouterModels()
       if (!modelsResult.error && modelsResult.data) {
         const models = modelsResult.data.map((item) => ({
@@ -166,7 +177,7 @@ export function ProviderConfigForm({
       if (result.error)
         throw new Error(result.error)
 
-      writeProviderMeta(provider.id, getDefaultProviderMeta('openai/gpt-4o-mini'))
+      await persistProviderMeta(getDefaultProviderMeta('openai/gpt-4o-mini'))
       await loadKeys()
       toast.success(`${provider.name} key removed`)
     } catch (error) {
@@ -180,8 +191,7 @@ export function ProviderConfigForm({
     setActionLoading(`${provider.id}-${role}`)
 
     try {
-      const defaultModel = keyInfo?.model_name || selectedModelGen
-      const meta = readProviderMeta(provider.id, defaultModel)
+      const meta = providerMeta
 
       const isActive = role === 'generation'
         ? meta.is_active_gen
@@ -206,7 +216,7 @@ export function ProviderConfigForm({
         model_vision: selectedModelVision,
       }
 
-      writeProviderMeta(provider.id, nextMeta)
+      await persistProviderMeta(nextMeta)
       if (!isActive) syncTaskModel(role, provider.id, currentModel)
 
       await loadKeys()
@@ -249,10 +259,9 @@ export function ProviderConfigForm({
   }
 
   const handleModelChange = async (genId: string, improveId: string, visionId: string) => {
-    const defaultModel = keyInfo?.model_name || genId
-    const meta = readProviderMeta(provider.id, defaultModel)
+    const meta = providerMeta
 
-    writeProviderMeta(provider.id, {
+    await persistProviderMeta({
       ...meta,
       model_gen: genId,
       model_improve: improveId,
@@ -333,7 +342,7 @@ export function ProviderConfigForm({
     )
   }
 
-  const activeMeta = readProviderMeta(provider.id, keyInfo?.model_name || selectedModelGen)
+  const activeMeta = providerMeta
 
   return (
     <div className="space-y-6 w-full animate-in fade-in slide-in-from-left-4 duration-300">

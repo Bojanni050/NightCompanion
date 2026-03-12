@@ -36,17 +36,7 @@ type LegacyLocalEndpoint = Partial<LocalEndpoint> & {
   model?: string
 }
 
-function readProviderMeta(providerId: string, fallbackModel: string): ProviderMetaStore {
-  try {
-    const raw = localStorage.getItem('providerMeta')
-    const parsed = raw ? (JSON.parse(raw) as Record<string, ProviderMetaStore>) : {}
-
-    if (parsed[providerId])
-      return parsed[providerId]
-  } catch (error) {
-    console.error('Failed to read provider meta', error)
-  }
-
+function getDefaultProviderMeta(fallbackModel: string): ProviderMetaStore {
   return {
     model_gen: fallbackModel,
     model_improve: fallbackModel,
@@ -176,6 +166,28 @@ export function AIConfig() {
 
   const getToken = useCallback(async () => 'local-desktop-token', [])
 
+  const migrateLegacyProviderMeta = useCallback(async () => {
+    try {
+      const raw = localStorage.getItem('providerMeta')
+      if (!raw)
+        return
+
+      const parsed = JSON.parse(raw) as Record<string, Partial<ProviderMetaStore>>
+      const entries = Object.entries(parsed)
+
+      for (const [providerId, providerMeta] of entries) {
+        const result = await window.electronAPI.settings.saveProviderMeta(providerId, providerMeta)
+        if (result.error) {
+          throw new Error(result.error)
+        }
+      }
+
+      localStorage.removeItem('providerMeta')
+    } catch (error) {
+      console.error('Failed to migrate legacy provider meta from localStorage', error)
+    }
+  }, [])
+
   const loadKeys = useCallback(async () => {
     const result = await window.electronAPI.settings.getOpenRouter()
 
@@ -185,7 +197,10 @@ export function AIConfig() {
     }
 
     const modelName = result.data.model || 'openai/gpt-4o-mini'
-    const meta = readProviderMeta('openrouter', modelName)
+    const metaResult = await window.electronAPI.settings.getProviderMeta('openrouter', modelName)
+    const meta = metaResult.error || !metaResult.data
+      ? getDefaultProviderMeta(modelName)
+      : metaResult.data
 
     const key = result.data.apiKey
     const masked = key.length > 8 ? `${key.slice(0, 4)}...${key.slice(-4)}` : '****'
@@ -226,6 +241,7 @@ export function AIConfig() {
   }, [])
 
   const refreshData = useCallback(async () => {
+    await migrateLegacyProviderMeta()
     await Promise.all([loadKeys(), loadLocalEndpoints()])
 
     const modelsResult = await window.electronAPI.settings.listOpenRouterModels()
@@ -241,7 +257,7 @@ export function AIConfig() {
         capabilities: item.modelId.toLowerCase().includes('vision') ? ['vision'] : undefined,
       })),
     }))
-  }, [loadKeys, loadLocalEndpoints])
+  }, [loadKeys, loadLocalEndpoints, migrateLegacyProviderMeta])
 
   useEffect(() => {
     let active = true

@@ -167,3 +167,9 @@
 - Findings: Character entities were persisted in renderer `localStorage`, while the rest of app entities already used PostgreSQL.
 - Conclusions: This split persistence model risks data loss/size limits and breaks backup/export consistency; characters should use DB-backed storage with existing image file persistence unchanged.
 - Actions: Added `characters` table to `src/lib/schema.ts` and migration `drizzle/0005_characters.sql` (+ journal update); added Electron IPC CRUD handlers in `electron/main.ts` (`characters:list/create/update/delete`) and exposed typings/bridge in `electron/preload.ts` + `src/types/electron.d.ts`; refactored `src/screens/Characters.tsx` to load/save/update/delete via DB and perform one-time migration from legacy `localStorage` key (`nightcompanion.characters`) when DB is empty; updated `src/screens/Dashboard.tsx` to source character counts/cards from DB IPC instead of localStorage.
+
+## 2026-03-12 (providerMeta Moved From localStorage To Electron Settings Store)
+
+- Findings: `providerMeta` in `AIConfig` / `ProviderConfigForm` was still stored in renderer `localStorage`, causing the same persistence consistency issue.
+- Conclusions: Provider settings belong in main-process persistent storage; existing `settings.json` store is sufficient and avoids renderer-local state persistence.
+- Actions: Added `settings:getProviderMeta` and `settings:saveProviderMeta` IPC in `electron/main.ts` with typed normalization defaults and persistence in `settings.json`; updated `electron/preload.ts` and `src/types/electron.d.ts` with the new settings API; refactored `src/screens/AIConfig.tsx` and `src/screens/Settings/ProviderConfigForm.tsx` to load/save provider meta through Electron settings store instead of localStorage; added one-time legacy migration from `localStorage.providerMeta` to the Electron store in `AIConfig`; ensured `settings:saveOpenRouter` preserves `providerMeta` when writing settings.

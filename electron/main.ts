@@ -156,6 +156,16 @@ type OpenRouterSettings = {
   appName: string
 }
 
+type ProviderMetaStore = {
+  model_gen: string
+  model_improve: string
+  model_vision: string
+  is_active: boolean
+  is_active_gen: boolean
+  is_active_improve: boolean
+  is_active_vision: boolean
+}
+
 type OpenRouterModel = {
   modelId: string
   displayName: string
@@ -310,10 +320,28 @@ function normalizeOpenRouterSettings(input?: Partial<OpenRouterSettings>): OpenR
   }
 }
 
-async function readStoredSettings(): Promise<{ openRouter?: Partial<OpenRouterSettings> }> {
+function normalizeProviderMeta(input: Partial<ProviderMetaStore> | undefined, fallbackModel: string): ProviderMetaStore {
+  return {
+    model_gen: input?.model_gen || fallbackModel,
+    model_improve: input?.model_improve || fallbackModel,
+    model_vision: input?.model_vision || fallbackModel,
+    is_active: input?.is_active ?? false,
+    is_active_gen: input?.is_active_gen ?? false,
+    is_active_improve: input?.is_active_improve ?? false,
+    is_active_vision: input?.is_active_vision ?? false,
+  }
+}
+
+async function readStoredSettings(): Promise<{
+  openRouter?: Partial<OpenRouterSettings>
+  providerMeta?: Record<string, Partial<ProviderMetaStore>>
+}> {
   try {
     const raw = await readFile(getSettingsFilePath(), 'utf-8')
-    return JSON.parse(raw) as { openRouter?: Partial<OpenRouterSettings> }
+    return JSON.parse(raw) as {
+      openRouter?: Partial<OpenRouterSettings>
+      providerMeta?: Record<string, Partial<ProviderMetaStore>>
+    }
   } catch (error) {
     const err = error as NodeJS.ErrnoException
     if (err.code === 'ENOENT') {
@@ -323,7 +351,10 @@ async function readStoredSettings(): Promise<{ openRouter?: Partial<OpenRouterSe
   }
 }
 
-async function writeStoredSettings(settings: { openRouter: OpenRouterSettings }) {
+async function writeStoredSettings(settings: {
+  openRouter: OpenRouterSettings
+  providerMeta?: Record<string, Partial<ProviderMetaStore>>
+}) {
   const settingsPath = getSettingsFilePath()
   await mkdir(path.dirname(settingsPath), { recursive: true })
   await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf-8')
@@ -906,8 +937,41 @@ ipcMain.handle('settings:getOpenRouter', async () => {
   }
 })
 
+ipcMain.handle('settings:getProviderMeta', async (_, providerId: string, fallbackModel = DEFAULT_OPENROUTER_MODEL) => {
+  try {
+    const stored = await readStoredSettings()
+    const providerMap = stored.providerMeta || {}
+    const data = normalizeProviderMeta(providerMap[providerId], fallbackModel)
+    return { data }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
+ipcMain.handle('settings:saveProviderMeta', async (_, providerId: string, input: Partial<ProviderMetaStore>) => {
+  try {
+    const stored = await readStoredSettings()
+    const providerMap = stored.providerMeta || {}
+    const fallbackModel = input.model_gen || input.model_improve || input.model_vision || DEFAULT_OPENROUTER_MODEL
+    const current = normalizeProviderMeta(providerMap[providerId], fallbackModel)
+    const next = normalizeProviderMeta({ ...current, ...input }, fallbackModel)
+
+    providerMap[providerId] = next
+
+    await writeStoredSettings({
+      openRouter: normalizeOpenRouterSettings(stored.openRouter),
+      providerMeta: providerMap,
+    })
+
+    return { data: next }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
 ipcMain.handle('settings:saveOpenRouter', async (_, input: Partial<OpenRouterSettings>) => {
   try {
+    const stored = await readStoredSettings()
     const data = normalizeOpenRouterSettings(input)
 
     if (data.apiKey) {
@@ -916,7 +980,10 @@ ipcMain.handle('settings:saveOpenRouter', async (_, input: Partial<OpenRouterSet
       await db.delete(openRouterModels)
     }
 
-    await writeStoredSettings({ openRouter: data })
+    await writeStoredSettings({
+      openRouter: data,
+      providerMeta: stored.providerMeta,
+    })
     return { data }
   } catch (error) {
     return { error: String(error) }
