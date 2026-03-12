@@ -1,5 +1,5 @@
 import 'dotenv/config'
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import path from 'path'
 import { mkdirSync } from 'fs'
 import { readFile, writeFile, mkdir, unlink } from 'fs/promises'
@@ -44,6 +44,73 @@ async function runMigrations() {
 
   await migrate(migrateDb, { migrationsFolder })
   await migrateClient.end()
+}
+
+function quoteIdentifier(value: string) {
+  return `"${value.replace(/"/g, '""')}"`
+}
+
+function getDatabaseNameFromUrl(connectionUrl: string) {
+  const parsed = new URL(connectionUrl)
+  const dbName = parsed.pathname.replace(/^\//, '')
+
+  if (!dbName) {
+    throw new Error('DATABASE_URL must include a database name in the path')
+  }
+
+  return dbName
+}
+
+function getAdminConnectionString(connectionUrl: string) {
+  const parsed = new URL(connectionUrl)
+  parsed.pathname = '/postgres'
+  return parsed.toString()
+}
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error) return error.message
+  return String(error)
+}
+
+function isPostgresUnavailableError(error: unknown) {
+  if (!error || typeof error !== 'object') return false
+
+  const code = 'code' in error ? String((error as { code?: string }).code) : ''
+  return code === 'CONNECTION_REFUSED' || code === 'CONNECT_TIMEOUT' || code === 'ECONNREFUSED'
+}
+
+async function ensurePostgresAndDatabase() {
+  const dbName = getDatabaseNameFromUrl(connectionString!)
+  const adminConnectionString = getAdminConnectionString(connectionString!)
+  const adminClient = postgres(adminConnectionString, { max: 1, connect_timeout: 5 })
+
+  try {
+    await adminClient`SELECT 1`
+
+    const existing = await adminClient`
+      SELECT 1
+      FROM pg_database
+      WHERE datname = ${dbName}
+      LIMIT 1
+    `
+
+    if (existing.length > 0) {
+      console.log(`Database "${dbName}" exists.`)
+      return
+    }
+
+    console.log(`Database "${dbName}" not found. Creating...`)
+    await adminClient.unsafe(`CREATE DATABASE ${quoteIdentifier(dbName)}`)
+    console.log(`Database "${dbName}" created.`)
+  } catch (error) {
+    if (isPostgresUnavailableError(error)) {
+      throw new Error(`PostgreSQL is not running or unreachable. Start PostgreSQL and retry. (${toErrorMessage(error)})`)
+    }
+
+    throw error
+  } finally {
+    await adminClient.end()
+  }
 }
 
 // ─── Window ───────────────────────────────────────────────────────────────────
@@ -967,11 +1034,19 @@ ipcMain.handle('generator:magicRandom', async (_, input?: { theme?: string; pres
 
 app.whenReady().then(async () => {
   try {
+    await ensurePostgresAndDatabase()
     await runMigrations()
     console.log('Database ready.')
   } catch (err) {
-    console.error('Failed to run migrations:', err)
-    // Continue anyway — DB may already be migrated
+    const errorMessage = toErrorMessage(err)
+    console.error('Startup database check failed:', err)
+    dialog.showErrorBox(
+      'NightCompanion startup error',
+      `Database startup check failed.\n\n${errorMessage}\n\nIf PostgreSQL is running, verify DATABASE_URL and user permissions.`
+    )
+    app.quit()
+    process.exit(1)
+    return
   }
 
   try {

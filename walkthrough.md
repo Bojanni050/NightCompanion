@@ -143,3 +143,15 @@
 - Findings: User requested a Generator greylist with default words (`jellyfish`, `neon`, `cyber`), an on/off switch, and an autocomplete add field.
 - Conclusions: Greylist needed to exist in both UI state and `generator:magicRandom` IPC payload so the model receives explicit avoidance guidance.
 - Actions: Updated `src/screens/Generator.tsx` with greylist state, localStorage persistence, add/remove UX, datalist autocomplete input, default list seed, and on/off control; updated `electron/preload.ts` and `src/types/electron.d.ts` to include `greylistEnabled`/`greylistWords`; updated `electron/main.ts` `generator:magicRandom` handler to normalize/dedupe greylist terms and inject "avoid/low probability" instructions into AI prompt generation; validated with `npm run build`.
+
+## 2026-03-12 (Startup PostgreSQL Guard + Auto-Create Default DB)
+
+- Findings: App startup attempted migrations but tolerated failures, allowing launch to continue even when PostgreSQL was unavailable.
+- Conclusions: Startup must fail fast when PostgreSQL is not reachable, while still auto-creating the default database when the server is running and only the DB is missing.
+- Actions: Updated `electron/main.ts` to add `ensurePostgresAndDatabase()` startup guard (admin connection to `postgres`, `pg_database` existence check, `CREATE DATABASE` when missing, explicit unavailable-server error handling); changed `app.whenReady()` flow to exit app with error (`app.quit()` + `process.exit(1)`) on DB guard/migration failure instead of continuing.
+
+## 2026-03-12 (Startup DB Failure Dialog)
+
+- Findings: User requested a visible startup error notification instead of console-only failure output.
+- Conclusions: A native Electron dialog shown in the main process before quitting makes startup failures explicit for non-dev users.
+- Actions: Updated `electron/main.ts` startup catch block to display `dialog.showErrorBox(...)` with database failure details and recovery hint before `app.quit()`/`process.exit(1)`.
