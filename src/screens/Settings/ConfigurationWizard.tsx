@@ -29,20 +29,18 @@ function getModelForRole(endpoint: LocalEndpoint | undefined, role: AIRole): str
   return endpoint.model_name
 }
 
-function readEndpoints(): LocalEndpoint[] {
-  try {
-    const raw = localStorage.getItem('localEndpoints')
-    return raw ? (JSON.parse(raw) as LocalEndpoint[]) : []
-  } catch {
-    return []
-  }
+async function readEndpoints(): Promise<LocalEndpoint[]> {
+  const result = await window.electronAPI.settings.getLocalEndpoints()
+  if (result.error || !result.data) return []
+  return result.data as LocalEndpoint[]
 }
 
-function writeEndpoints(next: LocalEndpoint[]) {
-  localStorage.setItem('localEndpoints', JSON.stringify(next))
+async function writeEndpoints(next: LocalEndpoint[]) {
+  const result = await window.electronAPI.settings.saveLocalEndpoints(next)
+  if (result.error) throw new Error(result.error)
 }
 
-function upsertEndpoint({
+async function upsertEndpoint({
   provider,
   name,
   baseUrl,
@@ -57,7 +55,7 @@ function upsertEndpoint({
   modelImprove: string
   modelVision: string
 }) {
-  const endpoints = readEndpoints()
+  const endpoints = await readEndpoints()
   const existing = endpoints.find((item) => item.provider === provider)
 
   const nextRecord: LocalEndpoint = {
@@ -77,16 +75,16 @@ function upsertEndpoint({
   }
 
   const filtered = endpoints.filter((item) => item.provider !== provider)
-  writeEndpoints([...filtered, nextRecord])
+  await writeEndpoints([...filtered, nextRecord])
 }
 
-function removeEndpoint(provider: string) {
-  const endpoints = readEndpoints()
-  writeEndpoints(endpoints.filter((item) => item.provider !== provider))
+async function removeEndpoint(provider: string) {
+  const endpoints = await readEndpoints()
+  await writeEndpoints(endpoints.filter((item) => item.provider !== provider))
 }
 
-function toggleLocalRole(provider: string, role: AIRole) {
-  const endpoints = readEndpoints()
+async function toggleLocalRole(provider: string, role: AIRole) {
+  const endpoints = await readEndpoints()
 
   const next = endpoints.map((endpoint) => {
     if (endpoint.provider !== provider)
@@ -113,7 +111,7 @@ function toggleLocalRole(provider: string, role: AIRole) {
     }
   })
 
-  writeEndpoints(next)
+  await writeEndpoints(next)
 }
 
 export function ConfigurationWizard({
@@ -181,7 +179,7 @@ export function ConfigurationWizard({
               onSave={async (url, modelGen, modelImprove, modelVision) => {
                 setActionLoading('ollama')
                 try {
-                  upsertEndpoint({
+                  await upsertEndpoint({
                     provider: LOCAL_PROVIDERS.OLLAMA,
                     name: 'Ollama',
                     baseUrl: url,
@@ -200,7 +198,7 @@ export function ConfigurationWizard({
               onDelete={async () => {
                 setActionLoading('ollama-delete')
                 try {
-                  removeEndpoint(LOCAL_PROVIDERS.OLLAMA)
+                  await removeEndpoint(LOCAL_PROVIDERS.OLLAMA)
                   await loadLocalEndpoints()
                   toast.success('Ollama removed')
                 } catch {
@@ -215,7 +213,7 @@ export function ConfigurationWizard({
                   const endpoint = localEndpoints.find((e) => e.provider === LOCAL_PROVIDERS.OLLAMA)
                   const model = getModelForRole(endpoint, role)
 
-                  toggleLocalRole(LOCAL_PROVIDERS.OLLAMA, role)
+                  await toggleLocalRole(LOCAL_PROVIDERS.OLLAMA, role)
                   if (model) syncTaskModel(role, LOCAL_PROVIDERS.OLLAMA, model)
 
                   await loadLocalEndpoints()
@@ -235,7 +233,7 @@ export function ConfigurationWizard({
               onSave={async (url, modelGen, modelImprove, modelVision) => {
                 setActionLoading('lmstudio')
                 try {
-                  upsertEndpoint({
+                  await upsertEndpoint({
                     provider: LOCAL_PROVIDERS.LMSTUDIO,
                     name: 'LM Studio',
                     baseUrl: url,
@@ -254,7 +252,7 @@ export function ConfigurationWizard({
               onDelete={async () => {
                 setActionLoading('lmstudio-delete')
                 try {
-                  removeEndpoint(LOCAL_PROVIDERS.LMSTUDIO)
+                  await removeEndpoint(LOCAL_PROVIDERS.LMSTUDIO)
                   await loadLocalEndpoints()
                   toast.success('LM Studio removed')
                 } catch {
@@ -269,7 +267,7 @@ export function ConfigurationWizard({
                   const endpoint = localEndpoints.find((e) => e.provider === LOCAL_PROVIDERS.LMSTUDIO)
                   const model = getModelForRole(endpoint, role)
 
-                  toggleLocalRole(LOCAL_PROVIDERS.LMSTUDIO, role)
+                  await toggleLocalRole(LOCAL_PROVIDERS.LMSTUDIO, role)
                   if (model) syncTaskModel(role, LOCAL_PROVIDERS.LMSTUDIO, model)
 
                   await loadLocalEndpoints()

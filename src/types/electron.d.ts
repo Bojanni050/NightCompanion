@@ -17,6 +17,21 @@ type AiConfigStateStore = {
   cachedModels?: unknown
   advisorModelRoute?: unknown
 }
+type LocalEndpointStore = {
+  id?: string
+  provider?: string
+  name?: string
+  baseUrl?: string
+  model_name?: string
+  model_gen?: string
+  model_improve?: string
+  model_vision?: string
+  is_active?: boolean
+  is_active_gen?: boolean
+  is_active_improve?: boolean
+  is_active_vision?: boolean
+  updated_at?: string
+}
 type OpenRouterModel = { modelId: string; displayName: string; contextLength: number | null }
 type NightcafeModelOption = { modelName: string; modelType: string; mediaType: string }
 type NightcafePresetOption = { presetName: string; category: string }
@@ -61,6 +76,8 @@ declare global {
         saveProviderMeta(providerId: string, input: Partial<ProviderMetaStore>): Promise<IpcResult<ProviderMetaStore>>
         getAiConfigState(): Promise<IpcResult<AiConfigStateStore>>
         saveAiConfigState(input: AiConfigStateStore): Promise<IpcResult<AiConfigStateStore>>
+        getLocalEndpoints(): Promise<IpcResult<LocalEndpointStore[]>>
+        saveLocalEndpoints(input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>>
         saveOpenRouter(input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>>
         listOpenRouterModels(): Promise<IpcResult<OpenRouterModel[]>>
         refreshOpenRouterModels(input?: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterModel[]>>

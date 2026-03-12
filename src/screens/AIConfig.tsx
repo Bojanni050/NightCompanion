@@ -266,12 +266,30 @@ export function AIConfig() {
 
   const loadLocalEndpoints = useCallback(async () => {
     try {
-      const saved = localStorage.getItem('localEndpoints')
-      const parsed = saved ? (JSON.parse(saved) as LegacyLocalEndpoint[]) : []
-      const { endpoints, didMigrate } = migrateLegacyLocalEndpoints(parsed)
+      const storedResult = await window.electronAPI.settings.getLocalEndpoints()
+      const stored = storedResult.error || !storedResult.data
+        ? []
+        : (storedResult.data as LegacyLocalEndpoint[])
 
-      if (didMigrate) {
-        localStorage.setItem('localEndpoints', JSON.stringify(endpoints))
+      const normalizedStored = migrateLegacyLocalEndpoints(stored).endpoints
+      if (normalizedStored.length > 0) {
+        setLocalEndpoints(normalizedStored)
+        return
+      }
+
+      const legacyRaw = localStorage.getItem('localEndpoints')
+      const legacyParsed = legacyRaw ? (JSON.parse(legacyRaw) as LegacyLocalEndpoint[]) : []
+      const { endpoints, didMigrate } = migrateLegacyLocalEndpoints(legacyParsed)
+
+      if (endpoints.length > 0 || didMigrate) {
+        const saveResult = await window.electronAPI.settings.saveLocalEndpoints(endpoints)
+        if (saveResult.error) {
+          console.error('Failed to persist migrated local endpoints:', saveResult.error)
+        }
+      }
+
+      if (legacyRaw) {
+        localStorage.removeItem('localEndpoints')
       }
 
       setLocalEndpoints(endpoints)

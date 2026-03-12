@@ -172,6 +172,22 @@ type AiConfigStateStore = {
   advisorModelRoute?: unknown
 }
 
+type LocalEndpointStore = {
+  id?: string
+  provider?: string
+  name?: string
+  baseUrl?: string
+  model_name?: string
+  model_gen?: string
+  model_improve?: string
+  model_vision?: string
+  is_active?: boolean
+  is_active_gen?: boolean
+  is_active_improve?: boolean
+  is_active_vision?: boolean
+  updated_at?: string
+}
+
 type OpenRouterModel = {
   modelId: string
   displayName: string
@@ -342,6 +358,7 @@ async function readStoredSettings(): Promise<{
   openRouter?: Partial<OpenRouterSettings>
   providerMeta?: Record<string, Partial<ProviderMetaStore>>
   aiConfig?: AiConfigStateStore
+  localEndpoints?: LocalEndpointStore[]
 }> {
   try {
     const raw = await readFile(getSettingsFilePath(), 'utf-8')
@@ -349,6 +366,7 @@ async function readStoredSettings(): Promise<{
       openRouter?: Partial<OpenRouterSettings>
       providerMeta?: Record<string, Partial<ProviderMetaStore>>
       aiConfig?: AiConfigStateStore
+      localEndpoints?: LocalEndpointStore[]
     }
   } catch (error) {
     const err = error as NodeJS.ErrnoException
@@ -363,6 +381,7 @@ async function writeStoredSettings(settings: {
   openRouter: OpenRouterSettings
   providerMeta?: Record<string, Partial<ProviderMetaStore>>
   aiConfig?: AiConfigStateStore
+  localEndpoints?: LocalEndpointStore[]
 }) {
   const settingsPath = getSettingsFilePath()
   await mkdir(path.dirname(settingsPath), { recursive: true })
@@ -971,9 +990,38 @@ ipcMain.handle('settings:saveProviderMeta', async (_, providerId: string, input:
       openRouter: normalizeOpenRouterSettings(stored.openRouter),
       providerMeta: providerMap,
       aiConfig: stored.aiConfig,
+      localEndpoints: stored.localEndpoints,
     })
 
     return { data: next }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
+ipcMain.handle('settings:getLocalEndpoints', async () => {
+  try {
+    const stored = await readStoredSettings()
+    const data = Array.isArray(stored.localEndpoints) ? stored.localEndpoints : []
+    return { data }
+  } catch (error) {
+    return { error: String(error) }
+  }
+})
+
+ipcMain.handle('settings:saveLocalEndpoints', async (_, input: LocalEndpointStore[]) => {
+  try {
+    const stored = await readStoredSettings()
+    const nextLocalEndpoints = Array.isArray(input) ? input : []
+
+    await writeStoredSettings({
+      openRouter: normalizeOpenRouterSettings(stored.openRouter),
+      providerMeta: stored.providerMeta,
+      aiConfig: stored.aiConfig,
+      localEndpoints: nextLocalEndpoints,
+    })
+
+    return { data: nextLocalEndpoints }
   } catch (error) {
     return { error: String(error) }
   }
@@ -1000,6 +1048,7 @@ ipcMain.handle('settings:saveAiConfigState', async (_, input: AiConfigStateStore
       openRouter: normalizeOpenRouterSettings(stored.openRouter),
       providerMeta: stored.providerMeta,
       aiConfig: nextAiConfig,
+      localEndpoints: stored.localEndpoints,
     })
 
     return { data: nextAiConfig }
@@ -1023,6 +1072,7 @@ ipcMain.handle('settings:saveOpenRouter', async (_, input: Partial<OpenRouterSet
       openRouter: data,
       providerMeta: stored.providerMeta,
       aiConfig: stored.aiConfig,
+      localEndpoints: stored.localEndpoints,
     })
     return { data }
   } catch (error) {

@@ -30,6 +30,22 @@ export type AiConfigStateStore = {
   advisorModelRoute?: unknown
 }
 
+export type LocalEndpointStore = {
+  id?: string
+  provider?: string
+  name?: string
+  baseUrl?: string
+  model_name?: string
+  model_gen?: string
+  model_improve?: string
+  model_vision?: string
+  is_active?: boolean
+  is_active_gen?: boolean
+  is_active_improve?: boolean
+  is_active_vision?: boolean
+  updated_at?: string
+}
+
 export type OpenRouterModel = {
   modelId: string
   displayName: string
@@ -119,6 +135,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('settings:getAiConfigState'),
     saveAiConfigState: (input: AiConfigStateStore): Promise<IpcResult<AiConfigStateStore>> =>
       ipcRenderer.invoke('settings:saveAiConfigState', input),
+    getLocalEndpoints: (): Promise<IpcResult<LocalEndpointStore[]>> =>
+      ipcRenderer.invoke('settings:getLocalEndpoints'),
+    saveLocalEndpoints: (input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>> =>
+      ipcRenderer.invoke('settings:saveLocalEndpoints', input),
     saveOpenRouter: (input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>> =>
       ipcRenderer.invoke('settings:saveOpenRouter', input),
     listOpenRouterModels: (): Promise<IpcResult<OpenRouterModel[]>> =>

@@ -179,3 +179,9 @@
 - Findings: `dashboardRoleRouting`, `cachedModels`, and derived `advisorModelRoute` were still persisted in renderer localStorage.
 - Conclusions: These are settings and should live in the main-process settings store to align with architecture and avoid renderer storage coupling.
 - Actions: Added `settings:getAiConfigState` and `settings:saveAiConfigState` IPC in `electron/main.ts` with persistence under `settings.json` (`aiConfig` section), updated `electron/preload.ts` + `src/types/electron.d.ts` with new methods/types, and refactored `src/screens/AIConfig.tsx` to hydrate/persist via settings IPC; implemented one-time migration of legacy localStorage keys (`dashboardRoleRouting`, `cachedModels`, `advisorModelRoute`) into the Electron settings store, then cleanup localStorage keys.
+
+## 2026-03-12 (localEndpoints Moved From localStorage To Electron Settings Store)
+
+- Findings: `localEndpoints` in AI configuration still used renderer `localStorage`, despite broader migration to main-process settings persistence.
+- Conclusions: Local provider endpoint configuration should be managed in the Electron settings store for consistency, backupability, and renderer storage independence.
+- Actions: Added `settings:getLocalEndpoints` and `settings:saveLocalEndpoints` IPC in `electron/main.ts` and exposed these methods/types in `electron/preload.ts` and `src/types/electron.d.ts`; updated `src/screens/AIConfig.tsx` to load endpoints from settings store with one-time migration from legacy `localStorage.localEndpoints`; refactored `src/screens/Settings/ConfigurationWizard.tsx` endpoint upsert/remove/toggle helpers to use settings IPC instead of localStorage writes.
