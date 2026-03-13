@@ -126,6 +126,8 @@ export function ProviderConfigForm({
     setActionLoading(provider.id)
 
     try {
+      let modelSyncWarning: string | null = null
+
       const saveResult = await window.electronAPI.settings.saveOpenRouter({
         apiKey: inputValue.trim(),
         model: selectedModelGen,
@@ -143,7 +145,7 @@ export function ProviderConfigForm({
       }
 
       await persistProviderMeta(nextMeta)
-      const modelsResult = await window.electronAPI.settings.listOpenRouterModels()
+      const modelsResult = await window.electronAPI.settings.refreshOpenRouterModels()
       if (!modelsResult.error && modelsResult.data) {
         const models = modelsResult.data.map((item) => ({
           id: item.modelId,
@@ -156,10 +158,20 @@ export function ProviderConfigForm({
           ...prev,
           [provider.id]: models,
         }))
+      } else {
+        modelSyncWarning = modelsResult.error || 'Model sync failed after saving the API key.'
       }
 
       await loadKeys()
-      toast.success(`${provider.name} key saved successfully`)
+
+      if (modelSyncWarning) {
+        toast.warning(`${provider.name} key saved, but model sync failed`, {
+          description: modelSyncWarning,
+        })
+      } else {
+        toast.success(`${provider.name} key saved successfully`)
+      }
+
       setIsEditing(false)
       setInputValue('')
     } catch (error) {

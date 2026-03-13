@@ -317,13 +317,10 @@ export function registerSettingsIpc({ db }: { db: Database }) {
   ipcMain.handle('settings:saveOpenRouter', async (_, input: Partial<OpenRouterSettings>) => {
     try {
       const stored = await readStoredSettings()
-      const data = normalizeOpenRouterSettings(input)
-
-      if (data.apiKey) {
-        await syncOpenRouterModels(db, data)
-      } else {
-        await db.delete(openRouterModels)
-      }
+      const data = normalizeOpenRouterSettings({
+        ...stored.openRouter,
+        ...input,
+      })
 
       await writeStoredSettings({
         openRouter: data,
@@ -331,6 +328,17 @@ export function registerSettingsIpc({ db }: { db: Database }) {
         aiConfig: stored.aiConfig,
         localEndpoints: stored.localEndpoints,
       })
+
+      if (data.apiKey) {
+        try {
+          await syncOpenRouterModels(db, data)
+        } catch (error) {
+          console.error('OpenRouter model sync failed after saving settings:', error)
+        }
+      } else {
+        await db.delete(openRouterModels)
+      }
+
       return { data }
     } catch (error) {
       return { error: String(error) }
@@ -362,7 +370,11 @@ export function registerSettingsIpc({ db }: { db: Database }) {
 
   ipcMain.handle('settings:testOpenRouter', async (_, input?: Partial<OpenRouterSettings>) => {
     try {
-      const data = normalizeOpenRouterSettings(input)
+      const stored = await getOpenRouterSettings()
+      const data = normalizeOpenRouterSettings({
+        ...stored,
+        ...input,
+      })
       const result = await testOpenRouterConnection(data)
       return { data: result }
     } catch (error) {

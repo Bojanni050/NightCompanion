@@ -209,3 +209,15 @@
 - Findings: `Dashboard` remounts on each screen navigation from `App`, causing a full `Promise.all` refetch for prompts, style profiles, generation log, and characters every time user returns.
 - Conclusions: A lightweight module-level stale cache with short TTL prevents unnecessary repeat fetches while keeping data reasonably fresh.
 - Actions: Updated `src/screens/Dashboard.tsx` with a `DashboardCache` object, `DASHBOARD_CACHE_STALE_MS = 60_000`, cache hit path before fetch, and shared `applyDashboardData` state updater; kept existing loading/fallback behavior intact.
+
+## 2026-03-13 (Provider API Key Persistence Fix)
+
+- Findings: Saving provider API key depended on immediate OpenRouter model sync; if sync failed, save flow failed and key was not persisted. Test connection without edit mode also ignored stored key because it normalized only the incoming partial input.
+- Conclusions: Settings persistence must be decoupled from model sync success, and test/partial save handlers should merge input over currently stored settings.
+- Actions: Updated `electron/ipc/settings.ts` so `settings:saveOpenRouter` merges partial input with stored OpenRouter settings, writes settings first, and runs model sync as best-effort without blocking key persistence; updated `settings:testOpenRouter` to merge with stored settings so existing saved key is used when no new key is provided.
+
+## 2026-03-13 (Settings UX: Key Saved + Model Sync Warning)
+
+- Findings: After decoupling save from model sync, the UI could still show a generic success toast without clearly signaling model sync failure.
+- Conclusions: Save feedback should distinguish between key persistence success and model refresh outcome to avoid confusion.
+- Actions: Updated `src/screens/Settings/ProviderConfigForm.tsx` `handleSave` to refresh models via `settings:refreshOpenRouterModels` after key save and show `toast.warning` with description when model sync fails, while still keeping the API key save as successful.
