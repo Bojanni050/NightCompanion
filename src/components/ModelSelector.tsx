@@ -16,17 +16,43 @@ interface ModelSelectorProps {
   providers?: ProviderInfo[]
   placeholder?: string
   className?: string
+  sortMode?: 'cheapest' | 'alphabetical'
 }
 
-export default function ModelSelector({ value, onChange, models, placeholder, className }: ModelSelectorProps) {
+function getCombinedPrice(model: Pick<ModelOption, 'promptPrice' | 'completionPrice'>): number {
+  const prompt = Number(model.promptPrice || '')
+  const completion = Number(model.completionPrice || '')
+
+  if (!Number.isFinite(prompt) || !Number.isFinite(completion))
+    return Number.POSITIVE_INFINITY
+
+  return prompt + completion
+}
+
+export default function ModelSelector({ value, onChange, models, placeholder, className, sortMode = 'alphabetical' }: ModelSelectorProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(0)
 
+  const sortedModels = useMemo(() => {
+    return [...models].sort((first, second) => {
+      if (sortMode === 'cheapest') {
+        const firstPrice = getCombinedPrice(first)
+        const secondPrice = getCombinedPrice(second)
+        if (firstPrice !== secondPrice)
+          return firstPrice - secondPrice
+      }
+
+      const firstLabel = first.label || first.name || first.id
+      const secondLabel = second.label || second.name || second.id
+      return firstLabel.localeCompare(secondLabel)
+    })
+  }, [models, sortMode])
+
   const selectedModel = useMemo(
-    () => models.find((model) => model.id === value),
-    [models, value]
+    () => sortedModels.find((model) => model.id === value),
+    [sortedModels, value]
   )
 
   useEffect(() => {
@@ -53,13 +79,13 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
   const filteredModels = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle)
-      return models
+      return sortedModels
 
-    return models.filter((model) => {
+    return sortedModels.filter((model) => {
       const label = (model.label || model.name || model.id).toLowerCase()
       return label.includes(needle) || model.id.toLowerCase().includes(needle)
     })
-  }, [models, query])
+  }, [sortedModels, query])
 
   useEffect(() => {
     if (highlightedIndex >= filteredModels.length)

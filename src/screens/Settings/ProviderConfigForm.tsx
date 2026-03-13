@@ -119,6 +119,7 @@ export function ProviderConfigForm({
   isGlobalActive,
 }: ProviderConfigFormProps) {
   const [inputValue, setInputValue] = useState('')
+  const [modelSortMode, setModelSortMode] = useState<'cheapest' | 'alphabetical'>('cheapest')
   const [selectedModelGen, setSelectedModelGen] = useState(keyInfo?.model_gen || keyInfo?.model_name || 'openai/gpt-4o-mini')
   const [selectedModelImprove, setSelectedModelImprove] = useState(keyInfo?.model_improve || keyInfo?.model_name || 'openai/gpt-4o-mini')
   const [selectedModelVision, setSelectedModelVision] = useState(keyInfo?.model_vision || keyInfo?.model_name || 'openai/gpt-4o-mini')
@@ -525,21 +526,40 @@ export function ProviderConfigForm({
       </div>
 
       <div className="space-y-4 pt-4 border-t border-slate-800/50">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <h4 className="text-sm font-medium text-white flex items-center gap-2">
             <Server size={14} className="text-teal-500" />
             Model Selection
           </h4>
 
-          <button
-            onClick={handleFetchModels}
-            disabled={isFetching}
-            className="text-xs text-slate-500 hover:text-teal-400 flex items-center gap-1.5 transition-colors"
-            aria-label="Refresh Models"
-          >
-            {isFetching ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            Refresh Models
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-lg border border-slate-700 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setModelSortMode('cheapest')}
+                className={`px-2.5 py-1.5 text-xs transition-colors ${modelSortMode === 'cheapest' ? 'bg-teal-500 text-slate-900 font-medium' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+              >
+                Cheapest
+              </button>
+              <button
+                type="button"
+                onClick={() => setModelSortMode('alphabetical')}
+                className={`px-2.5 py-1.5 text-xs transition-colors ${modelSortMode === 'alphabetical' ? 'bg-teal-500 text-slate-900 font-medium' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+              >
+                Alphabetical
+              </button>
+            </div>
+
+            <button
+              onClick={handleFetchModels}
+              disabled={isFetching}
+              className="text-xs text-slate-500 hover:text-teal-400 flex items-center gap-1.5 transition-colors"
+              aria-label="Refresh Models"
+            >
+              {isFetching ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Refresh Models
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -554,6 +574,7 @@ export function ProviderConfigForm({
               models={allModels}
               providers={providersInfo}
               placeholder="Select generation model..."
+              sortMode={modelSortMode}
               className="w-full"
             />
           </div>
@@ -569,6 +590,7 @@ export function ProviderConfigForm({
               models={allModels}
               providers={providersInfo}
               placeholder="Select improvement model..."
+              sortMode={modelSortMode}
               className="w-full"
             />
           </div>
@@ -590,6 +612,7 @@ export function ProviderConfigForm({
               )}
               providers={providersInfo}
               placeholder="Select vision model..."
+              sortMode={modelSortMode}
               className="w-full"
             />
           </div>
