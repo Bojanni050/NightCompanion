@@ -27,7 +27,18 @@ function formatPerMillion(priceText: string | null | undefined): string | null {
   if (!Number.isFinite(parsed)) return null
 
   const perMillion = parsed * 1_000_000
+  if (perMillion > 0 && perMillion < 0.01) return '<$0.01'
   return `$${perMillion.toFixed(2)}`
+}
+
+function buildComputedPriceLabel(model: Pick<ModelOption, 'promptPrice' | 'completionPrice' | 'priceLabel'>): string {
+  const promptPerMillion = formatPerMillion(model.promptPrice)
+  const completionPerMillion = formatPerMillion(model.completionPrice)
+
+  if (promptPerMillion && completionPerMillion)
+    return `${promptPerMillion}/${completionPerMillion}`
+
+  return model.priceLabel || ''
 }
 
 function getCombinedPrice(model: Pick<ModelOption, 'promptPrice' | 'completionPrice'>): number {
@@ -79,7 +90,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
   )
 
   const selectedModelName = selectedModel?.displayName || selectedModel?.name || selectedModel?.label || selectedModel?.id || ''
-  const selectedPriceLabel = selectedModel?.priceLabel || ''
+  const selectedPriceLabel = selectedModel ? buildComputedPriceLabel(selectedModel) : ''
   const selectedProviderName = getProviderDisplayName(selectedModel?.provider)
 
   // Auto-focus the search input when dropdown opens
@@ -217,7 +228,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
             ) : (
               filteredModels.map((model, index) => {
                 const modelName = model.displayName || model.name || model.label || model.id
-                const priceLabel = model.priceLabel || ''
+                const priceLabel = buildComputedPriceLabel(model)
                 const providerName = getProviderDisplayName(model.provider)
                 const description = model.description?.trim() || ''
                 const capabilityTags = model.capabilities ?? []

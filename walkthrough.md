@@ -311,3 +311,15 @@
 - Findings: Clicking generate could throw `TypeError: Cannot read properties of undefined (reading 'error')` in `handleGenerate` when IPC response was undefined/unexpected.
 - Conclusions: Generator flow needs defensive handling around IPC calls to avoid renderer crashes on malformed or missing responses.
 - Actions: Updated `src/screens/Generator.tsx` `handleGenerate` with `try/catch/finally`, added explicit guard for empty result before reading `result.error`, and preserved status feedback paths; verified with `npm run build`.
+
+## 2026-03-13 (Model Price Label Normalization In Selector)
+
+- Findings: Some model options still displayed `00.00`-style pricing labels in the dropdown trigger/list due to relying on precomputed `priceLabel` text from cached option payloads.
+- Conclusions: Pricing display should be normalized at render time from raw `promptPrice`/`completionPrice`, always rounded with two decimals for consistent UI output.
+- Actions: Updated `src/components/ModelSelector.tsx` to compute price labels via shared formatter (`buildComputedPriceLabel`) from raw price fields and use that for both selected trigger label and list items; verified with `npm run build`.
+
+## 2026-03-13 (Compact Tiny-Price Fallback)
+
+- Findings: Extremely small but non-zero model prices still rendered as `0.00` after two-decimal rounding, which looked like free pricing.
+- Conclusions: Tiny non-zero values should use a compact fallback label to distinguish them from true zero values.
+- Actions: Updated per-million price formatters in `src/components/ModelSelector.tsx`, `src/screens/AIConfig.tsx`, and `src/screens/Settings/ProviderConfigForm.tsx` to render `<$0.01` when `0 < perMillion < 0.01`, otherwise keep two-decimal formatting; verified with `npm run build`.
