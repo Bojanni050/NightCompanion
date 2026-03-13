@@ -51,6 +51,14 @@ export default function Generator() {
     setGreylistWords((prev) => prev.filter((item) => item !== word))
   }
 
+  const handleClearAll = () => {
+    setTheme('')
+    setSelectedPreset('')
+    setGeneratedPrompt('')
+    setStatus(null)
+    setSavedTitle('')
+  }
+
   useEffect(() => {
     let ignore = false
 
@@ -215,71 +223,6 @@ export default function Generator() {
                 </select>
               </div>
 
-              <div className="mt-4 rounded-lg border border-night-600/50 bg-night-900/30 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="label mb-0">Greylist</p>
-                    <p className="text-xs text-night-400">Words the AI should try to avoid or use with low probability.</p>
-                  </div>
-                  <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${greylistEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-night-600 bg-night-800 text-night-300'}`}>
-                    <input
-                      type="checkbox"
-                      checked={greylistEnabled}
-                      onChange={(e) => setGreylistEnabled(e.target.checked)}
-                      className="mr-1 h-3.5 w-3.5 accent-green-500"
-                      aria-label="Enable greylist"
-                    />
-                    {greylistEnabled ? 'On' : 'Off'}
-                  </label>
-                </div>
-
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-                  <div>
-                    <input
-                      type="text"
-                      list="generator-greylist-suggestions"
-                      value={greylistInput}
-                      onChange={(e) => setGreylistInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return
-                        e.preventDefault()
-                        addGreylistWord()
-                      }}
-                      className="input"
-                      placeholder="Add word to greylist"
-                    />
-                    <datalist id="generator-greylist-suggestions">
-                      {greylistSuggestions.map((item) => (
-                        <option key={item} value={item} />
-                      ))}
-                    </datalist>
-                  </div>
-                  <button type="button" onClick={addGreylistWord} className="btn-ghost border border-night-600/50">
-                    Add
-                  </button>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {greylistWords.length === 0 ? (
-                    <p className="text-xs text-night-400">No greylist words added.</p>
-                  ) : (
-                    greylistWords.map((word) => (
-                      <span key={word} className="tag-removable">
-                        {word}
-                        <button
-                          type="button"
-                          onClick={() => removeGreylistWord(word)}
-                          className="rounded px-1 text-night-300 hover:bg-night-700 hover:text-white"
-                          aria-label={`Remove ${word}`}
-                        >
-                          x
-                        </button>
-                      </span>
-                    ))
-                  )}
-                </div>
-              </div>
-
               <div className="mt-4 flex flex-wrap gap-3">
                 <button onClick={handleGenerate} disabled={loading} className="btn-primary">
                   {loading ? 'Generating...' : 'Magic Random (AI)'}
@@ -287,6 +230,79 @@ export default function Generator() {
                 <button onClick={handleCopy} disabled={!generatedPrompt} className="btn-ghost border border-night-600/50">
                   Copy Prompt
                 </button>
+                <button
+                  type="button"
+                  onClick={handleClearAll}
+                  disabled={loading}
+                  className="btn-ghost border border-night-600/50"
+                >
+                  Clear all
+                </button>
+              </div>
+            </div>
+
+            <div className="card mt-5 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Greylist</h2>
+                  <p className="text-xs text-night-400 mt-1">Words the AI should try to avoid or use with low probability.</p>
+                </div>
+                <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${greylistEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-night-600 bg-night-800 text-night-300'}`}>
+                  <input
+                    type="checkbox"
+                    checked={greylistEnabled}
+                    onChange={(e) => setGreylistEnabled(e.target.checked)}
+                    className="mr-1 h-3.5 w-3.5 accent-green-500"
+                    aria-label="Enable greylist"
+                  />
+                  {greylistEnabled ? 'On' : 'Off'}
+                </label>
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+                <div>
+                  <input
+                    type="text"
+                    list="generator-greylist-suggestions"
+                    value={greylistInput}
+                    onChange={(e) => setGreylistInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter') return
+                      e.preventDefault()
+                      addGreylistWord()
+                    }}
+                    className="input"
+                    placeholder="Add word to greylist"
+                  />
+                  <datalist id="generator-greylist-suggestions">
+                    {greylistSuggestions.map((item) => (
+                      <option key={item} value={item} />
+                    ))}
+                  </datalist>
+                </div>
+                <button type="button" onClick={addGreylistWord} className="btn-ghost border border-night-600/50">
+                  Add
+                </button>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {greylistWords.length === 0 ? (
+                  <p className="text-xs text-night-400">No greylist words added.</p>
+                ) : (
+                  greylistWords.map((word) => (
+                    <span key={word} className="tag-removable">
+                      {word}
+                      <button
+                        type="button"
+                        onClick={() => removeGreylistWord(word)}
+                        className="rounded px-1 text-night-300 hover:bg-night-700 hover:text-white"
+                        aria-label={`Remove ${word}`}
+                      >
+                        x
+                      </button>
+                    </span>
+                  ))
+                )}
               </div>
             </div>
 
