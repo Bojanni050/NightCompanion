@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { BookOpen, Eye, Settings, Sparkles, Wand2 } from 'lucide-react'
+import ModelSelector from '../../components/ModelSelector'
 import type { ApiKeyInfo, LocalEndpoint, ModelOption } from './types'
 
 type DashboardRole = 'generation' | 'improvement' | 'vision' | 'general'
@@ -97,6 +98,20 @@ export function Dashboard({
   void setDynamicModels
   void getToken
 
+  function getRoleModelOptions(providerId: string): ModelOption[] {
+    const dynamicProviderModels = dynamicModels[providerId]
+    if (dynamicProviderModels && dynamicProviderModels.length > 0)
+      return dynamicProviderModels
+
+    return (modelsByProvider[providerId] || []).map((modelId) => ({
+      id: modelId,
+      name: modelId,
+      displayName: modelId,
+      provider: providerId,
+      capabilities: modelId.toLowerCase().includes('vision') ? ['Vision'] : ['Text'],
+    }))
+  }
+
   return (
     <div className="max-w-6xl space-y-6">
       <div>
@@ -108,7 +123,7 @@ export function Dashboard({
         {ROLES.map((role) => {
             const meta = ROLE_META[role]
             const routing = roleRouting[role]
-            const models = modelsByProvider[routing.providerId] || []
+            const modelOptions = getRoleModelOptions(routing.providerId)
 
             return (
               <section key={role} className={`rounded-2xl border p-5 ${meta.cardClass}`}>
@@ -129,7 +144,7 @@ export function Dashboard({
                   <div>
                     <label className="block text-[11px] font-medium tracking-widest uppercase text-night-400 mb-1.5">Provider</label>
                     <select
-                      className="input w-full"
+                      className="w-full rounded-2xl border border-cyan-500/35 bg-slate-800/90 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-400/50"
                       value={routing.providerId}
                       onChange={(event) =>
                         onChangeRoleRouting(role, { providerId: event.target.value, modelId: '' })
@@ -150,22 +165,14 @@ export function Dashboard({
 
                   <div>
                     <label className="block text-[11px] font-medium tracking-widest uppercase text-night-400 mb-1.5">Model</label>
-                    <select
-                      className="input w-full"
+                    <ModelSelector
                       value={routing.modelId}
-                      onChange={(event) =>
-                        onChangeRoleRouting(role, { modelId: event.target.value })
-                      }
-                      aria-label={`${meta.label} model`}
-                    >
-                      {models.length === 0 ? (
-                        <option value="">Select model...</option>
-                      ) : (
-                        models.map((m) => (
-                          <option key={m} value={m}>{m}</option>
-                        ))
-                      )}
-                    </select>
+                      onChange={(modelId) => onChangeRoleRouting(role, { modelId })}
+                      models={modelOptions}
+                      placeholder="Select model..."
+                      sortMode="cheapest"
+                      className="w-full"
+                    />
                   </div>
                 </div>
               </section>

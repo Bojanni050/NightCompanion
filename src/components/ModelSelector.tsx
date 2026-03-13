@@ -20,6 +20,18 @@ interface ModelSelectorProps {
   sortMode?: 'cheapest' | 'alphabetical'
 }
 
+function formatPerMillion(priceText: string | null | undefined): string | null {
+  if (!priceText) return null
+
+  const parsed = Number(priceText)
+  if (!Number.isFinite(parsed)) return null
+
+  const perMillion = parsed * 1_000_000
+  if (perMillion >= 1) return `$${perMillion.toFixed(2)}`
+
+  return `$${perMillion.toFixed(4)}`
+}
+
 function getCombinedPrice(model: Pick<ModelOption, 'promptPrice' | 'completionPrice'>): number {
   const prompt = Number(model.promptPrice || '')
   const completion = Number(model.completionPrice || '')
@@ -154,27 +166,23 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
 
   return (
     <div ref={containerRef} className={`relative ${className || ''}`.trim()}>
-      {/* Card-style button trigger */}
       <button
         type="button"
         onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="flex items-center gap-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-left hover:border-slate-600 transition-colors"
+        className="group flex items-center gap-2 w-full rounded-2xl border border-cyan-500/35 bg-slate-800/90 px-3 py-2.5 text-left hover:border-cyan-400/50 transition-colors"
       >
-        {selectedPriceLabel && (
-          <span className="text-xs text-teal-300 shrink-0 font-mono">{selectedPriceLabel}</span>
-        )}
-        {selectedPriceLabel && (
-          <span className="text-slate-600 shrink-0">|</span>
-        )}
+        <span className="w-16 shrink-0 text-[11px] leading-4 text-teal-300 font-semibold text-right">
+          {selectedPriceLabel || 'Free'}
+        </span>
         <span className="flex-1 min-w-0">
           {selectedModelName
             ? (
               <>
-                <span className="block text-sm font-medium text-white truncate">{selectedModelName}</span>
+                <span className="block text-sm font-semibold text-white truncate">{selectedModelName}</span>
                 {selectedProviderName && (
-                  <span className="block text-xs text-slate-400 truncate">{selectedProviderName}</span>
+                  <span className="block text-xs text-slate-400 truncate">• {selectedProviderName.toLowerCase()}</span>
                 )}
               </>
             )
@@ -184,14 +192,13 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
         </span>
         <ChevronDown
           size={14}
-          className={`text-slate-400 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+          className={`text-slate-500 group-hover:text-slate-300 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full rounded-xl border border-slate-700 bg-slate-900 shadow-xl flex flex-col max-h-80">
-          {/* Search input inside dropdown */}
-          <div className="px-3 py-2 border-b border-slate-700 shrink-0">
+        <div className="absolute z-50 mt-2 w-full rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col max-h-[26rem] p-3">
+          <div className="px-1 pb-2 shrink-0">
             <input
               ref={searchInputRef}
               type="text"
@@ -202,12 +209,11 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
               }}
               onKeyDown={onInputKeyDown}
               placeholder="Search models..."
-              className="w-full bg-transparent text-sm text-white placeholder-slate-500 outline-none"
+              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-500/50"
             />
           </div>
 
-          {/* Model list */}
-          <div className="overflow-auto">
+          <div className="overflow-auto pr-1 space-y-2">
             {filteredModels.length === 0 ? (
               <div className="px-3 py-2 text-sm text-slate-400">No models found</div>
             ) : (
@@ -216,7 +222,9 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
                 const priceLabel = model.priceLabel || ''
                 const providerName = getProviderDisplayName(model.provider)
                 const description = model.description?.trim() || ''
-                const isVision = model.capabilities?.some(c => c.toLowerCase() === 'vision') ?? false
+                const capabilityTags = model.capabilities ?? []
+                const promptPerMillion = formatPerMillion(model.promptPrice)
+                const completionPerMillion = formatPerMillion(model.completionPrice)
                 const isExpanded = Boolean(expandedDescriptions[model.id])
                 const showReadMore = description.length > 120
                 const isHighlighted = index === highlightedIndex
@@ -227,70 +235,87 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
                     key={model.id}
                     role="button"
                     tabIndex={-1}
-                    className={`w-full px-3 py-2.5 text-left transition-colors cursor-pointer border-b border-slate-800 last:border-0 ${isHighlighted ? 'bg-slate-800' : 'hover:bg-slate-800/60'} ${isSelected ? 'bg-slate-800/40' : ''}`}
+                    className={`rounded-2xl border p-3 transition-colors cursor-pointer ${
+                      isHighlighted ? 'border-cyan-500/55 bg-slate-800/80' : 'border-slate-700 bg-slate-900 hover:border-slate-600 hover:bg-slate-800/60'
+                    } ${isSelected ? 'ring-1 ring-cyan-500/40' : ''}`}
                     onMouseEnter={() => setHighlightedIndex(index)}
                     onMouseDown={(event) => {
                       event.preventDefault()
                       selectModel(model)
                     }}
                   >
-                    {/* Model name + price */}
-                    <div className="flex items-baseline gap-2">
-                      <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-slate-100'} truncate flex-1`}>
-                        {modelName}
-                      </span>
-                      {priceLabel && (
-                        <span className="text-xs text-teal-300 shrink-0 font-mono">{priceLabel}</span>
-                      )}
-                    </div>
+                    <div className="flex gap-3">
+                      <div className="w-16 shrink-0 text-[11px] text-slate-400 leading-5 pt-1">
+                        <div>In: <span className="text-cyan-300">{promptPerMillion || '—'}</span></div>
+                        <div>Out: <span className="text-cyan-300">{completionPerMillion || '—'}</span></div>
+                      </div>
 
-                    {/* Provider + capability badges */}
-                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                      {providerName && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-violet-500/15 text-violet-300 border border-violet-500/20 leading-none">
-                          {providerName}
-                        </span>
-                      )}
-                      {isVision && (
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-teal-500/15 text-teal-300 border border-teal-500/20 leading-none">
-                          Vision
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Description */}
-                    {description && (
-                      <>
-                        <div
-                          className={`mt-1.5 text-xs text-slate-400 ${isExpanded ? '' : 'overflow-hidden'}`}
-                          style={isExpanded
-                            ? undefined
-                            : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
-                        >
-                          {description}
+                      <div className="min-w-0 flex-1 border-l border-slate-700 pl-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className={`text-sm font-semibold ${isSelected ? 'text-white' : 'text-slate-100'} truncate`}>
+                            {modelName}
+                          </span>
+                          {priceLabel && <span className="text-[11px] text-teal-300 shrink-0">{priceLabel}</span>}
                         </div>
-                        {showReadMore && (
-                          <button
-                            type="button"
-                            className="mt-1 text-xs text-teal-400 hover:text-teal-300"
-                            onMouseDown={(event) => {
-                              event.preventDefault()
-                              event.stopPropagation()
-                            }}
-                            onClick={(event) => {
-                              event.preventDefault()
-                              event.stopPropagation()
-                              setExpandedDescriptions((previous) => ({
-                                ...previous,
-                                [model.id]: !previous[model.id],
-                              }))
-                            }}
-                          >
-                            {isExpanded ? 'Lees minder' : 'Lees meer'}
-                          </button>
+
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          {providerName && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] bg-violet-500/15 text-violet-300 border border-violet-500/25 leading-none">
+                              ● {providerName.toLowerCase()}
+                            </span>
+                          )}
+                          {capabilityTags.map((capability) => {
+                            const normalized = capability.toLowerCase()
+                            const isReasoning = normalized.includes('reason')
+                            const isVision = normalized.includes('vision') || normalized.includes('image')
+                            const chipClass = isReasoning
+                              ? 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/25'
+                              : isVision
+                                ? 'bg-teal-500/15 text-teal-300 border-teal-500/25'
+                                : 'bg-slate-500/15 text-slate-200 border-slate-500/25'
+
+                            return (
+                              <span key={`${model.id}-${capability}`} className={`px-2 py-0.5 rounded-md text-[10px] border leading-none ${chipClass}`}>
+                                {capability}
+                              </span>
+                            )
+                          })}
+                        </div>
+
+                        {description && (
+                          <>
+                            <div
+                              className={`mt-1.5 text-xs text-slate-400 ${isExpanded ? '' : 'overflow-hidden'}`}
+                              style={isExpanded
+                                ? undefined
+                                : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                            >
+                              {description}
+                            </div>
+                            {showReadMore && (
+                              <button
+                                type="button"
+                                className="mt-1 text-xs text-slate-300 hover:text-white"
+                                onMouseDown={(event) => {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                }}
+                                onClick={(event) => {
+                                  event.preventDefault()
+                                  event.stopPropagation()
+                                  setExpandedDescriptions((previous) => ({
+                                    ...previous,
+                                    [model.id]: !previous[model.id],
+                                  }))
+                                }}
+                              >
+                                {isExpanded ? 'Show less' : 'Show more'}
+                              </button>
+                            )}
+                          </>
                         )}
-                      </>
-                    )}
+                      </div>
+                    </div>
                   </div>
                 )
               })
