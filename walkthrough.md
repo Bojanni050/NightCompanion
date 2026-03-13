@@ -257,3 +257,21 @@
 - Findings: Follow-up verification requested after description-column rollout for OpenRouter models.
 - Conclusions: Running migrations again is safe and confirms pending migrations are applied in sequence by Drizzle.
 - Actions: Executed `npm run db:migrate`; migration runner completed successfully with no blocking errors.
+
+## 2026-03-13 (Settings Dashboard Visual Redesign)
+
+- Findings: Settings page (AI Config dashboard) had a dated table-row layout with status cards, checkboxes, and exposed provider/key details. User provided a screenshot showing a cleaner design.
+- Conclusions: A card-based layout matching the screenshot improves clarity: role-grouped icon squares with inline Provider + Model dropdowns, "AI Configuration" header with Active/Inactive badge, gradient "Save Configuration" button, and secondary "Manage Providers" button for wizard access.
+- Actions: Fully rewrote `src/screens/Settings/Dashboard.tsx`: replaced old `RoleRouteRow`, `StatusCard`, and `formatProvider` helpers with typed `ROLE_META` record (icon + color per role), `formatProviderLabel` map, and a single `Dashboard` function rendering Settings header (gear icon + subtitle), AI Configuration card with four role rows (violet/rose/cyan/teal icon squares, Provider/Model native selects, dividers), gradient Save button (toast feedback), and a secondary Manage Providers button (`onConfigure` → wizard). Build passes without errors.
+
+## 2026-03-13 (OpenRouter Config UI Redesign — Card Trigger + In-Dropdown Search + Badges)
+
+- Findings: The model selector trigger was an `<input>` field that displayed the selected model's label; search was inline in the trigger; dropdown items showed only `price | name` with no provider or capability context.
+- Conclusions: A card-style `<button>` trigger showing price, name, and provider sub-row better matches the target design; moving search inside the dropdown decouples display from filtering; provider and Vision badges improve model discoverability.
+- Actions: Rewrote `src/components/ModelSelector.tsx`: replaced `<input>` trigger with card-style `<button>` (teal price | model name + provider sub-row | `ChevronDown` that rotates when open); added `searchInputRef` auto-focused via `useEffect([isOpen])`; moved search `<input>` to top of dropdown panel with border-b separator; redesigned dropdown items to show model name + teal price on first row, then violet provider badge + optional teal Vision badge, then clamped description + `Lees meer`/`Lees minder`; added `getProviderDisplayName` helper; removed the `useEffect` that mirrored selected name into query state. Build passes without errors.
+
+## 2026-03-13 (Local Provider Config Redesign — Match OpenRouter Design)
+
+- Findings: Ollama and LM Studio configuration cards (`LocalEndpointCard.tsx`) used a dated layout: basic unlabeled 2-column input grid, minimal header with only a `Cpu` icon and plain title, no provider description, and terse role-activation buttons with inline icon+text spans.
+- Conclusions: The local provider cards should match the visual design of `ProviderConfigForm.tsx` (OpenRouter): sectioned layout with header + Active badge, descriptive subtitle, clearly labeled inputs with consistent styled class, "Model Selection" section separated by a border with `Server` icon header, and 3-column role-activation buttons with `flex-col` centering.
+- Actions: Rewrote `src/components/LocalEndpointCard.tsx`: added module-level `PROVIDER_META` lookup with title, description, and URL placeholder per provider type; replaced `Cpu` import with `Server`; added `isAnyRoleActive` derived flag; replaced `space-y-4` card with `space-y-6 animate-in fade-in` wrapper; added header section matching `ProviderConfigForm` (h3 + amber Active badge + description paragraph); replaced unlabeled 2-col grid with a labeled Base URL input + separate "Model Selection" section (`border-t`, `Server` icon, `grid-cols-1 md:grid-cols-3 gap-6`, properly labeled text inputs); updated Save/Remove buttons to match `ProviderConfigForm` button styles; updated role-activation grid to `py-3 flex-col items-center` matching existing cloud provider design. Build passes without errors.

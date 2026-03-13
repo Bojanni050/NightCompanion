@@ -1,4 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react'
+import { Eye, MessageSquare, Save, Settings, Sparkles, Wand2 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ApiKeyInfo, LocalEndpoint, ModelOption } from './types'
 
 type DashboardRole = 'generation' | 'improvement' | 'vision' | 'general'
@@ -33,24 +35,55 @@ interface DashboardProps {
   onChangeRoleRouting: (role: DashboardRole, patch: Partial<RoleRouteSelection>) => void
 }
 
-function formatProvider(source?: ApiKeyInfo | LocalEndpoint) {
-  if (!source) return 'Not configured'
-  if ('name' in source) return `${source.name} (${source.model_name})`
-  return `${source.provider} (${source.model_name})`
+const ROLE_META: Record<DashboardRole, {
+  label: string
+  description: string
+  icon: React.ReactNode
+  iconBg: string
+}> = {
+  generation: {
+    label: 'Generation',
+    description: 'For generating creative prompts and ideas',
+    icon: <Sparkles className="w-5 h-5" />,
+    iconBg: 'bg-violet-600',
+  },
+  improvement: {
+    label: 'Improvement',
+    description: 'For enhancing and refining existing prompts',
+    icon: <Wand2 className="w-5 h-5" />,
+    iconBg: 'bg-rose-600',
+  },
+  vision: {
+    label: 'Vision',
+    description: 'For analyzing and describing images',
+    icon: <Eye className="w-5 h-5" />,
+    iconBg: 'bg-cyan-600',
+  },
+  general: {
+    label: 'General',
+    description: 'For general AI assistance and queries',
+    icon: <MessageSquare className="w-5 h-5" />,
+    iconBg: 'bg-teal-600',
+  },
 }
 
+function formatProviderLabel(id: string): string {
+  const MAP: Record<string, string> = {
+    openrouter: 'OpenRouter',
+    openai: 'OpenAI',
+    anthropic: 'Anthropic',
+    ollama: 'Ollama',
+    lmstudio: 'LM Studio',
+  }
+  return MAP[id] || id.charAt(0).toUpperCase() + id.slice(1)
+}
+
+const ROLES: DashboardRole[] = ['generation', 'improvement', 'vision', 'general']
+
 export function Dashboard({
-  activeGen,
-  activeImprove,
-  activeVision,
-  activeResearch,
   onConfigure,
   configuredCount,
-  keys,
-  localEndpoints,
-  dynamicModels,
   setDynamicModels,
-  onRefreshData,
   getToken,
   providerOptions,
   modelsByProvider,
@@ -59,162 +92,143 @@ export function Dashboard({
 }: DashboardProps) {
   void setDynamicModels
   void getToken
-  const modelGroups = Object.keys(dynamicModels).length
+
+  const isActive = configuredCount > 0
+
+  function handleSave() {
+    toast.success('Configuration saved')
+  }
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-2xl space-y-6">
+
+      {/* Page header */}
       <div>
-        <h1 className="text-2xl font-semibold text-white tracking-tight">AI Config</h1>
-        <p className="text-sm text-night-400 mt-1">Dashboard met actieve providers en model-caches.</p>
+        <div className="flex items-center gap-2.5 mb-1">
+          <Settings className="w-6 h-6 text-white" />
+          <h1 className="text-2xl font-bold text-white">Settings</h1>
+        </div>
+        <p className="text-sm text-night-400">Configure AI providers and models for different tasks</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatusCard title="Generation" value={formatProvider(activeGen)} />
-        <StatusCard title="Improve" value={formatProvider(activeImprove)} />
-        <StatusCard title="Vision" value={formatProvider(activeVision)} />
-        <StatusCard title="Research" value={formatProvider(activeResearch)} />
-      </div>
+      {/* AI Configuration card */}
+      <div className="card p-6">
 
-      <div className="card p-5 flex flex-wrap items-center gap-3">
-        <button className="btn-primary" onClick={onConfigure}>Open configuratie wizard</button>
-        <button className="btn-ghost border border-night-600/50" onClick={onRefreshData}>Refresh data</button>
-        <span className="text-xs text-night-500">Geconfigureerde bronnen: {configuredCount}</span>
-        <span className="text-xs text-night-500">Modelgroepen in cache: {modelGroups}</span>
-      </div>
-
-      <div className="card p-5 space-y-4">
-        <div>
-          <h2 className="text-sm font-semibold text-white">Role Routing</h2>
-          <p className="text-xs text-night-400 mt-1">Select provider, model, and enabled state for generation, improvement, vision, and general advice.</p>
+        {/* Card header */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-base font-semibold text-white">AI Configuration</h2>
+          <span
+            className={`text-xs px-3 py-0.5 rounded-full font-medium ${
+              isActive
+                ? 'bg-indigo-600 text-white'
+                : 'bg-night-700 text-night-400'
+            }`}
+          >
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
         </div>
 
-        <div className="grid gap-3">
-          <RoleRouteRow
-            role="generation"
-            label="Generation"
-            value={roleRouting.generation}
-            providerOptions={providerOptions}
-            modelOptions={modelsByProvider[roleRouting.generation.providerId] || []}
-            onChange={onChangeRoleRouting}
-          />
-          <RoleRouteRow
-            role="improvement"
-            label="Improvement"
-            value={roleRouting.improvement}
-            providerOptions={providerOptions}
-            modelOptions={modelsByProvider[roleRouting.improvement.providerId] || []}
-            onChange={onChangeRoleRouting}
-          />
-          <RoleRouteRow
-            role="vision"
-            label="Vision"
-            value={roleRouting.vision}
-            providerOptions={providerOptions}
-            modelOptions={modelsByProvider[roleRouting.vision.providerId] || []}
-            onChange={onChangeRoleRouting}
-          />
-          <RoleRouteRow
-            role="general"
-            label="General"
-            value={roleRouting.general}
-            providerOptions={providerOptions}
-            modelOptions={modelsByProvider[roleRouting.general.providerId] || []}
-            onChange={onChangeRoleRouting}
-          />
-        </div>
-      </div>
+        {/* Role rows */}
+        <div className="space-y-0">
+          {ROLES.map((role, index) => {
+            const meta = ROLE_META[role]
+            const routing = roleRouting[role]
+            const models = modelsByProvider[routing.providerId] || []
+            const isLast = index === ROLES.length - 1
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="card p-5">
-          <h2 className="text-sm font-semibold text-white mb-3">API Keys</h2>
-          {keys.length === 0 && <p className="text-xs text-night-500">Nog geen API keys opgeslagen.</p>}
-          <div className="space-y-2">
-            {keys.map((key) => (
-              <div key={key.id} className="rounded-lg border border-night-600/50 p-3 bg-night-900/40">
-                <p className="text-sm text-night-100">{key.provider}</p>
-                <p className="text-xs text-night-400">{key.apiKeyMasked}</p>
-                <p className="text-xs text-night-500">Model: {key.model_name}</p>
+            return (
+              <div key={role}>
+                <div className="flex gap-4 items-start py-1">
+
+                  {/* Icon */}
+                  <div
+                    className={`mt-0.5 w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center text-white ${meta.iconBg}`}
+                  >
+                    {meta.icon}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 space-y-3 min-w-0">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{meta.label}</p>
+                      <p className="text-xs text-night-400">{meta.description}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Provider */}
+                      <div>
+                        <label className="block text-xs text-night-400 mb-1.5">Provider</label>
+                        <select
+                          className="input w-full"
+                          value={routing.providerId}
+                          onChange={(event) =>
+                            onChangeRoleRouting(role, { providerId: event.target.value, modelId: '' })
+                          }
+                          aria-label={`${meta.label} provider`}
+                        >
+                          {providerOptions.length === 0 ? (
+                            <option value="">No providers configured</option>
+                          ) : (
+                            providerOptions.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {formatProviderLabel(p.label || p.id)}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
+                      {/* Model */}
+                      <div>
+                        <label className="block text-xs text-night-400 mb-1.5">Model</label>
+                        <select
+                          className="input w-full"
+                          value={routing.modelId}
+                          onChange={(event) =>
+                            onChangeRoleRouting(role, { modelId: event.target.value })
+                          }
+                          aria-label={`${meta.label} model`}
+                        >
+                          {models.length === 0 ? (
+                            <option value="">No models available</option>
+                          ) : (
+                            models.map((m) => (
+                              <option key={m} value={m}>{m}</option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {!isLast && <div className="my-4 border-b border-night-700/50" />}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card p-5">
-          <h2 className="text-sm font-semibold text-white mb-3">Local Endpoints</h2>
-          {localEndpoints.length === 0 && <p className="text-xs text-night-500">Nog geen lokale endpoint toegevoegd.</p>}
-          <div className="space-y-2">
-            {localEndpoints.map((endpoint) => (
-              <div key={endpoint.id} className="rounded-lg border border-night-600/50 p-3 bg-night-900/40">
-                <p className="text-sm text-night-100">{endpoint.name}</p>
-                <p className="text-xs text-night-400">{endpoint.baseUrl}</p>
-                <p className="text-xs text-night-500">Model: {endpoint.model_name}</p>
-              </div>
-            ))}
-          </div>
+            )
+          })}
         </div>
       </div>
-    </div>
-  )
-}
 
-function RoleRouteRow({
-  role,
-  label,
-  value,
-  providerOptions,
-  modelOptions,
-  onChange,
-}: {
-  role: DashboardRole
-  label: string
-  value: RoleRouteSelection
-  providerOptions: ProviderOption[]
-  modelOptions: string[]
-  onChange: (role: DashboardRole, patch: Partial<RoleRouteSelection>) => void
-}) {
-  return (
-    <div className="rounded-lg border border-night-600/50 p-3 bg-night-900/40 grid gap-3 md:grid-cols-[140px_120px_1fr_1fr] md:items-center">
-      <p className="text-sm text-night-100 font-medium">{label}</p>
+      {/* Action row */}
+      <div className="flex gap-3">
+        <button
+          className="flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-xl text-sm font-semibold text-white
+            bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 transition-all duration-200"
+          onClick={handleSave}
+        >
+          <Save className="w-4 h-4" />
+          Save Configuration
+        </button>
 
-      <label className="inline-flex items-center gap-2 text-xs text-night-300">
-        <input
-          type="checkbox"
-          checked={value.enabled}
-          onChange={(event) => onChange(role, { enabled: event.target.checked })}
-        />
-        Enabled
-      </label>
-
-      <select
-        className="input"
-        value={value.providerId}
-        onChange={(event) => onChange(role, { providerId: event.target.value, modelId: '' })}
-        aria-label={`${label} provider`}
-      >
-        {providerOptions.map((provider) => (
-          <option key={provider.id} value={provider.id}>{provider.label}</option>
-        ))}
-      </select>
-
-      <select
-        className="input"
-        value={value.modelId}
-        onChange={(event) => onChange(role, { modelId: event.target.value })}
-        aria-label={`${label} model`}
-      >
-        {modelOptions.map((model) => (
-          <option key={model} value={model}>{model}</option>
-        ))}
-      </select>
-    </div>
-  )
-}
-
-function StatusCard({ title, value }: { title: string; value: string }) {
-  return (
-    <div className="card p-4">
-      <p className="text-[11px] text-night-500 uppercase tracking-wide">{title}</p>
-      <p className="text-sm text-night-100 mt-1">{value}</p>
+        <button
+          className="px-4 py-3 rounded-xl text-sm font-medium text-night-300 border border-night-600/60
+            hover:bg-night-700/40 hover:text-white transition-all duration-200"
+          onClick={onConfigure}
+          title="Open configuration wizard"
+        >
+          Manage Providers
+        </button>
+      </div>
     </div>
   )
 }
