@@ -97,28 +97,38 @@ export default function Generator() {
     setStatus(null)
     setLoading(true)
 
-    const result = await window.electronAPI.generator.magicRandom({
-      theme: theme.trim() || undefined,
-      presetName: selectedPreset || undefined,
-      greylistEnabled,
-      greylistWords,
-    })
-    setLoading(false)
+    try {
+      const result = await window.electronAPI.generator.magicRandom({
+        theme: theme.trim() || undefined,
+        presetName: selectedPreset || undefined,
+        greylistEnabled,
+        greylistWords,
+      })
 
-    if (result.error) {
-      setStatus(result.error)
-      return
-    }
+      if (!result) {
+        setStatus('Error: Generator returned an empty response.')
+        return
+      }
 
-    if (!result.data) {
-      setStatus('Error: Generator returned no data.')
-      return
-    }
+      if (result.error) {
+        setStatus(result.error)
+        return
+      }
 
-    setGeneratedPrompt(result.data.prompt)
-    if (!savedTitle.trim()) {
-      const stamp = new Date().toLocaleString()
-      setSavedTitle(`Magic Prompt ${stamp}`)
+      if (!result.data) {
+        setStatus('Error: Generator returned no data.')
+        return
+      }
+
+      setGeneratedPrompt(result.data.prompt)
+      if (!savedTitle.trim()) {
+        const stamp = new Date().toLocaleString()
+        setSavedTitle(`Magic Prompt ${stamp}`)
+      }
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Error: Failed to generate prompt.')
+    } finally {
+      setLoading(false)
     }
   }
 

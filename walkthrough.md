@@ -305,3 +305,9 @@
 - Findings: Model pricing display used mixed precision (`toFixed(2)` for larger values and `toFixed(4)` for smaller values), causing inconsistent UI formatting.
 - Conclusions: Pricing should always render with exactly two decimals (e.g., `7.15`) for consistent readability.
 - Actions: Updated price-per-million format helpers in `src/screens/AIConfig.tsx`, `src/screens/Settings/ProviderConfigForm.tsx`, and `src/components/ModelSelector.tsx` to always use `toFixed(2)`; verified with `npm run build`.
+
+## 2026-03-13 (Generator Runtime Error Guard)
+
+- Findings: Clicking generate could throw `TypeError: Cannot read properties of undefined (reading 'error')` in `handleGenerate` when IPC response was undefined/unexpected.
+- Conclusions: Generator flow needs defensive handling around IPC calls to avoid renderer crashes on malformed or missing responses.
+- Actions: Updated `src/screens/Generator.tsx` `handleGenerate` with `try/catch/finally`, added explicit guard for empty result before reading `result.error`, and preserved status feedback paths; verified with `npm run build`.
