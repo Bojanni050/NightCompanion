@@ -102,6 +102,8 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
   function onInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (!isOpen && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       setIsOpen(true)
+      setQuery('')
+      setHighlightedIndex(0)
       return
     }
 
@@ -140,7 +142,11 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
         className="input w-full"
         value={query}
         placeholder={placeholder || 'Search model...'}
-        onFocus={() => setIsOpen(true)}
+        onFocus={() => {
+          setIsOpen(true)
+          setQuery('')
+          setHighlightedIndex(0)
+        }}
         onChange={(event) => {
           setQuery(event.target.value)
           setIsOpen(true)

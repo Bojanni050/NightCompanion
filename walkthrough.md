@@ -239,3 +239,9 @@
 - Findings: User requested explicit control over model sorting (cheap-first vs alphabetical) in addition to autocomplete search.
 - Conclusions: A compact toggle in the model-selection header is the simplest UX and should drive sorting consistently for all three role selectors.
 - Actions: Updated `src/screens/Settings/ProviderConfigForm.tsx` with `Cheapest` / `Alphabetical` toggle state and UI, and passed `sortMode` into each `ModelSelector`; updated `src/components/ModelSelector.tsx` to support `sortMode` and sort filtered options accordingly before rendering.
+
+## 2026-03-13 (Model Dropdown Showing Only One Option Fix)
+
+- Findings: Searchable model dropdown opened with query prefilled to selected model label, so filter reduced options to only the selected model.
+- Conclusions: Opening the dropdown should reset query state so users start from the full model list.
+- Actions: Updated `src/components/ModelSelector.tsx` to clear query and reset highlight index when opening via focus or arrow-key open path, restoring full options visibility.
