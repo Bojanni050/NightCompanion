@@ -23,6 +23,7 @@ Construct your prompts using the following elements, blending them seamlessly in
 STRICT FORMATTING RULE: Output ONLY the final prompt text. Do NOT use bullet points, line breaks, labels (like 'Subject:'), or introductory/concluding remarks. The output must be a single, flowing descriptive paragraph.`
 
 const IMPROVE_INSTRUCTION = `Analyze the following basic concept and elevate it into a professional, highly detailed prompt following all your persona rules. Expand on missing elements (such as style, lighting, and composition) while strictly preserving the original intent.`
+const IMPROVE_NEGATIVE_INSTRUCTION = `Improve the following negative prompt for AI image generation. Keep it concise, high-signal, comma-separated, and focused on common visual defects and unwanted artifacts. Remove duplicates, keep original intent, and return only the final negative prompt text.`
 
 const TITLE_SYSTEM_INSTRUCTION = `You generate concise, descriptive library titles for AI art prompts. ${LANGUAGE_INSTRUCTION} Return only the final title text with no quotes, no labels, and no extra commentary. Keep it under ${TITLE_MAX_LENGTH} characters and aim for 4 to 10 words.`
 
@@ -335,6 +336,165 @@ export function registerAiIpc({
           timestamp: new Date().toISOString(),
           requestId,
           endpoint: 'generator:improvePrompt',
+          provider: requestProvider,
+          model: requestModel,
+          durationMs: Date.now() - startedAt,
+          status: responseStatus,
+          requestPayload,
+          responsePrompt: resultPrompt || null,
+          error: errorMessage,
+        })
+      } catch (loggingError) {
+        console.error('Failed to write AI request log:', loggingError)
+      }
+    }
+  })
+
+  ipcMain.handle('generator:improveNegativePrompt', async (_, input?: { negativePrompt?: string }) => {
+    const requestId = crypto.randomUUID()
+    const startedAt = Date.now()
+    let requestModel = ''
+    let requestProvider = ''
+    let requestPayload: Record<string, unknown> | null = null
+    let responseStatus: number | null = null
+    let resultPrompt = ''
+    let errorMessage: string | null = null
+
+    try {
+      const negativePrompt = input?.negativePrompt?.trim() || ''
+      if (!negativePrompt) return { error: 'No negative prompt to improve.' }
+
+      const stored = await readStoredSettings()
+      const roleRouting = stored.aiConfig?.dashboardRoleRouting
+      const improveRoute = typeof roleRouting === 'object' && roleRouting !== null
+        ? (roleRouting as Record<string, unknown>).improvement
+        : undefined
+
+      const providerId = typeof improveRoute === 'object' && improveRoute !== null
+        ? String((improveRoute as Record<string, unknown>).providerId || '')
+        : ''
+      const modelId = typeof improveRoute === 'object' && improveRoute !== null
+        ? String((improveRoute as Record<string, unknown>).modelId || '')
+        : ''
+
+      if (!providerId || !modelId) {
+        return { error: 'No improvement model is selected. Set it in AI Configuration → Improvement.' }
+      }
+
+      requestProvider = providerId
+      requestModel = modelId
+
+      if (providerId === 'openrouter') {
+        const settings = await getOpenRouterSettings()
+        if (!settings.apiKey) {
+          return { error: 'OpenRouter API key is missing. Add it in Settings first.' }
+        }
+
+        requestPayload = {
+          model: modelId,
+          temperature: 0.4,
+          max_tokens: 220,
+          messages: [
+            {
+              role: 'system',
+              content: LANGUAGE_INSTRUCTION,
+            },
+            {
+              role: 'user',
+              content: `${IMPROVE_NEGATIVE_INSTRUCTION}\n\n${negativePrompt}`,
+            },
+          ],
+        }
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${settings.apiKey}`,
+            'Content-Type': 'application/json',
+            ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
+            ...(settings.appName ? { 'X-Title': settings.appName } : {}),
+          },
+          body: JSON.stringify(requestPayload),
+        })
+
+        responseStatus = response.status
+
+        if (!response.ok) {
+          const errText = await response.text()
+          throw new Error(`OpenRouter request failed (${response.status}): ${errText.slice(0, 300)}`)
+        }
+
+        const payload = (await response.json()) as {
+          choices?: Array<{ message?: { content?: string } }>
+        }
+
+        const improved = payload.choices?.[0]?.message?.content?.trim()
+        if (!improved) throw new Error('No improved negative prompt content returned.')
+
+        resultPrompt = improved
+        return { data: { negativePrompt: improved } }
+      }
+
+      const localEndpointsRaw = stored.localEndpoints
+      const localEndpoints = Array.isArray(localEndpointsRaw)
+        ? (localEndpointsRaw as Array<Record<string, unknown>>)
+        : []
+      const endpoint = localEndpoints.find((item) => String(item.provider || '') === providerId)
+      const baseUrl = endpoint && typeof endpoint.baseUrl === 'string' ? endpoint.baseUrl : ''
+      if (!baseUrl) {
+        return { error: `Local provider "${providerId}" is not configured. Set its Base URL in AI Configuration → Configure Providers.` }
+      }
+
+      requestPayload = {
+        model: modelId,
+        temperature: 0.4,
+        max_tokens: 220,
+        messages: [
+          {
+            role: 'system',
+            content: LANGUAGE_INSTRUCTION,
+          },
+          {
+            role: 'user',
+            content: `${IMPROVE_NEGATIVE_INSTRUCTION}\n\n${negativePrompt}`,
+          },
+        ],
+      }
+
+      const response = await fetch(`${normalizeBaseUrl(baseUrl)}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestPayload),
+      })
+
+      responseStatus = response.status
+
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(`Local AI request failed (${response.status}): ${errText.slice(0, 300)}`)
+      }
+
+      const payload = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>
+      }
+
+      const improved = payload.choices?.[0]?.message?.content?.trim()
+      if (!improved) throw new Error('No improved negative prompt content returned.')
+
+      resultPrompt = improved
+      return { data: { negativePrompt: improved } }
+    } catch (error) {
+      errorMessage = String(error)
+      return { error: String(error) }
+    } finally {
+      try {
+        const loggingEnabled = await getAiApiRequestLoggingEnabled()
+        if (loggingEnabled) await appendAiRequestLog({
+          timestamp: new Date().toISOString(),
+          requestId,
+          endpoint: 'generator:improveNegativePrompt',
           provider: requestProvider,
           model: requestModel,
           durationMs: Date.now() - startedAt,

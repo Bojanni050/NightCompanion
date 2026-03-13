@@ -348,6 +348,18 @@
 - Findings: Editing a prompt overwrote previous content with no built-in revision history.
 - Conclusions: A lightweight snapshot-per-update model provides useful history with minimal UX complexity.
 - Actions: Added `prompt_versions` table in `src/lib/schema.ts` and migration `drizzle/0010_prompt_versions.sql` (+ journal update); updated `electron/ipc/prompts.ts` so every `prompts:update` first snapshots current prompt into `prompt_versions` with incrementing `version_number`; added `prompts:listVersions` IPC endpoint and typings in preload/renderer declarations; updated `src/components/PromptForm.tsx` edit mode to show recent history and allow one-click restore into the form before saving.
+
+## 2026-03-13 (Generator Negative Prompt + Improve)
+
+- Findings: Generator page had no dedicated negative prompt field and no AI improvement flow for negative prompts.
+- Conclusions: Adding a persistent negative prompt textarea with a separate improve action allows faster iteration while keeping positive/negative flows independent.
+- Actions: Updated `src/screens/Generator.tsx` with `negativePrompt` state, persistence in `generatorUiState`, clear/reset behavior, UI textarea, and `Improve Negative Prompt` action; updated save-to-library to store entered negative prompt; added IPC endpoint `generator:improveNegativePrompt` in `electron/ipc/ai.ts` with dedicated instruction for concise comma-separated negative prompts; exposed new method via `electron/preload.ts` and `src/types/electron.d.ts`.
+
+## 2026-03-13 (Negative Prompt Diff View Tabs)
+
+- Findings: User requested a diff/final comparison UX for negative prompt improvements as well.
+- Conclusions: Reusing the existing diff viewer component with a dedicated negative tab state keeps UX consistent with positive prompt improvements.
+- Actions: Updated `src/screens/Generator.tsx` to track `negativeImprovementDiff` and `negativePromptViewTab`, show `Diff View` / `Final Result` tabs after improving negative prompt, render `PromptDiffView` for comparison, and persist this UI state in `generatorUiState`.
 - Actions: Refactored `src/screens/Generator.tsx` to extract a reusable `greylistCard`, render it next to the preset card in a responsive 2-column grid (`xl:grid-cols-2`) for the generator tab, and keep the same greylist card above Prompt Builder in builder mode.
 
 ## 2026-03-13 (Generator Layout Breakpoint to LG)

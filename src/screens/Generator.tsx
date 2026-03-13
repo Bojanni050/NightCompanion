@@ -26,12 +26,19 @@ type PresetOption = {
 }
 
 type PromptViewTab = 'final' | 'diff'
+type NegativePromptViewTab = 'final' | 'diff'
 
 type GeneratorPersistedState = {
   tab?: 'generator' | 'builder'
   selectedPreset?: string
   maxWords?: number
   generatedPrompt?: string
+  negativePrompt?: string
+  negativePromptViewTab?: NegativePromptViewTab
+  negativeImprovementDiff?: {
+    originalPrompt: string
+    improvedPrompt: string
+  } | null
   savedTitle?: string
   promptViewTab?: PromptViewTab
   improvementDiff?: {
@@ -54,11 +61,15 @@ export default function Generator() {
   const [selectedPreset, setSelectedPreset] = useState('')
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS)
   const [generatedPrompt, setGeneratedPrompt] = useState('')
+  const [negativePrompt, setNegativePrompt] = useState('')
   const [improvementDiff, setImprovementDiff] = useState<{ originalPrompt: string; improvedPrompt: string } | null>(null)
+  const [negativeImprovementDiff, setNegativeImprovementDiff] = useState<{ originalPrompt: string; improvedPrompt: string } | null>(null)
   const [promptViewTab, setPromptViewTab] = useState<PromptViewTab>('final')
+  const [negativePromptViewTab, setNegativePromptViewTab] = useState<NegativePromptViewTab>('final')
   const [status, setStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [improving, setImproving] = useState(false)
+  const [improvingNegative, setImprovingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
   const [savedTitle, setSavedTitle] = useState('')
   const [greylistEnabled, setGreylistEnabled] = useState(true)
@@ -87,8 +98,11 @@ export default function Generator() {
     setSelectedPreset('')
     setMaxWords(DEFAULT_MAX_WORDS)
     setGeneratedPrompt('')
+    setNegativePrompt('')
     setImprovementDiff(null)
+    setNegativeImprovementDiff(null)
     setPromptViewTab('final')
+    setNegativePromptViewTab('final')
     setStatus(null)
     setSavedTitle('')
   }
@@ -124,19 +138,26 @@ export default function Generator() {
         : DEFAULT_MAX_WORDS
       setMaxWords(persistedMaxWords)
       setGeneratedPrompt(parsed.generatedPrompt ?? '')
+      setNegativePrompt(parsed.negativePrompt ?? '')
+      setNegativeImprovementDiff(parsed.negativeImprovementDiff ?? null)
       setSavedTitle(parsed.savedTitle ?? '')
       setImprovementDiff(parsed.improvementDiff ?? null)
 
       const nextPromptViewTab = parsed.promptViewTab === 'diff' && parsed.improvementDiff ? 'diff' : 'final'
       setPromptViewTab(nextPromptViewTab)
+      const nextNegativePromptViewTab = parsed.negativePromptViewTab === 'diff' && parsed.negativeImprovementDiff ? 'diff' : 'final'
+      setNegativePromptViewTab(nextNegativePromptViewTab)
     } catch {
       setTab('generator')
       setSelectedPreset('')
       setMaxWords(DEFAULT_MAX_WORDS)
       setGeneratedPrompt('')
+      setNegativePrompt('')
       setSavedTitle('')
       setImprovementDiff(null)
+      setNegativeImprovementDiff(null)
       setPromptViewTab('final')
+      setNegativePromptViewTab('final')
     }
   }, [])
 
@@ -147,6 +168,9 @@ export default function Generator() {
         selectedPreset,
         maxWords,
         generatedPrompt,
+        negativePrompt,
+        negativePromptViewTab,
+        negativeImprovementDiff,
         savedTitle,
         promptViewTab,
         improvementDiff,
@@ -154,7 +178,7 @@ export default function Generator() {
     } catch (e) {
       console.error('Failed to save generator state to localStorage:', e)
     }
-  }, [tab, selectedPreset, maxWords, generatedPrompt, savedTitle, promptViewTab, improvementDiff])
+  }, [tab, selectedPreset, maxWords, generatedPrompt, negativePrompt, negativePromptViewTab, negativeImprovementDiff, savedTitle, promptViewTab, improvementDiff])
 
   useEffect(() => {
     const stored = localStorage.getItem('generatorGreylist')
@@ -217,7 +241,9 @@ export default function Generator() {
 
       setGeneratedPrompt(nextPrompt)
       setImprovementDiff(null)
+      setNegativeImprovementDiff(null)
       setPromptViewTab('final')
+      setNegativePromptViewTab('final')
       setSavedTitle((currentTitle) => {
         const trimmedTitle = currentTitle.trim()
         if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
@@ -325,13 +351,57 @@ export default function Generator() {
     }
   }
 
+  const handleImproveNegative = async () => {
+    if (!negativePrompt.trim()) {
+      setStatus('Nothing to improve yet in negative prompt.')
+      return
+    }
+
+    setStatus(null)
+    setImprovingNegative(true)
+
+    try {
+      const result = await window.electronAPI.generator.improveNegativePrompt({
+        negativePrompt,
+      })
+
+      if (!result) {
+        setStatus('Error: Negative improver returned an empty response.')
+        return
+      }
+
+      if (result.error) {
+        setStatus(result.error)
+        return
+      }
+
+      if (!result.data?.negativePrompt) {
+        setStatus('Error: Negative improver returned no data.')
+        return
+      }
+
+      const previousNegativePrompt = negativePrompt
+      setNegativePrompt(result.data.negativePrompt)
+      setNegativeImprovementDiff({
+        originalPrompt: previousNegativePrompt,
+        improvedPrompt: result.data.negativePrompt,
+      })
+      setNegativePromptViewTab('diff')
+      setStatus('Negative prompt improved.')
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Error: Failed to improve negative prompt.')
+    } finally {
+      setImprovingNegative(false)
+    }
+  }
+
   const handleSaveToLibrary = async () => {
     if (!generatedPrompt || !savedTitle.trim()) return
 
     const result = await window.electronAPI.prompts.create({
       title: savedTitle.trim(),
       promptText: generatedPrompt,
-      negativePrompt: '',
+      negativePrompt,
       model: '',
       notes: 'Generated with Magic Random (AI)',
       tags: ['ai-random'],
@@ -512,6 +582,64 @@ export default function Generator() {
                 placeholder="Your generated prompt will appear here."
               />
 
+              <div className="mt-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-semibold text-night-200 uppercase tracking-wide">Negative Prompt</h3>
+                  <span className="text-[10px] text-night-500">{negativePrompt.length} characters</span>
+                </div>
+                <textarea
+                  className="textarea mt-2 min-h-24"
+                  value={negativePrompt}
+                  onChange={(e) => setNegativePrompt(e.target.value)}
+                  placeholder="Things to avoid (e.g. blurry, watermark, deformed hands)…"
+                />
+                <div className="mt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleImproveNegative}
+                    disabled={!negativePrompt.trim() || loading || improving || improvingNegative}
+                    className="btn-ghost border border-night-600/50"
+                  >
+                    {improvingNegative ? 'Improving negative...' : 'Improve Negative Prompt'}
+                  </button>
+                </div>
+
+                {negativeImprovementDiff && (
+                  <div className="mt-3 rounded-xl border border-night-600/50 bg-night-900/30 p-3">
+                    <div className="inline-flex rounded-lg border border-night-600/50 bg-night-900/40 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setNegativePromptViewTab('diff')}
+                        className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+                      >
+                        Diff View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setNegativePromptViewTab('final')}
+                        className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+                      >
+                        Final Result
+                      </button>
+                    </div>
+
+                    {negativePromptViewTab === 'diff' ? (
+                      <PromptDiffView
+                        originalPrompt={negativeImprovementDiff.originalPrompt}
+                        improvedPrompt={negativeImprovementDiff.improvedPrompt}
+                      />
+                    ) : (
+                      <textarea
+                        className="textarea mt-3 min-h-24"
+                        value={negativeImprovementDiff.improvedPrompt}
+                        readOnly
+                        placeholder="Improved negative prompt result"
+                      />
+                    )}
+                  </div>
+                )}
+              </div>
+
               {improvementDiff && (
                 <div className="mt-4 rounded-xl border border-night-600/50 bg-night-900/30 p-3">
                   <div className="inline-flex rounded-lg border border-night-600/50 bg-night-900/40 p-1">
@@ -559,7 +687,7 @@ export default function Generator() {
                   <button
                     type="button"
                     onClick={handleGenerateTitle}
-                    disabled={!generatedPrompt.trim() || loading || improving || generatingTitle}
+                    disabled={!generatedPrompt.trim() || loading || improving || improvingNegative || generatingTitle}
                     className="btn-ghost border border-night-600/50"
                   >
                     {generatingTitle ? 'Generating title...' : 'Generate Title (AI)'}
@@ -584,7 +712,7 @@ export default function Generator() {
                 <button
                   type="button"
                   onClick={handleImprove}
-                  disabled={!generatedPrompt.trim() || loading || improving}
+                  disabled={!generatedPrompt.trim() || loading || improving || improvingNegative}
                   className="btn-ghost border border-night-600/50"
                 >
                   {improving ? 'Improving...' : 'Improve Prompt'}
