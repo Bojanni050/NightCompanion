@@ -3,6 +3,7 @@ export type { Prompt, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry,
 
 export type Screen =
   | 'dashboard'
+  | 'ai-config'
   | 'library'
   | 'characters'
   | 'style-profiles'

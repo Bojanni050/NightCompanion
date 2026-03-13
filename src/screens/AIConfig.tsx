@@ -197,7 +197,6 @@ export function AIConfig() {
   const [loading, setLoading] = useState(true)
   const [roleRouting, setRoleRouting] = useState<RoleRouteState>(buildRoleDefaults)
   const [dynamicModels, setDynamicModels] = useState<Record<string, ModelOption[]>>({})
-  const [aiApiRequestLoggingEnabled, setAiApiRequestLoggingEnabled] = useState(false)
   const [aiConfigHydrated, setAiConfigHydrated] = useState(false)
 
   const getToken = useCallback(async () => 'local-desktop-token', [])
@@ -205,7 +204,6 @@ export function AIConfig() {
   const hydrateAiConfigState = useCallback(async () => {
     let nextRoleRouting = buildRoleDefaults()
     let nextDynamicModels: Record<string, ModelOption[]> = {}
-    let nextAiApiRequestLoggingEnabled = false
 
     const storedResult = await window.electronAPI.settings.getAiConfigState()
     if (!storedResult.error && storedResult.data) {
@@ -220,9 +218,6 @@ export function AIConfig() {
         nextDynamicModels = storedDynamicModels
       }
 
-      if (typeof storedResult.data.aiApiRequestLoggingEnabled === 'boolean') {
-        nextAiApiRequestLoggingEnabled = storedResult.data.aiApiRequestLoggingEnabled
-      }
     }
 
     try {
@@ -259,7 +254,6 @@ export function AIConfig() {
 
     setRoleRouting(nextRoleRouting)
     setDynamicModels(nextDynamicModels)
-    setAiApiRequestLoggingEnabled(nextAiApiRequestLoggingEnabled)
     setAiConfigHydrated(true)
   }, [])
 
@@ -272,12 +266,11 @@ export function AIConfig() {
         dashboardRoleRouting: roleRouting,
         cachedModels: dynamicModels,
         advisorModelRoute: roleRouting.general,
-        aiApiRequestLoggingEnabled,
       })
     }
 
     void persist()
-  }, [roleRouting, dynamicModels, aiApiRequestLoggingEnabled, aiConfigHydrated])
+  }, [roleRouting, dynamicModels, aiConfigHydrated])
 
   const migrateLegacyProviderMeta = useCallback(async () => {
     try {
@@ -592,8 +585,6 @@ export function AIConfig() {
           modelsByProvider={modelsByProvider}
           roleRouting={roleRouting}
           onChangeRoleRouting={updateRoleRouting}
-          aiApiRequestLoggingEnabled={aiApiRequestLoggingEnabled}
-          onToggleAiApiRequestLogging={setAiApiRequestLoggingEnabled}
         />
       ) : (
         <ConfigurationWizard

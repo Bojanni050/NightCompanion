@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Dashboard from './screens/Dashboard'
+import AIConfig from './screens/AIConfig'
 import Library from './screens/Library'
 import Characters from './screens/Characters'
 import StyleProfiles from './screens/StyleProfiles'
@@ -23,6 +24,7 @@ export default function App() {
       <main className="flex-1 overflow-hidden">
         <div className="animate-fade-in h-full">
           {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
+          {screen === 'ai-config' && <AIConfig />}
           {screen === 'library' && <Library />}
           {screen === 'characters' && <Characters />}
           {screen === 'style-profiles' && <StyleProfiles />}
