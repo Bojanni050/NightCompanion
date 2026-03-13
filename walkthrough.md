@@ -318,6 +318,24 @@
 - Findings: Runtime normalization prevented malformed config usage in memory, but the underlying `settings.json` file could remain stale/corrupt in structure.
 - Conclusions: If parsed settings differ from normalized settings, the cleaned version should be persisted immediately to prevent repeated normalization and future drift.
 - Actions: Updated `readStoredSettings()` in `electron/ipc/settings.ts` to compare parsed vs normalized settings and automatically rewrite `settings.json` with normalized content when differences are detected.
+
+## 2026-03-13 (Self-Heal Logging)
+
+- Findings: User requested explicit visibility when self-healing rewrite occurs.
+- Conclusions: A small informational log line is enough for diagnostics without changing behavior.
+- Actions: Added `console.info('[settings] settings.json normalized and rewritten to disk')` in `electron/ipc/settings.ts` immediately after successful self-heal write-back.
+
+## 2026-03-13 (main.ts Modularization)
+
+- Findings: `electron/main.ts` mixed database bootstrap, migration execution, window creation, and app orchestration in a single large file.
+- Conclusions: Moving bootstrap and window concerns into dedicated modules improves maintainability while preserving startup flow.
+- Actions: Added `electron/services/databaseBootstrap.ts` (exports `ensurePostgresAndDatabase`, `runMigrations`, `formatErrorMessage`) and `electron/services/windowManager.ts` (exports `createMainWindow`); refactored `electron/main.ts` to orchestrate only (session path setup, db client init, startup sequence, IPC registration, lifecycle hooks); validated with `npm run build` and `npm run db:migrate`.
+
+## 2026-03-13 (Session/GPU Setup Extracted)
+
+- Findings: `main.ts` still contained inline app environment setup (`sessionData` path and GPU shader disk cache switch).
+- Conclusions: Extracting this into a dedicated service keeps `main.ts` slimmer and startup concerns better separated.
+- Actions: Added `electron/services/appEnvironment.ts` with `configureAppEnvironment()` and replaced inline setup in `electron/main.ts` with a single service call.
 - Actions: Refactored `src/screens/Generator.tsx` to extract a reusable `greylistCard`, render it next to the preset card in a responsive 2-column grid (`xl:grid-cols-2`) for the generator tab, and keep the same greylist card above Prompt Builder in builder mode.
 
 ## 2026-03-13 (Generator Layout Breakpoint to LG)

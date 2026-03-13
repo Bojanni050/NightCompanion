@@ -201,6 +201,7 @@ async function readStoredSettings(): Promise<StoredSettings> {
       const settingsPath = getSettingsFilePath()
       await mkdir(path.dirname(settingsPath), { recursive: true })
       await writeFile(settingsPath, JSON.stringify(normalized, null, 2), 'utf-8')
+      console.info('[settings] settings.json normalized and rewritten to disk')
     }
 
     return normalized
