@@ -27,9 +27,7 @@ function formatPerMillion(priceText: string | null | undefined): string | null {
   if (!Number.isFinite(parsed)) return null
 
   const perMillion = parsed * 1_000_000
-  if (perMillion >= 1) return `$${perMillion.toFixed(2)}`
-
-  return `$${perMillion.toFixed(4)}`
+  return `$${perMillion.toFixed(2)}`
 }
 
 function getCombinedPrice(model: Pick<ModelOption, 'promptPrice' | 'completionPrice'>): number {

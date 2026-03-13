@@ -299,3 +299,9 @@
 - Findings: Opening AI Configuration threw `ReferenceError: dynamicModels is not defined` from `src/screens/Settings/Dashboard.tsx` after dashboard/model-selector refactor.
 - Conclusions: `dynamicModels` was referenced inside `getRoleModelOptions` but omitted from Dashboard component prop destructuring.
 - Actions: Added `dynamicModels` back into `Dashboard` function prop destructuring in `src/screens/Settings/Dashboard.tsx`; verified with `npm run build`.
+
+## 2026-03-13 (Model Price Formatting: Fixed Two Decimals)
+
+- Findings: Model pricing display used mixed precision (`toFixed(2)` for larger values and `toFixed(4)` for smaller values), causing inconsistent UI formatting.
+- Conclusions: Pricing should always render with exactly two decimals (e.g., `7.15`) for consistent readability.
+- Actions: Updated price-per-million format helpers in `src/screens/AIConfig.tsx`, `src/screens/Settings/ProviderConfigForm.tsx`, and `src/components/ModelSelector.tsx` to always use `toFixed(2)`; verified with `npm run build`.
