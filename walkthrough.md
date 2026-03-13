@@ -260,6 +260,18 @@
 - Conclusions: Preset and greylist should share the same row in the Magic Random tab while preserving greylist controls for the Prompt Builder tab.
 - Actions: Refactored `src/screens/Generator.tsx` to extract a reusable `greylistCard`, render it next to the preset card in a responsive 2-column grid (`xl:grid-cols-2`) for the generator tab, and keep the same greylist card above Prompt Builder in builder mode.
 
+## 2026-03-13 (Generator Layout Breakpoint to LG)
+
+- Findings: User requested earlier side-by-side activation for preset + greylist on medium-large screens.
+- Conclusions: Changing the grid breakpoint from `xl` to `lg` improves layout density earlier without altering component behavior.
+- Actions: Updated `src/screens/Generator.tsx` generator controls grid class from `xl:grid-cols-2` to `lg:grid-cols-2`.
+
+## 2026-03-13 (Generator Layout Breakpoint to MD)
+
+- Findings: User requested the side-by-side preset + greylist layout to activate even earlier.
+- Conclusions: Switching from `lg` to `md` makes the 2-column controls available on medium widths while preserving stacked behavior on small screens.
+- Actions: Updated `src/screens/Generator.tsx` generator controls grid class from `lg:grid-cols-2` to `md:grid-cols-2`.
+
 - Findings: OpenRouter models were shown without description context, making selection harder when model names are similar.
 - Conclusions: Model descriptions should be fetched and displayed directly in the dropdown with compact preview and expandable full text.
 - Actions: Added `description` to `openrouter_models` schema (`src/lib/schema.ts`) and migration `drizzle/0007_openrouter_model_description.sql` (+ journal update); updated `electron/ipc/settings.ts`, `electron/preload.ts`, and `src/types/electron.d.ts` to parse/persist/expose model descriptions from OpenRouter `/models`; updated model mapping in `src/screens/Settings/ProviderConfigForm.tsx` and `src/screens/AIConfig.tsx` to carry `description` + `priceLabel`; updated `src/components/ModelSelector.tsx` to render `prijs | model` on first line, 2-line clamped description on second line, and `Lees meer`/`Lees minder` toggle per model.

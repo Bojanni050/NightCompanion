@@ -362,7 +362,7 @@ export default function Generator() {
 
         {tab === 'generator' ? (
           <>
-            <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
               <div className="card p-5">
                 <div>
                   <label htmlFor="generator-preset" className="label">NightCafe Preset</label>
