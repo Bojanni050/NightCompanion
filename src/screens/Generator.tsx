@@ -333,14 +333,6 @@ export default function Generator() {
                 </button>
                 <button
                   type="button"
-                  onClick={handleImprove}
-                  disabled={!generatedPrompt.trim() || loading || improving}
-                  className="btn-ghost border border-night-600/50"
-                >
-                  {improving ? 'Improving...' : 'Improve Prompt'}
-                </button>
-                <button
-                  type="button"
                   onClick={handleClearAll}
                   disabled={loading}
                   className="btn-ghost border border-night-600/50"
@@ -385,6 +377,17 @@ export default function Generator() {
                   {status}
                 </p>
               )}
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleImprove}
+                  disabled={!generatedPrompt.trim() || loading || improving}
+                  className="btn-ghost border border-night-600/50"
+                >
+                  {improving ? 'Improving...' : 'Improve Prompt'}
+                </button>
+              </div>
             </div>
           </>
         ) : (
