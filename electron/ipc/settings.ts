@@ -49,6 +49,7 @@ type LocalEndpointStore = {
 type OpenRouterModel = {
   modelId: string
   displayName: string
+  description: string
   contextLength: number | null
   promptPrice: string | null
   completionPrice: string | null
@@ -122,6 +123,7 @@ async function listOpenRouterModelsFromDb(db: Database) {
     .select({
       modelId: openRouterModels.modelId,
       displayName: openRouterModels.displayName,
+      description: openRouterModels.description,
       contextLength: openRouterModels.contextLength,
       promptPrice: openRouterModels.promptPrice,
       completionPrice: openRouterModels.completionPrice,
@@ -158,6 +160,7 @@ async function syncOpenRouterModels(db: Database, settings: OpenRouterSettings) 
     data?: Array<{
       id?: string
       name?: string
+      description?: string
       context_length?: number
       pricing?: {
         prompt?: string
@@ -176,6 +179,7 @@ async function syncOpenRouterModels(db: Database, settings: OpenRouterSettings) 
       return {
         modelId,
         displayName: item.name?.trim() || modelId,
+        description: item.description?.trim() || '',
         contextLength: typeof item.context_length === 'number' ? item.context_length : null,
         promptPrice: item.pricing?.prompt?.trim() || null,
         completionPrice: item.pricing?.completion?.trim() || null,
@@ -192,6 +196,7 @@ async function syncOpenRouterModels(db: Database, settings: OpenRouterSettings) 
       normalized.map((item) => ({
         modelId: item.modelId,
         displayName: item.displayName,
+        description: item.description,
         contextLength: item.contextLength,
         promptPrice: item.promptPrice,
         completionPrice: item.completionPrice,

@@ -245,3 +245,9 @@
 - Findings: Searchable model dropdown opened with query prefilled to selected model label, so filter reduced options to only the selected model.
 - Conclusions: Opening the dropdown should reset query state so users start from the full model list.
 - Actions: Updated `src/components/ModelSelector.tsx` to clear query and reset highlight index when opening via focus or arrow-key open path, restoring full options visibility.
+
+## 2026-03-13 (OpenRouter Dropdown With Model Descriptions + Lees Meer)
+
+- Findings: OpenRouter models were shown without description context, making selection harder when model names are similar.
+- Conclusions: Model descriptions should be fetched and displayed directly in the dropdown with compact preview and expandable full text.
+- Actions: Added `description` to `openrouter_models` schema (`src/lib/schema.ts`) and migration `drizzle/0007_openrouter_model_description.sql` (+ journal update); updated `electron/ipc/settings.ts`, `electron/preload.ts`, and `src/types/electron.d.ts` to parse/persist/expose model descriptions from OpenRouter `/models`; updated model mapping in `src/screens/Settings/ProviderConfigForm.tsx` and `src/screens/AIConfig.tsx` to carry `description` + `priceLabel`; updated `src/components/ModelSelector.tsx` to render `prijs | model` on first line, 2-line clamped description on second line, and `Lees meer`/`Lees minder` toggle per model.

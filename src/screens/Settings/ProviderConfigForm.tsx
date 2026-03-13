@@ -83,6 +83,18 @@ function buildOpenRouterModelLabel(input: {
   return `${input.displayName} (${prompt}/${completion} per 1M tok in/out)`
 }
 
+function buildOpenRouterPriceLabel(input: {
+  promptPrice: string | null
+  completionPrice: string | null
+}): string {
+  const prompt = formatPricePerMillion(input.promptPrice)
+  const completion = formatPricePerMillion(input.completionPrice)
+  if (!prompt || !completion)
+    return '—'
+
+  return `${prompt}/${completion}`
+}
+
 function getOpenRouterCombinedPrice(model: Pick<ModelOption, 'promptPrice' | 'completionPrice'>): number {
   const prompt = Number(model.promptPrice || '')
   const completion = Number(model.completionPrice || '')
@@ -207,6 +219,13 @@ export function ProviderConfigForm({
             promptPrice: item.promptPrice,
             completionPrice: item.completionPrice,
           }),
+          name: item.displayName,
+          displayName: item.displayName,
+          description: item.description,
+          priceLabel: buildOpenRouterPriceLabel({
+            promptPrice: item.promptPrice,
+            completionPrice: item.completionPrice,
+          }),
           provider: provider.id,
           capabilities: item.modelId.toLowerCase().includes('vision') ? ['vision'] : undefined,
           promptPrice: item.promptPrice,
@@ -315,6 +334,13 @@ export function ProviderConfigForm({
         id: item.modelId,
         label: buildOpenRouterModelLabel({
           displayName: item.displayName,
+          promptPrice: item.promptPrice,
+          completionPrice: item.completionPrice,
+        }),
+        name: item.displayName,
+        displayName: item.displayName,
+        description: item.description,
+        priceLabel: buildOpenRouterPriceLabel({
           promptPrice: item.promptPrice,
           completionPrice: item.completionPrice,
         }),

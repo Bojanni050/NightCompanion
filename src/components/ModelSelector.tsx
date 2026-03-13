@@ -34,6 +34,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(0)
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({})
 
   const sortedModels = useMemo(() => {
     return [...models].sort((first, second) => {
@@ -55,10 +56,11 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
     [sortedModels, value]
   )
 
+  const selectedModelName = selectedModel?.displayName || selectedModel?.name || selectedModel?.label || selectedModel?.id || ''
+
   useEffect(() => {
-    const selectedLabel = selectedModel?.label || selectedModel?.name || selectedModel?.id || ''
-    setQuery(selectedLabel)
-  }, [selectedModel])
+    setQuery(selectedModelName)
+  }, [selectedModelName])
 
   useEffect(() => {
     function handleOutsideClick(event: MouseEvent) {
@@ -82,8 +84,9 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
       return sortedModels
 
     return sortedModels.filter((model) => {
-      const label = (model.label || model.name || model.id).toLowerCase()
-      return label.includes(needle) || model.id.toLowerCase().includes(needle)
+      const modelName = (model.displayName || model.name || model.label || model.id).toLowerCase()
+      const description = (model.description || '').toLowerCase()
+      return modelName.includes(needle) || description.includes(needle) || model.id.toLowerCase().includes(needle)
     })
   }, [sortedModels, query])
 
@@ -94,7 +97,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
 
   function selectModel(model: ModelOption) {
     onChange(model.id)
-    setQuery(model.label || model.name || model.id)
+    setQuery(model.displayName || model.name || model.label || model.id)
     setIsOpen(false)
     setHighlightedIndex(0)
   }
@@ -165,23 +168,60 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
             <div className="px-3 py-2 text-sm text-slate-400">No models found</div>
           ) : (
             filteredModels.map((model, index) => {
-              const label = model.label || model.name || model.id
+              const modelName = model.displayName || model.name || model.label || model.id
+              const priceLabel = model.priceLabel || '—'
+              const description = model.description?.trim() || 'Geen beschrijving beschikbaar.'
+              const isExpanded = Boolean(expandedDescriptions[model.id])
+              const showReadMore = description.length > 120
               const isHighlighted = index === highlightedIndex
               const isSelected = model.id === value
 
               return (
-                <button
+                <div
                   key={model.id}
-                  type="button"
-                  className={`w-full px-3 py-2 text-left text-sm transition-colors ${isHighlighted ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800'} ${isSelected ? 'font-medium' : ''}`}
+                  role="button"
+                  tabIndex={-1}
+                  className={`w-full px-3 py-2 text-left transition-colors cursor-pointer ${isHighlighted ? 'bg-slate-800 text-white' : 'text-slate-200 hover:bg-slate-800'} ${isSelected ? 'font-medium' : ''}`}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   onMouseDown={(event) => {
                     event.preventDefault()
                     selectModel(model)
                   }}
                 >
-                  {label}
-                </button>
+                  <div className="text-sm">
+                    <span className="text-teal-300">{priceLabel}</span>
+                    <span className="text-slate-500 px-1">|</span>
+                    <span>{modelName}</span>
+                  </div>
+                  <div
+                    className={`mt-1 text-xs text-slate-400 ${isExpanded ? '' : 'overflow-hidden'}`}
+                    style={isExpanded
+                      ? undefined
+                      : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                  >
+                    {description}
+                  </div>
+                  {showReadMore && (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs text-teal-400 hover:text-teal-300"
+                      onMouseDown={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                      }}
+                      onClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        setExpandedDescriptions((previous) => ({
+                          ...previous,
+                          [model.id]: !previous[model.id],
+                        }))
+                      }}
+                    >
+                      {isExpanded ? 'Lees minder' : 'Lees meer'}
+                    </button>
+                  )}
+                </div>
               )
             })
           )}

@@ -49,6 +49,7 @@ export type LocalEndpointStore = {
 export type OpenRouterModel = {
   modelId: string
   displayName: string
+  description: string
   contextLength: number | null
   promptPrice: string | null
   completionPrice: string | null

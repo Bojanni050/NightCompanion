@@ -32,7 +32,10 @@ export interface LocalEndpoint {
 export interface ModelOption {
   id: string
   name?: string
+  displayName?: string
   label?: string
+  description?: string
+  priceLabel?: string
   provider?: string
   capabilities?: string[]
   promptPrice?: string | null
