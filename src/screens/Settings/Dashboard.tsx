@@ -88,6 +88,7 @@ const ROLES: DashboardRole[] = ['generation', 'improvement', 'vision', 'general'
 export function Dashboard({
   onConfigure,
   configuredCount,
+  dynamicModels,
   setDynamicModels,
   getToken,
   providerOptions,

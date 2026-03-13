@@ -293,3 +293,9 @@
 - Findings: AI Configuration Dashboard still used native model `<select>` fields and existing custom selector styling did not match the screenshot's richer dropdown (search panel, card options, left in/out pricing column, badges).
 - Conclusions: A single upgraded `ModelSelector` should drive model selection visuals across both AI Configuration Dashboard and Provider Configuration to keep UX consistent.
 - Actions: Refined `src/components/ModelSelector.tsx` trigger/dropdown styling to match screenshot patterns (rounded trigger, darker panel, search bar, card-style options, left `In/Out` price column, provider/capability chips, show more/less text); integrated `ModelSelector` into `src/screens/Settings/Dashboard.tsx` for role model selection and styled provider dropdown to match; retained Provider Configuration model fields using the same shared selector for visual parity; verified with `npm run build`.
+
+## 2026-03-13 (AI Configuration Runtime Regression Fix)
+
+- Findings: Opening AI Configuration threw `ReferenceError: dynamicModels is not defined` from `src/screens/Settings/Dashboard.tsx` after dashboard/model-selector refactor.
+- Conclusions: `dynamicModels` was referenced inside `getRoleModelOptions` but omitted from Dashboard component prop destructuring.
+- Actions: Added `dynamicModels` back into `Dashboard` function prop destructuring in `src/screens/Settings/Dashboard.tsx`; verified with `npm run build`.
