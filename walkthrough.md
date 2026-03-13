@@ -335,3 +335,9 @@
 - Findings: User requested a dedicated improvement instruction for the Improve button flow to upgrade a basic concept while preserving original intent.
 - Conclusions: Improvement requests should reuse the same persona constraints (`BASE_PERSONA`) and prepend a dedicated `IMPROVE_INSTRUCTION` in the user message for both OpenRouter and local provider routes.
 - Actions: Updated `electron/ipc/ai.ts` with `IMPROVE_INSTRUCTION` and changed `generator:improvePrompt` request payloads (OpenRouter + local) to use `BASE_PERSONA` as system content and `${IMPROVE_INSTRUCTION}\n\n${prompt}` as user content; validated with `npm run build`.
+
+## 2026-03-13 (Magic Random: Preset Instructie + Theme Verwijderd)
+
+- Findings: User requested that Magic Random always passes the selected preset as instruction context and that the theme field is removed.
+- Conclusions: The Magic Random request contract should only include `presetName` + greylist settings, and the renderer must remove theme input/state entirely.
+- Actions: Updated `electron/ipc/ai.ts` to remove `theme` handling from `generator:magicRandom`, make preset instruction explicit (`mandatory style guidance`), and remove theme logging field; updated `src/screens/Generator.tsx` to delete theme state/input and stop sending `theme`; updated `electron/preload.ts` and `src/types/electron.d.ts` generator `magicRandom` signature to remove `theme`; validated with `npm run build`.

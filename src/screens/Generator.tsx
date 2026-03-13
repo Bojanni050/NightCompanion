@@ -22,7 +22,6 @@ type PresetOption = {
 
 export default function Generator() {
   const [tab, setTab] = useState<'generator' | 'builder'>('generator')
-  const [theme, setTheme] = useState('')
   const [presetOptions, setPresetOptions] = useState<PresetOption[]>([])
   const [selectedPreset, setSelectedPreset] = useState('')
   const [generatedPrompt, setGeneratedPrompt] = useState('')
@@ -53,7 +52,6 @@ export default function Generator() {
   }
 
   const handleClearAll = () => {
-    setTheme('')
     setSelectedPreset('')
     setGeneratedPrompt('')
     setStatus(null)
@@ -108,7 +106,6 @@ export default function Generator() {
 
     try {
       const result = await window.electronAPI.generator.magicRandom({
-        theme: theme.trim() || undefined,
         presetName: selectedPreset || undefined,
         greylistEnabled,
         greylistWords,
@@ -239,16 +236,7 @@ export default function Generator() {
         {tab === 'generator' ? (
           <>
             <div className="card mt-6 p-5">
-              <label className="label">Theme (optional)</label>
-              <input
-                type="text"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                className="input"
-                placeholder="e.g. cyberpunk city at dawn, mythic forest creatures, surreal architecture"
-              />
-
-              <div className="mt-4">
+              <div>
                 <label htmlFor="generator-preset" className="label">NightCafe Preset</label>
                 <select
                   id="generator-preset"

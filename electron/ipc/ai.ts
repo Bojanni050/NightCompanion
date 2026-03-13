@@ -57,7 +57,7 @@ export function registerAiIpc({
   getOpenRouterSettings: () => Promise<OpenRouterSettings>
   getAiApiRequestLoggingEnabled: () => Promise<boolean>
 }) {
-  ipcMain.handle('generator:magicRandom', async (_, input?: { theme?: string; presetName?: string; greylistEnabled?: boolean; greylistWords?: string[] }) => {
+  ipcMain.handle('generator:magicRandom', async (_, input?: { presetName?: string; greylistEnabled?: boolean; greylistWords?: string[] }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
     let requestModel = ''
@@ -74,7 +74,6 @@ export function registerAiIpc({
         return { error: 'OpenRouter API key is missing. Add it in Settings first.' }
       }
 
-      const theme = input?.theme?.trim()
       const presetName = input?.presetName?.trim()
       const greylistEnabled = input?.greylistEnabled !== false
       const greylistWords = (input?.greylistWords ?? [])
@@ -85,8 +84,8 @@ export function registerAiIpc({
 
       const promptParts = [
         'Create one random, vivid text-to-image prompt.',
-        presetName ? `Use this NightCafe preset as style guidance: ${presetName}.` : '',
-        theme ? `Theme to include: ${theme}.` : 'Pick any surprising subject.',
+        presetName ? `Use this NightCafe preset as mandatory style guidance: ${presetName}.` : '',
+        'Pick any surprising subject.',
         hasGreylist
           ? `Avoid these words when writing the prompt (or keep their probability very low): ${uniqueGreylistWords.join(', ')}.`
           : '',
@@ -156,7 +155,6 @@ export function registerAiIpc({
           durationMs: Date.now() - startedAt,
           status: responseStatus,
           input: {
-            theme: input?.theme?.trim() || null,
             presetName: input?.presetName?.trim() || null,
             greylistEnabled: input?.greylistEnabled !== false,
             greylistWordCount: (input?.greylistWords ?? []).filter((word) => word.trim().length > 0).length,
