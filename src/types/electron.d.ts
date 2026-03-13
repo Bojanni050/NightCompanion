@@ -1,4 +1,4 @@
-import type { Prompt, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../lib/schema'
+import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../lib/schema'
 
 type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
 type PromptFilters = { search?: string; tags?: string[]; model?: string }
@@ -64,6 +64,7 @@ declare global {
         list(filters?: PromptFilters): Promise<IpcResult<Prompt[]>>
         get(id: number): Promise<IpcResult<Prompt | undefined>>
         create(data: NewPrompt): Promise<IpcResult<Prompt>>
+        listVersions(promptId: number): Promise<IpcResult<PromptVersion[]>>
         update(id: number, data: Partial<NewPrompt>): Promise<IpcResult<Prompt>>
         delete(id: number): Promise<IpcResult<void>>
       }

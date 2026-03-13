@@ -9,6 +9,7 @@ import {
   boolean,
   timestamp,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
 // ─── Prompts ─────────────────────────────────────────────────────────────────
@@ -33,6 +34,32 @@ export const prompts = pgTable(
     index('prompts_model_idx').on(table.model),
     index('prompts_created_at_idx').on(table.createdAt),
     index('prompts_tags_idx').on(table.tags),
+  ]
+)
+
+// ─── Prompt Versions ─────────────────────────────────────────────────────────
+
+export const promptVersions = pgTable(
+  'prompt_versions',
+  {
+    id: serial('id').primaryKey(),
+    promptId: integer('prompt_id').notNull().references(() => prompts.id, { onDelete: 'cascade' }),
+    versionNumber: integer('version_number').notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    promptText: text('prompt_text').notNull(),
+    negativePrompt: text('negative_prompt').default('').notNull(),
+    tags: text('tags').array().default([]).notNull(),
+    model: varchar('model', { length: 100 }).default('').notNull(),
+    isTemplate: boolean('is_template').default(false).notNull(),
+    isFavorite: boolean('is_favorite').default(false).notNull(),
+    rating: integer('rating'),
+    notes: text('notes').default(''),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('prompt_versions_prompt_id_idx').on(table.promptId),
+    index('prompt_versions_created_at_idx').on(table.createdAt),
+    uniqueIndex('prompt_versions_prompt_version_unique').on(table.promptId, table.versionNumber),
   ]
 )
 
@@ -176,6 +203,8 @@ export const characters = pgTable(
 
 export type Prompt = typeof prompts.$inferSelect
 export type NewPrompt = typeof prompts.$inferInsert
+export type PromptVersion = typeof promptVersions.$inferSelect
+export type NewPromptVersion = typeof promptVersions.$inferInsert
 
 export type StyleProfile = typeof styleProfiles.$inferSelect
 export type NewStyleProfile = typeof styleProfiles.$inferInsert

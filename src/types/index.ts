@@ -1,5 +1,5 @@
 // Re-export schema types for use in the renderer
-export type { Prompt, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../lib/schema'
+export type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../lib/schema'
 
 export type Screen =
   | 'dashboard'

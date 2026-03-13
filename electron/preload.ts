@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Prompt, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../src/lib/schema'
+import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../src/lib/schema'
 
 export type PromptFilters = {
   search?: string
@@ -103,6 +103,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('prompts:get', id),
     create: (data: NewPrompt): Promise<IpcResult<Prompt>> =>
       ipcRenderer.invoke('prompts:create', data),
+    listVersions: (promptId: number): Promise<IpcResult<PromptVersion[]>> =>
+      ipcRenderer.invoke('prompts:listVersions', promptId),
     update: (id: number, data: Partial<NewPrompt>): Promise<IpcResult<Prompt>> =>
       ipcRenderer.invoke('prompts:update', id, data),
     delete: (id: number): Promise<IpcResult<void>> =>

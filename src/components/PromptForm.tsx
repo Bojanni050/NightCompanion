@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { Prompt, NewPrompt } from '../types'
+import type { Prompt, PromptVersion, NewPrompt } from '../types'
 
 type FormData = Omit<NewPrompt, 'createdAt' | 'updatedAt'>
 
@@ -23,6 +23,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [modelOptions, setModelOptions] = useState<string[]>([])
+  const [versions, setVersions] = useState<PromptVersion[]>([])
+  const [loadingVersions, setLoadingVersions] = useState(false)
 
   const titleRef = useRef<HTMLInputElement>(null)
   const isEdit = !!initial
@@ -51,6 +53,39 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
       ignore = true
     }
   }, [])
+
+  useEffect(() => {
+    let ignore = false
+    if (!isEdit || !initial?.id) return
+
+    async function loadVersions() {
+      setLoadingVersions(true)
+      const result = await window.electronAPI.prompts.listVersions(initial.id)
+      if (!ignore && !result.error && result.data) {
+        setVersions(result.data)
+      }
+      if (!ignore) setLoadingVersions(false)
+    }
+
+    loadVersions()
+
+    return () => {
+      ignore = true
+    }
+  }, [isEdit, initial?.id])
+
+  const restoreFromVersion = (version: PromptVersion) => {
+    setTitle(version.title)
+    setPromptText(version.promptText)
+    setNegativePrompt(version.negativePrompt)
+    setModel(version.model)
+    setIsTemplate(version.isTemplate)
+    setIsFavorite(version.isFavorite)
+    setRating(version.rating ?? 0)
+    setNotes(version.notes ?? '')
+    setTags(version.tags ?? [])
+    setTagInput('')
+  }
 
   const addTag = () => {
     const t = tagInput.trim().toLowerCase()
@@ -270,6 +305,43 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 placeholder="Personal notes about this prompt…"
               />
             </div>
+
+            {isEdit && (
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="label !mb-0">History</label>
+                  <span className="text-[10px] text-night-500">{versions.length} version{versions.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                {loadingVersions ? (
+                  <div className="rounded-lg border border-night-700 bg-night-900/40 px-3 py-2 text-xs text-night-400">
+                    Loading history…
+                  </div>
+                ) : versions.length === 0 ? (
+                  <div className="rounded-lg border border-night-700 bg-night-900/40 px-3 py-2 text-xs text-night-500">
+                    No previous versions yet.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-night-700 bg-night-900/40 divide-y divide-night-700/60">
+                    {versions.slice(0, 8).map((version) => (
+                      <div key={version.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                        <div className="min-w-0">
+                          <p className="text-xs text-night-200 truncate">v{version.versionNumber} · {version.title || 'Untitled'}</p>
+                          <p className="text-[10px] text-night-500">{new Date(version.createdAt).toLocaleString()}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => restoreFromVersion(version)}
+                          className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Error */}
             {error && (

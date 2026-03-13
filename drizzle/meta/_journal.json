@@ -71,6 +71,13 @@
       "when": 1773372600000,
       "tag": "0009_characters_uuid_pk",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773374400000,
+      "tag": "0010_prompt_versions",
+      "breakpoints": true
     }
   ]
 }

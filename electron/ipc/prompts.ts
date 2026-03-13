@@ -2,7 +2,7 @@ import { ipcMain } from 'electron'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { eq, desc, and, or, ilike, sql } from 'drizzle-orm'
 import * as schema from '../../src/lib/schema'
-import { prompts } from '../../src/lib/schema'
+import { prompts, promptVersions } from '../../src/lib/schema'
 import type { NewPrompt } from '../../src/lib/schema'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
@@ -63,13 +63,59 @@ export function registerPromptsIpc({ db }: { db: Database }) {
     }
   })
 
+  ipcMain.handle('prompts:listVersions', async (_, promptId: number) => {
+    try {
+      const data = await db
+        .select()
+        .from(promptVersions)
+        .where(eq(promptVersions.promptId, promptId))
+        .orderBy(desc(promptVersions.versionNumber))
+
+      return { data }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
   ipcMain.handle('prompts:update', async (_, id: number, data: Partial<NewPrompt>) => {
     try {
-      const [updated] = await db
-        .update(prompts)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(prompts.id, id))
-        .returning()
+      const updated = await db.transaction(async (tx) => {
+        const [current] = await tx.select().from(prompts).where(eq(prompts.id, id))
+        if (!current) throw new Error(`Prompt with id ${id} not found.`)
+
+        const [versionCounter] = await tx
+          .select({
+            maxVersion: sql<number>`coalesce(max(${promptVersions.versionNumber}), 0)`,
+          })
+          .from(promptVersions)
+          .where(eq(promptVersions.promptId, id))
+
+        const nextVersionNumber = (versionCounter?.maxVersion ?? 0) + 1
+
+        await tx.insert(promptVersions).values({
+          promptId: current.id,
+          versionNumber: nextVersionNumber,
+          title: current.title,
+          promptText: current.promptText,
+          negativePrompt: current.negativePrompt ?? '',
+          tags: current.tags,
+          model: current.model,
+          isTemplate: current.isTemplate,
+          isFavorite: current.isFavorite,
+          rating: current.rating,
+          notes: current.notes ?? '',
+          createdAt: new Date(),
+        })
+
+        const [next] = await tx
+          .update(prompts)
+          .set({ ...data, updatedAt: new Date() })
+          .where(eq(prompts.id, id))
+          .returning()
+
+        return next
+      })
+
       return { data: updated }
     } catch (error) {
       return { error: String(error) }

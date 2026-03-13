@@ -342,6 +342,12 @@
 - Findings: `main.ts` still had IPC registration wiring logic mixed into startup orchestration.
 - Conclusions: Centralizing handler registration in a dedicated registry service further reduces `main.ts` complexity and keeps startup responsibilities focused.
 - Actions: Added `electron/services/ipcRegistry.ts` with `registerIpcHandlers({ db, getOpenRouterSettings, getAiApiRequestLoggingEnabled })`; updated `electron/main.ts` to remove inline registration function and call the registry service.
+
+## 2026-03-13 (Prompt Versioning)
+
+- Findings: Editing a prompt overwrote previous content with no built-in revision history.
+- Conclusions: A lightweight snapshot-per-update model provides useful history with minimal UX complexity.
+- Actions: Added `prompt_versions` table in `src/lib/schema.ts` and migration `drizzle/0010_prompt_versions.sql` (+ journal update); updated `electron/ipc/prompts.ts` so every `prompts:update` first snapshots current prompt into `prompt_versions` with incrementing `version_number`; added `prompts:listVersions` IPC endpoint and typings in preload/renderer declarations; updated `src/components/PromptForm.tsx` edit mode to show recent history and allow one-click restore into the form before saving.
 - Actions: Refactored `src/screens/Generator.tsx` to extract a reusable `greylistCard`, render it next to the preset card in a responsive 2-column grid (`xl:grid-cols-2`) for the generator tab, and keep the same greylist card above Prompt Builder in builder mode.
 
 ## 2026-03-13 (Generator Layout Breakpoint to LG)
