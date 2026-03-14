@@ -761,8 +761,11 @@ export default function Generator() {
                     {quickStartStatus}
                   </p>
                 )}
+              </div>
 
-                <div className="mt-4">
+              {/* RIGHT: Magic Random AI controls */}
+              <div className="flex flex-col gap-5">
+                <div className="lg:sticky lg:top-6">
                   <PromptPreview
                     promptText={generatedPrompt || quickStartIdea}
                     negativePrompt={negativePrompt}
@@ -771,10 +774,7 @@ export default function Generator() {
                     model={selectedPreset ? `NightCafe preset: ${selectedPreset}` : 'Magic Random AI'}
                   />
                 </div>
-              </div>
 
-              {/* RIGHT: Magic Random AI controls */}
-              <div className="flex flex-col gap-5">
                 <div className="card p-5">
                   <div>
                     <label htmlFor="generator-preset" className="label">NightCafe Preset</label>
