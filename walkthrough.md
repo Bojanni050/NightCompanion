@@ -1,5 +1,17 @@
 # Walkthrough
 
+## 2026-03-15 (Soepele lightbox-transitie in Prompt Library)
+
+- Findings: User vroeg om een vloeiendere overgang bij het openen van een promptafbeelding in de Library lightbox.
+- Conclusions: Een zachte open/close animatie met fade + scale + subtiele vertical motion en delayed unmount voorkomt abrupte visuele sprongen.
+- Actions: In [src/screens/Library.tsx](src/screens/Library.tsx) lightbox state uitgebreid met `lightboxVisible`, helper handlers (`openLightbox`/`closeLightbox`), `requestAnimationFrame`-gestuurde enter transition, en timeout-gebaseerde unmount na exit; backdrop, close-knop en hoofdafbeelding kregen `transition-*` classes voor soepel in/uitfaden en in-/uitzoomen; gevalideerd met `npm run build`.
+
+## 2026-03-15 (Lightbox timing premium getuned)
+
+- Findings: User bevestigde dat de overgang nog meer premium mocht aanvoelen.
+- Conclusions: Openen moet net iets langzamer en sluiten iets sneller voor een vloeiendere maar responsieve interactie.
+- Actions: In [src/screens/Library.tsx](src/screens/Library.tsx) transities aangepast naar `320ms` voor enter en `200ms` voor exit voor backdrop, close-knop en hoofdafbeelding; unmount-delay afgestemd op close-tijd (`210ms`); gevalideerd met `npm run build`.
+
 ## 2026-03-15 (Togglebare native Windows-titelbalk)
 
 - Findings: User vroeg om een native Windowsbalk (titelbalk/frame) met toggle-optie.

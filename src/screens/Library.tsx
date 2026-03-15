@@ -26,6 +26,42 @@ export default function Library() {
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>({ mode: 'closed' })
   const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null)
+  const [lightboxVisible, setLightboxVisible] = useState(false)
+
+  const openLightbox = useCallback((image: { url: string; title: string }) => {
+    setLightboxImage(image)
+  }, [])
+
+  const closeLightbox = useCallback(() => {
+    setLightboxVisible(false)
+  }, [])
+
+  useEffect(() => {
+    if (!lightboxImage) {
+      setLightboxVisible(false)
+      return
+    }
+
+    const raf = window.requestAnimationFrame(() => {
+      setLightboxVisible(true)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(raf)
+    }
+  }, [lightboxImage])
+
+  useEffect(() => {
+    if (!lightboxImage || lightboxVisible) return
+
+    const timeout = window.setTimeout(() => {
+      setLightboxImage(null)
+    }, 210)
+
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [lightboxImage, lightboxVisible])
 
   const fetchPrompts = useCallback(async () => {
     setLoading(true)
@@ -252,7 +288,7 @@ export default function Library() {
                           src={prompt.imageUrl}
                           alt={prompt.title || 'Prompt image'}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02] cursor-zoom-in"
-                          onClick={() => setLightboxImage({ url: prompt.imageUrl, title: prompt.title || 'Prompt image' })}
+                          onClick={() => openLightbox({ url: prompt.imageUrl, title: prompt.title || 'Prompt image' })}
                           onError={(event) => {
                             ;(event.currentTarget.parentElement as HTMLDivElement | null)?.classList.add('hidden')
                           }}
@@ -402,9 +438,9 @@ export default function Library() {
       {lightboxImage && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-          onClick={() => setLightboxImage(null)}
+          onClick={closeLightbox}
         >
-          <div className="absolute inset-0 overflow-hidden">
+          <div className={`absolute inset-0 overflow-hidden transition-opacity ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100' : 'opacity-0'}`}>
             <img
               src={lightboxImage.url}
               alt=""
@@ -418,9 +454,9 @@ export default function Library() {
             type="button"
             onClick={(event) => {
               event.stopPropagation()
-              setLightboxImage(null)
+              closeLightbox()
             }}
-            className="absolute top-4 right-4 z-[101] rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70"
+            className={`absolute top-4 right-4 z-[101] rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
           >
             Close
           </button>
@@ -429,7 +465,7 @@ export default function Library() {
             src={lightboxImage.url}
             alt={lightboxImage.title}
             onClick={(event) => event.stopPropagation()}
-            className="relative z-[101] max-w-[96vw] max-h-[94vh] object-contain rounded-2xl shadow-2xl"
+            className={`relative z-[101] max-w-[96vw] max-h-[94vh] object-contain rounded-2xl shadow-2xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
           />
         </div>
       )}
