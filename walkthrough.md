@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Lightbox GPU-smoothness polish)
+
+- Findings: User vroeg om een mini performance polish voor de Library-lightbox op tragere GPU's.
+- Conclusions: Een gerichte `will-change` hint op alleen backdrop-fade en lightbox-images kan transitions stabieler maken zonder onnodige globale render-cost.
+- Actions: In [src/screens/Library.tsx](src/screens/Library.tsx) `willChange` toegevoegd op de backdrop fade-container (`opacity`), blur-backdrop image (`transform`) en de foreground lightbox image (`transform, opacity`).
+
 ## 2026-03-15 (Library lightbox metadata overlay)
 
 - Findings: User wilde in de Library lightbox extra context op de afbeelding: onderaan de prompt met sterwaardering, rechtsboven het gebruikte model, en de mogelijkheid om die overlay te togglen.

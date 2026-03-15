@@ -506,12 +506,14 @@ export default function Library() {
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           onClick={closeLightbox}
         >
-          <div className={`absolute inset-0 overflow-hidden transition-opacity ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100' : 'opacity-0'}`}>
+          <div
+            className={`absolute inset-0 overflow-hidden transition-opacity will-change-[opacity] ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100' : 'opacity-0'}`}
+          >
             <img
               src={lightboxImage.url}
               alt=""
               aria-hidden="true"
-              className="w-full h-full object-cover scale-150 blur-3xl opacity-60"
+              className="w-full h-full object-cover scale-150 blur-3xl opacity-60 will-change-transform"
             />
             <div className="absolute inset-0 bg-black/55 backdrop-blur-xl" />
           </div>
@@ -555,7 +557,7 @@ export default function Library() {
             src={lightboxImage.url}
             alt={lightboxImage.title}
             onClick={(event) => event.stopPropagation()}
-            className={`relative z-[101] max-w-[96vw] max-h-[94vh] object-contain rounded-2xl shadow-2xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
+            className={`relative z-[101] max-w-[96vw] max-h-[94vh] object-contain rounded-2xl shadow-2xl transition-all will-change-transform ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
           />
 
           <div
