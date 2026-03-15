@@ -21,3 +21,8 @@
 4. Avoid vague or generic commit messages, such as "Fix bug" or "Update code", and instead provide specific information about what was changed and why.
 5. Use the commit messages as a way to communicate with your team and provide a clear history of changes made to the project, making it easier for others to review and understand the evolution of the codebase.
 6. Use command LM Studio: Generate commit message when possible.
+
+### Rules
+1. You 'MUST' read and follow the rules outlined in the rules.md file to ensure that you are adhering to the project's guidelines and standards.
+2. Regularly review the rules.md file for any updates or changes to the rules, and adjust your behavior accordingly to maintain compliance with the project's rules.
+3. If you have any questions or need clarification about the rules, refer to the rules.md file for additional information.
