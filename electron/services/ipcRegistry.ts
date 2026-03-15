@@ -23,5 +23,5 @@ export function registerIpcHandlers({ db, getOpenRouterSettings, getAiApiRequest
   registerNightCafeIpc({ db })
   registerCharactersIpc({ db })
   registerSettingsIpc({ db })
-  registerAiIpc({ getOpenRouterSettings, getAiApiRequestLoggingEnabled })
+  registerAiIpc({ db, getOpenRouterSettings, getAiApiRequestLoggingEnabled })
 }

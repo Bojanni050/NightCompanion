@@ -45,6 +45,13 @@ type OpenRouterModel = {
 }
 type NightcafeModelOption = { modelName: string; modelType: string; mediaType: string }
 type NightcafePresetOption = { presetName: string; category: string }
+type ModelAdvisorRecommendation = { modelName: string; explanation: string }
+type ModelAdvisorResult = {
+  mode: 'rule' | 'ai'
+  recommendation: ModelAdvisorRecommendation
+  alternatives: ModelAdvisorRecommendation[]
+  matchedSignals: string[]
+}
 type CharacterImage = { id: string; url: string; isMain: boolean; createdAt: string }
 type CharacterDetail = { id: string; detail: string; category: string; worksWell: boolean }
 type CharacterRecord = {
@@ -101,6 +108,7 @@ declare global {
         improveNegativePrompt(input?: { negativePrompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
         generateTitle(input?: { prompt?: string }): Promise<IpcResult<{ title: string }>>
         quickExpand(input?: { idea?: string; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description?: string } }): Promise<IpcResult<{ prompt: string }>>
+        adviseModel(input?: { prompt?: string; mode?: 'rule' | 'ai' }): Promise<IpcResult<ModelAdvisorResult>>
       }
       nightcafeModels: {
         list(filters?: { mediaType?: 'image' | 'video' }): Promise<IpcResult<NightcafeModelOption[]>>

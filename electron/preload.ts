@@ -64,6 +64,18 @@ export type NightcafeModelOption = {
   mediaType: string
 }
 
+export type ModelAdvisorRecommendation = {
+  modelName: string
+  explanation: string
+}
+
+export type ModelAdvisorResult = {
+  mode: 'rule' | 'ai'
+  recommendation: ModelAdvisorRecommendation
+  alternatives: ModelAdvisorRecommendation[]
+  matchedSignals: string[]
+}
+
 export type NightcafePresetOption = {
   presetName: string
   category: string
@@ -169,6 +181,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('generator:generateTitle', input),
     quickExpand: (input?: { idea?: string; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description?: string } }): Promise<IpcResult<{ prompt: string }>> =>
       ipcRenderer.invoke('generator:quickExpand', input),
+    adviseModel: (input?: { prompt?: string; mode?: 'rule' | 'ai' }): Promise<IpcResult<ModelAdvisorResult>> =>
+      ipcRenderer.invoke('generator:adviseModel', input),
   },
   nightcafeModels: {
     list: (filters?: { mediaType?: 'image' | 'video' }): Promise<IpcResult<NightcafeModelOption[]>> =>

@@ -2,6 +2,9 @@ import { ipcMain } from 'electron'
 import { app } from 'electron'
 import path from 'path'
 import { appendFile, mkdir, readFile } from 'fs/promises'
+import { drizzle } from 'drizzle-orm/postgres-js'
+import * as schema from '../../src/lib/schema'
+import { nightcafeModels } from '../../src/lib/schema'
 import type { OpenRouterSettings } from './settings'
 
 const AI_REQUEST_LOG_FILE = 'ai-api-requests.jsonl'
@@ -49,6 +52,229 @@ const QUICK_EXPAND_TEMPERATURES: Record<string, number> = {
   wild: 1.4,
 }
 
+type Database = ReturnType<typeof drizzle<typeof schema>>
+
+type AdvisorMode = 'rule' | 'ai'
+
+type AdvisorModelRecord = {
+  modelName: string
+  description: string
+  modelType: string
+  mediaType: string
+  artScore: string
+  promptingScore: string
+  realismScore: string
+  typographyScore: string
+  costTier: string
+}
+
+type AdvisorRecommendation = {
+  modelName: string
+  explanation: string
+}
+
+type AdvisorResult = {
+  mode: AdvisorMode
+  recommendation: AdvisorRecommendation
+  alternatives: AdvisorRecommendation[]
+  matchedSignals: string[]
+}
+
+const REALISM_HINTS = [
+  'realistic', 'photorealistic', 'photo', 'photography', 'portrait', 'cinematic', 'documentary',
+  'natural light', 'true to life', 'hyperreal', 'lifestyle', 'headshot',
+]
+
+const TYPOGRAPHY_HINTS = [
+  'text', 'title', 'logo', 'lettering', 'typography', 'poster', 'cover', 'font', 'headline',
+  'caption', 'signage', 'wordmark', 'brand',
+]
+
+const ART_HINTS = [
+  'illustration', 'digital art', 'concept art', 'painting', 'anime', 'fantasy', 'surreal',
+  'watercolour', 'watercolor', 'oil painting', 'stylized', 'stylised', 'line art', 'comic',
+]
+
+const COST_SENSITIVE_HINTS = [
+  'cheap', 'budget', 'low cost', 'cost effective', 'fast draft', 'quick draft', 'test render', 'economy',
+]
+
+function parseScore(value: string) {
+  const numeric = Number.parseFloat(String(value ?? '').trim())
+  if (!Number.isFinite(numeric)) return 0
+  return Math.max(0, Math.min(10, numeric))
+}
+
+function parseCostTier(value: string) {
+  const raw = String(value ?? '').trim().toLowerCase()
+  if (!raw) return 2
+  const asNumber = Number.parseInt(raw, 10)
+  if (Number.isFinite(asNumber)) return Math.max(1, Math.min(5, asNumber))
+  if (raw.includes('low') || raw.includes('cheap') || raw.includes('budget')) return 1
+  if (raw.includes('med')) return 2
+  if (raw.includes('high') || raw.includes('expensive') || raw.includes('premium')) return 4
+  return 2
+}
+
+function countMatches(text: string, hints: string[]) {
+  return hints.reduce((count, hint) => (text.includes(hint) ? count + 1 : count), 0)
+}
+
+function normalizeWeights(base: { art: number; realism: number; typography: number; prompting: number }) {
+  const sum = base.art + base.realism + base.typography + base.prompting
+  if (sum <= 0) {
+    return { art: 0.35, realism: 0.35, typography: 0.2, prompting: 0.1 }
+  }
+
+  return {
+    art: base.art / sum,
+    realism: base.realism / sum,
+    typography: base.typography / sum,
+    prompting: base.prompting / sum,
+  }
+}
+
+function getRuleBasedRecommendation(prompt: string, models: AdvisorModelRecord[]): AdvisorResult {
+  const normalizedPrompt = prompt.trim().toLowerCase()
+  const realismHits = countMatches(normalizedPrompt, REALISM_HINTS)
+  const typographyHits = countMatches(normalizedPrompt, TYPOGRAPHY_HINTS)
+  const artHits = countMatches(normalizedPrompt, ART_HINTS)
+  const costHits = countMatches(normalizedPrompt, COST_SENSITIVE_HINTS)
+
+  const matchedSignals: string[] = []
+  if (realismHits > 0) matchedSignals.push('realism')
+  if (typographyHits > 0) matchedSignals.push('typography')
+  if (artHits > 0) matchedSignals.push('artistic style')
+  if (costHits > 0) matchedSignals.push('cost-sensitive')
+  if (matchedSignals.length === 0) matchedSignals.push('general balance')
+
+  const weights = normalizeWeights({
+    art: 0.35 + artHits * 0.2,
+    realism: 0.35 + realismHits * 0.25,
+    typography: 0.2 + typographyHits * 0.3,
+    prompting: 0.1,
+  })
+
+  const scored = models
+    .filter((model) => model.mediaType === 'image')
+    .map((model) => {
+      const art = parseScore(model.artScore)
+      const realism = parseScore(model.realismScore)
+      const typography = parseScore(model.typographyScore)
+      const prompting = parseScore(model.promptingScore)
+      const costTier = parseCostTier(model.costTier)
+
+      const qualityScore =
+        art * weights.art +
+        realism * weights.realism +
+        typography * weights.typography +
+        prompting * weights.prompting
+
+      const costPenalty = costHits > 0 ? (costTier - 1) * 0.35 : 0
+      const finalScore = qualityScore - costPenalty
+
+      return {
+        model,
+        finalScore,
+        detail: {
+          art,
+          realism,
+          typography,
+          prompting,
+          costTier,
+        },
+      }
+    })
+    .sort((a, b) => b.finalScore - a.finalScore)
+
+  const best = scored[0]
+  const alternatives = scored.slice(1, 4)
+
+  if (!best) {
+    return {
+      mode: 'rule',
+      recommendation: {
+        modelName: 'No model available',
+        explanation: 'No NightCafe image models are available in the cache yet.',
+      },
+      alternatives: [],
+      matchedSignals,
+    }
+  }
+
+  return {
+    mode: 'rule',
+    recommendation: {
+      modelName: best.model.modelName,
+      explanation: `Top score based on prompt-fit weights (art ${best.detail.art.toFixed(1)}, realism ${best.detail.realism.toFixed(1)}, typography ${best.detail.typography.toFixed(1)}, prompting ${best.detail.prompting.toFixed(1)}${costHits > 0 ? `, cost tier ${best.detail.costTier}` : ''}).`,
+    },
+    alternatives: alternatives.map((entry) => ({
+      modelName: entry.model.modelName,
+      explanation: `Strong alternative with balanced fit (art ${entry.detail.art.toFixed(1)}, realism ${entry.detail.realism.toFixed(1)}, typography ${entry.detail.typography.toFixed(1)}).`,
+    })),
+    matchedSignals,
+  }
+}
+
+function parseAdvisorAiResponse(rawContent: string): Pick<AdvisorResult, 'recommendation' | 'alternatives'> {
+  const cleaned = rawContent.trim()
+  try {
+    const parsed = JSON.parse(cleaned) as {
+      recommendedModel?: string
+      reasoning?: string
+      alternatives?: Array<{ modelName?: string; why?: string }>
+    }
+
+    const recommendedModel = String(parsed.recommendedModel || '').trim()
+    const reasoning = String(parsed.reasoning || '').trim()
+    const alternatives = Array.isArray(parsed.alternatives)
+      ? parsed.alternatives
+        .map((alt) => ({
+          modelName: String(alt.modelName || '').trim(),
+          explanation: String(alt.why || '').trim(),
+        }))
+        .filter((alt) => alt.modelName.length > 0)
+        .slice(0, 3)
+      : []
+
+    if (!recommendedModel) throw new Error('Missing recommendedModel in JSON payload')
+
+    return {
+      recommendation: {
+        modelName: recommendedModel,
+        explanation: reasoning || 'Recommended by AI analysis based on prompt semantics and model metadata.',
+      },
+      alternatives,
+    }
+  } catch {
+    const firstLine = cleaned.split('\n').find((line) => line.trim().length > 0) || cleaned
+    return {
+      recommendation: {
+        modelName: firstLine.slice(0, 120),
+        explanation: cleaned,
+      },
+      alternatives: [],
+    }
+  }
+}
+
+async function getAdvisorRouteSelection() {
+  const stored = await readStoredSettings()
+  const roleRouting = stored.aiConfig?.dashboardRoleRouting
+  const generalRoute = typeof roleRouting === 'object' && roleRouting !== null
+    ? (roleRouting as Record<string, unknown>).general
+    : undefined
+
+  const providerId = typeof generalRoute === 'object' && generalRoute !== null
+    ? String((generalRoute as Record<string, unknown>).providerId || '')
+    : ''
+  const modelId = typeof generalRoute === 'object' && generalRoute !== null
+    ? String((generalRoute as Record<string, unknown>).modelId || '')
+    : ''
+
+  return { providerId, modelId, stored }
+}
+
 function normalizeGeneratedTitle(value: string) {
   return value
     .replace(/\s+/g, ' ')
@@ -88,12 +314,209 @@ async function appendAiRequestLog(record: Record<string, unknown>) {
 }
 
 export function registerAiIpc({
+  db,
   getOpenRouterSettings,
   getAiApiRequestLoggingEnabled,
 }: {
+  db: Database
   getOpenRouterSettings: () => Promise<OpenRouterSettings>
   getAiApiRequestLoggingEnabled: () => Promise<boolean>
 }) {
+  ipcMain.handle('generator:adviseModel', async (_, input?: { prompt?: string; mode?: AdvisorMode }) => {
+    const requestId = crypto.randomUUID()
+    const startedAt = Date.now()
+    let requestModel = ''
+    let requestProvider = ''
+    let responseStatus: number | null = null
+    let requestPayload: Record<string, unknown> | null = null
+    let resultData: AdvisorResult | null = null
+    let errorMessage: string | null = null
+
+    try {
+      const prompt = input?.prompt?.trim() || ''
+      const mode: AdvisorMode = input?.mode === 'ai' ? 'ai' : 'rule'
+
+      if (!prompt) {
+        return { error: 'Enter a prompt or concept first.' }
+      }
+
+      const models = await db
+        .select({
+          modelName: nightcafeModels.modelName,
+          description: nightcafeModels.description,
+          modelType: nightcafeModels.modelType,
+          mediaType: nightcafeModels.mediaType,
+          artScore: nightcafeModels.artScore,
+          promptingScore: nightcafeModels.promptingScore,
+          realismScore: nightcafeModels.realismScore,
+          typographyScore: nightcafeModels.typographyScore,
+          costTier: nightcafeModels.costTier,
+        })
+        .from(nightcafeModels)
+
+      if (models.length === 0) {
+        return { error: 'No NightCafe models found in local cache yet.' }
+      }
+
+      if (mode === 'rule') {
+        const advice = getRuleBasedRecommendation(prompt, models)
+        resultData = advice
+        return { data: advice }
+      }
+
+      const { providerId, modelId, stored } = await getAdvisorRouteSelection()
+      if (!providerId || !modelId) {
+        return { error: 'No advisor route is selected. Configure AI Configuration → Research & Reasoning first.' }
+      }
+
+      requestProvider = providerId
+      requestModel = modelId
+
+      const compactModels = models
+        .filter((model) => model.mediaType === 'image')
+        .slice(0, 120)
+        .map((model) => ({
+          modelName: model.modelName,
+          description: model.description,
+          modelType: model.modelType,
+          artScore: model.artScore,
+          realismScore: model.realismScore,
+          typographyScore: model.typographyScore,
+          costTier: model.costTier,
+        }))
+
+      const advisorInstruction = [
+        'You are a NightCafe model advisor.',
+        LANGUAGE_INSTRUCTION,
+        'Based on the user prompt and provided model metadata, recommend the best single model.',
+        'Use the scores and description to justify fit for style, realism, typography, and cost sensitivity.',
+        'Return strict JSON only with this shape:',
+        '{"recommendedModel":"string","reasoning":"string","alternatives":[{"modelName":"string","why":"string"}]}',
+        'Keep alternatives to max 3.',
+      ].join(' ')
+
+      const userContent = [
+        `User prompt/concept: ${prompt}`,
+        `Available models JSON: ${JSON.stringify(compactModels)}`,
+      ].join('\n\n')
+
+      if (providerId === 'openrouter') {
+        const settings = await getOpenRouterSettings()
+        if (!settings.apiKey) {
+          return { error: 'OpenRouter API key is missing. Add it in Settings first.' }
+        }
+
+        requestPayload = {
+          model: modelId,
+          temperature: 0.2,
+          max_tokens: 700,
+          messages: [
+            { role: 'system', content: advisorInstruction },
+            { role: 'user', content: userContent },
+          ],
+        }
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${settings.apiKey}`,
+            'Content-Type': 'application/json',
+            ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
+            ...(settings.appName ? { 'X-Title': settings.appName } : {}),
+          },
+          body: JSON.stringify(requestPayload),
+        })
+
+        responseStatus = response.status
+        if (!response.ok) {
+          const errText = await response.text()
+          throw new Error(`OpenRouter request failed (${response.status}): ${errText.slice(0, 300)}`)
+        }
+
+        const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
+        const raw = payload.choices?.[0]?.message?.content?.trim() || ''
+        if (!raw) throw new Error('No advisor response content returned.')
+
+        const parsed = parseAdvisorAiResponse(raw)
+        const advice: AdvisorResult = {
+          mode: 'ai',
+          recommendation: parsed.recommendation,
+          alternatives: parsed.alternatives,
+          matchedSignals: ['semantic-ai-analysis'],
+        }
+        resultData = advice
+        return { data: advice }
+      }
+
+      const localEndpointsRaw = stored.localEndpoints
+      const localEndpoints = Array.isArray(localEndpointsRaw)
+        ? (localEndpointsRaw as Array<Record<string, unknown>>)
+        : []
+      const endpoint = localEndpoints.find((item) => String(item.provider || '') === providerId)
+      const baseUrl = endpoint && typeof endpoint.baseUrl === 'string' ? endpoint.baseUrl : ''
+      if (!baseUrl) {
+        return { error: `Local provider "${providerId}" is not configured. Set its Base URL in AI Configuration → Configure Providers.` }
+      }
+
+      requestPayload = {
+        model: modelId,
+        temperature: 0.2,
+        max_tokens: 700,
+        messages: [
+          { role: 'system', content: advisorInstruction },
+          { role: 'user', content: userContent },
+        ],
+      }
+
+      const response = await fetch(`${normalizeBaseUrl(baseUrl)}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload),
+      })
+
+      responseStatus = response.status
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(`Local AI request failed (${response.status}): ${errText.slice(0, 300)}`)
+      }
+
+      const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
+      const raw = payload.choices?.[0]?.message?.content?.trim() || ''
+      if (!raw) throw new Error('No advisor response content returned.')
+
+      const parsed = parseAdvisorAiResponse(raw)
+      const advice: AdvisorResult = {
+        mode: 'ai',
+        recommendation: parsed.recommendation,
+        alternatives: parsed.alternatives,
+        matchedSignals: ['semantic-ai-analysis'],
+      }
+      resultData = advice
+      return { data: advice }
+    } catch (error) {
+      errorMessage = String(error)
+      return { error: String(error) }
+    } finally {
+      try {
+        const loggingEnabled = await getAiApiRequestLoggingEnabled()
+        if (loggingEnabled) await appendAiRequestLog({
+          timestamp: new Date().toISOString(),
+          requestId,
+          endpoint: 'generator:adviseModel',
+          provider: requestProvider,
+          model: requestModel,
+          durationMs: Date.now() - startedAt,
+          status: responseStatus,
+          requestPayload,
+          responsePrompt: resultData,
+          error: errorMessage,
+        })
+      } catch (loggingError) {
+        console.error('Failed to write AI request log:', loggingError)
+      }
+    }
+  })
+
   ipcMain.handle('generator:magicRandom', async (_, input?: { presetName?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[] }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
