@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Suggested Model onder Negative Prompt)
+
+- Findings: User wilde de `Suggested Model`-kaart visueel onder het `Negative Prompt`-blok plaatsen op de Generator-pagina.
+- Conclusions: De juiste plaats is in de onderste contentkaart, direct na het conditionele `Negative Prompt`-gedeelte (zowel zichtbaar als verborgen-state), zodat de volgorde overeenkomt met de gewenste UX.
+- Actions: Verplaatst in [src/screens/Generator.tsx](src/screens/Generator.tsx): `Suggested Model`-kaart weggehaald uit de rechter controlcard en toegevoegd direct onder het `Negative Prompt`-blok; buildvalidatie uitgevoerd.
+
 ## 2026-03-15 (Generator: rule-first Suggested Model + conditionele negative prompt)
 
 - Findings: User wilde de modeladvies-toggle verwijderen, eerst rule-based modeladvies tonen zoals in de referentie-UI, en de negative prompt opties alleen tonen wanneer het geadviseerde model dit ondersteunt.

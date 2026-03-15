@@ -923,34 +923,6 @@ export default function Generator() {
                     </button>
                   </div>
 
-                  <div className="mt-4 rounded-xl border border-night-700/60 bg-night-900/40 p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-yellow-300">Suggested Model</p>
-                      <button
-                        type="button"
-                        onClick={() => void requestModelAdvice('ai', generatedPrompt, 'Generated Prompt')}
-                        disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
-                        className="btn-ghost border border-night-600/50 px-3 py-1.5 text-xs"
-                      >
-                        {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
-                      </button>
-                    </div>
-
-                    <p className="mt-3 text-2xl font-semibold text-white">{recommendedModel || '—'}</p>
-                    <p className="mt-1 text-sm text-night-300">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
-
-                    <div className="mt-3 flex items-center justify-between text-sm text-night-400">
-                      <p>{recommendedModelMode === 'ai' ? 'AI-based advice' : recommendedModelMode === 'rule' ? 'Rule-based advice' : 'No advice yet'}</p>
-                      <p>NightCafe</p>
-                    </div>
-
-                    {modelAdviceBusy && (
-                      <p className="mt-2 text-[11px] text-night-400">Modeladvies ophalen...</p>
-                    )}
-                    {modelAdviceNote && (
-                      <p className="mt-2 text-[11px] text-night-300">{modelAdviceNote}</p>
-                    )}
-                  </div>
                 </div>
 
                 {greylistCard}
@@ -1044,6 +1016,35 @@ export default function Generator() {
                   </p>
                 </div>
               )}
+
+              <div className="mt-4 rounded-xl border border-night-700/60 bg-night-900/40 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-yellow-300">Suggested Model</p>
+                  <button
+                    type="button"
+                    onClick={() => void requestModelAdvice('ai', generatedPrompt, 'Generated Prompt')}
+                    disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
+                    className="btn-ghost border border-night-600/50 px-3 py-1.5 text-xs"
+                  >
+                    {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
+                  </button>
+                </div>
+
+                <p className="mt-3 text-2xl font-semibold text-white">{recommendedModel || '—'}</p>
+                <p className="mt-1 text-sm text-night-300">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
+
+                <div className="mt-3 flex items-center justify-between text-sm text-night-400">
+                  <p>{recommendedModelMode === 'ai' ? 'AI-based advice' : recommendedModelMode === 'rule' ? 'Rule-based advice' : 'No advice yet'}</p>
+                  <p>NightCafe</p>
+                </div>
+
+                {modelAdviceBusy && (
+                  <p className="mt-2 text-[11px] text-night-400">Modeladvies ophalen...</p>
+                )}
+                {modelAdviceNote && (
+                  <p className="mt-2 text-[11px] text-night-300">{modelAdviceNote}</p>
+                )}
+              </div>
 
               {improvementDiff && (
                 <div className="mt-4 rounded-xl border border-night-600/50 bg-night-900/30 p-3">
