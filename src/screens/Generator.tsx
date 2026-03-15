@@ -141,6 +141,7 @@ export default function Generator() {
 
       const result = await window.electronAPI.generator.quickExpand({
         idea,
+        presetName: selectedPreset || undefined,
         creativity: quickStartCreativity,
         character: characterForContext
           ? { name: characterForContext.name, description: characterForContext.description }
@@ -893,6 +894,24 @@ export default function Generator() {
                       ✦ {expandingIdea ? 'Expanding…' : 'Magic AI Expansion'}
                     </button>
                   </div>
+                </div>
+
+                <div className="mt-4">
+                  <label htmlFor="quickstart-preset" className="label">NightCafe Preset</label>
+                  <select
+                    id="quickstart-preset"
+                    aria-label="NightCafe Preset Quickstart"
+                    value={selectedPreset}
+                    onChange={(e) => setSelectedPreset(e.target.value)}
+                    className="input"
+                  >
+                    <option value="">Geen preset</option>
+                    {presetOptions.map((preset) => (
+                      <option key={`quickstart-${preset.presetName}`} value={preset.presetName}>
+                        {preset.presetName}{preset.category ? ` (${preset.category})` : ''}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Creativity slider */}

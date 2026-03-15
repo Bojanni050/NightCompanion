@@ -1274,6 +1274,7 @@ export function registerAiIpc({
 
   ipcMain.handle('generator:quickExpand', async (_, input?: {
     idea?: string
+    presetName?: string
     creativity?: 'focused' | 'balanced' | 'wild'
     character?: { name: string; description?: string }
   }) => {
@@ -1291,6 +1292,7 @@ export function registerAiIpc({
       if (!idea) return { error: 'No idea provided for expansion.' }
 
       const creativity = input?.creativity || 'balanced'
+      const presetName = input?.presetName?.trim() || ''
       const character = input?.character
 
       const creativityInstruction = QUICK_EXPAND_CREATIVITY[creativity]
@@ -1300,7 +1302,11 @@ export function registerAiIpc({
         ? `\n\nCharacter context: The prompt should feature "${character.name}".${character.description ? ` Character description: ${character.description}` : ''}`
         : ''
 
-      const userPrompt = `${creativityInstruction}\n\nUser's concept: ${idea}${characterContext}`
+      const presetContext = presetName
+        ? `\n\nNightCafe preset guidance: Use this preset as mandatory style guidance: ${presetName}.`
+        : ''
+
+      const userPrompt = `${creativityInstruction}\n\nUser's concept: ${idea}${presetContext}${characterContext}`
 
       const stored = await readStoredSettings()
       const roleRouting = stored.aiConfig?.dashboardRoleRouting
@@ -1457,6 +1463,7 @@ export function registerAiIpc({
           status: responseStatus,
           input: {
             idea: input?.idea?.trim() || null,
+            presetName: input?.presetName?.trim() || null,
             creativity: input?.creativity || 'balanced',
             hasCharacter: !!(input?.character?.name),
           },

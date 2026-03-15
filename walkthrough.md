@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Magic Quickstart: NightCafe preset dropdown toegevoegd)
+
+- Findings: User vroeg om een NightCafe preset-keuzelijst direct in het Magic Quickstart blok.
+- Conclusions: De preset-selector in Quickstart moet dezelfde `selectedPreset` state gebruiken als Magic Random, zodat beide blokken consistent blijven; `quickExpand` moet de gekozen preset als verplichte stijlcontext ontvangen.
+- Actions: In [src/screens/Generator.tsx](src/screens/Generator.tsx) een `NightCafe Preset` dropdown toegevoegd binnen de `Magic Quickstart` card en `selectedPreset` doorgegeven aan `generator:quickExpand`; `quickExpand` input uitgebreid met `presetName` in [electron/ipc/ai.ts](electron/ipc/ai.ts), [electron/preload.ts](electron/preload.ts), en [src/types/electron.d.ts](src/types/electron.d.ts); backend `quickExpand` promptopbouw gebruikt nu expliciete preset-guidance (`Use this preset as mandatory style guidance`); gevalideerd met `npm run build`.
+
 ## 2026-03-15 (Settings: laatste Hugging Face sync tijd zichtbaar)
 
 - Findings: User vroeg om expliciet de laatste Hugging Face sync-tijd in Settings te tonen.

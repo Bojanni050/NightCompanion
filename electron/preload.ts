@@ -210,7 +210,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('generator:improveNegativePrompt', input),
     generateTitle: (input?: { prompt?: string }): Promise<IpcResult<{ title: string }>> =>
       ipcRenderer.invoke('generator:generateTitle', input),
-    quickExpand: (input?: { idea?: string; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description?: string } }): Promise<IpcResult<{ prompt: string }>> =>
+    quickExpand: (input?: { idea?: string; presetName?: string; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description?: string } }): Promise<IpcResult<{ prompt: string }>> =>
       ipcRenderer.invoke('generator:quickExpand', input),
     adviseModel: (input?: { prompt?: string; mode?: 'rule' | 'ai' }): Promise<IpcResult<ModelAdvisorResult>> =>
       ipcRenderer.invoke('generator:adviseModel', input),
