@@ -8,6 +8,8 @@ type CreateMainWindowInput = {
 }
 
 export function createMainWindow({ isPackaged, preloadPath, devUrl, prodIndexPath }: CreateMainWindowInput) {
+  const isDev = process.env.NODE_ENV === 'development' || !isPackaged
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -20,10 +22,11 @@ export function createMainWindow({ isPackaged, preloadPath, devUrl, prodIndexPat
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: false,
+      webSecurity: !isDev,
     },
   })
 
-  if (process.env.NODE_ENV === 'development' || !isPackaged) {
+  if (isDev) {
     mainWindow.loadURL(devUrl)
     mainWindow.webContents.openDevTools({ mode: 'detach' })
   } else {

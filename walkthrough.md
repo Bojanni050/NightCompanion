@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Dev local resource loading enabled)
+
+- Findings: User asked to allow loading local resources in the development environment.
+- Conclusions: Two blockers were addressed: renderer CSP needed explicit `file:` support for local image URLs, and Electron dev window needed relaxed web security only during development.
+- Actions: Updated [index.html](index.html) CSP `img-src` to include `file:` for local `file://` image rendering; updated [electron/services/windowManager.ts](electron/services/windowManager.ts) to set `webPreferences.webSecurity` to `false` only in dev (`NODE_ENV=development` or unpackaged) and keep it enabled in production.
+
 ## 2026-03-15 (Suggested model field + AI tags on prompts)
 
 - Findings: User asked for a non-editable `Suggested Model` field in prompt edit/library views, populated from Generator saves, plus an AI-assisted tag option with a maximum of 15 tags.
