@@ -53,6 +53,10 @@ export type LocalEndpointStore = {
   updated_at?: string
 }
 
+type GeneratedTagsResult = {
+  tags: string[]
+}
+
 export type OpenRouterModel = {
   modelId: string
   displayName: string
@@ -216,6 +220,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('generator:improveNegativePrompt', input),
     generateTitle: (input?: { prompt?: string }): Promise<IpcResult<{ title: string }>> =>
       ipcRenderer.invoke('generator:generateTitle', input),
+    generateTags: (input?: { title?: string; prompt?: string; negativePrompt?: string; existingTags?: string[]; maxTags?: number }): Promise<IpcResult<GeneratedTagsResult>> =>
+      ipcRenderer.invoke('generator:generateTags', input),
     quickExpand: (input?: { idea?: string; presetName?: string; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description?: string } }): Promise<IpcResult<{ prompt: string }>> =>
       ipcRenderer.invoke('generator:quickExpand', input),
     adviseModel: (input?: { prompt?: string; mode?: 'rule' | 'ai' }): Promise<IpcResult<ModelAdvisorResult>> =>

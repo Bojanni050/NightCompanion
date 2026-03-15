@@ -99,6 +99,13 @@
       "when": 1773609600000,
       "tag": "0013_prompt_images",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1773611400000,
+      "tag": "0014_prompt_suggested_model",
+      "breakpoints": true
     }
   ]
 }

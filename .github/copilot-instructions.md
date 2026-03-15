@@ -13,3 +13,11 @@
 1. When applicable update the nightcompanion.md file with any relevant information, tips, or instructions that may assist users in navigating and utilizing the project effectively.
 2. Ensure that the nightcompanion.md file is kept up-to-date with any changes or updates to the project, providing users with accurate and helpful information.
 3. Use the nightcompanion.md file as a resource for users to find answers to common questions, troubleshoot issues, and learn about new features or functionalities of the project.
+
+### commit messages
+1. When making commits, ensure that your commit messages are clear, concise, and descriptive of the changes you have made.
+2. Follow a consistent format for commit messages, such as starting with a capital letter and using the present tense (e.g., "Add new feature" instead of "Added new feature").
+3. Include relevant details in your commit messages, such as the purpose of the change, any related issues or tickets, and any important information that may help others understand the context of the change.
+4. Avoid vague or generic commit messages, such as "Fix bug" or "Update code", and instead provide specific information about what was changed and why.
+5. Use the commit messages as a way to communicate with your team and provide a clear history of changes made to the project, making it easier for others to review and understand the evolution of the codebase.
+6. Use command LM Studio: Generate commit message when possible.

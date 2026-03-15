@@ -3,6 +3,7 @@ import type { Prompt, PromptVersion, StyleProfile, PromptMutationInput } from '.
 import PromptPreview from './PromptPreview'
 
 type FormData = PromptMutationInput
+const MAX_TAG_COUNT = 15
 
 type Props = {
   initial?: Prompt
@@ -23,8 +24,10 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null)
   const [imageFileName, setImageFileName] = useState<string | null>(null)
   const [readingImage, setReadingImage] = useState(false)
+  const [suggestedModel, setSuggestedModel] = useState(initial?.suggestedModel ?? '')
   const [tagInput, setTagInput] = useState('')
-  const [tags, setTags] = useState<string[]>(initial?.tags ?? [])
+  const [tags, setTags] = useState<string[]>((initial?.tags ?? []).slice(0, MAX_TAG_COUNT))
+  const [generatingTags, setGeneratingTags] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [modelOptions, setModelOptions] = useState<string[]>([])
@@ -112,16 +115,21 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
     setPromptText(version.promptText)
     setNegativePrompt(version.negativePrompt)
     setModel(version.model)
+    setSuggestedModel(version.suggestedModel ?? '')
     setIsTemplate(version.isTemplate)
     setIsFavorite(version.isFavorite)
     setRating(version.rating ?? 0)
     setNotes(version.notes ?? '')
-    setTags(version.tags ?? [])
+    setTags((version.tags ?? []).slice(0, MAX_TAG_COUNT))
     setTagInput('')
   }
 
   const addTag = () => {
     const t = tagInput.trim().toLowerCase()
+    if (tags.length >= MAX_TAG_COUNT) {
+      setTagInput('')
+      return
+    }
     if (t && !tags.includes(t)) {
       setTags((prev) => [...prev, t])
     }
@@ -129,6 +137,38 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   }
 
   const removeTag = (tag: string) => setTags((prev) => prev.filter((t) => t !== tag))
+
+  const handleGenerateTags = async () => {
+    if (!promptText.trim()) {
+      setError('Enter a prompt before generating tags with AI.')
+      return
+    }
+
+    setGeneratingTags(true)
+    setError(null)
+
+    try {
+      const result = await window.electronAPI.generator.generateTags({
+        title: title.trim(),
+        prompt: promptText.trim(),
+        negativePrompt: negativePrompt.trim(),
+        existingTags: tags,
+        maxTags: MAX_TAG_COUNT,
+      })
+
+      if (result.error || !result.data?.tags) {
+        setError(result.error || 'AI could not generate tags.')
+        return
+      }
+
+      setTags(result.data.tags.slice(0, MAX_TAG_COUNT))
+      setTagInput('')
+    } catch {
+      setError('AI could not generate tags.')
+    } finally {
+      setGeneratingTags(false)
+    }
+  }
 
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -181,11 +221,12 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
       promptText: promptText.trim(),
       negativePrompt: negativePrompt.trim(),
       model: model.trim(),
+      suggestedModel: suggestedModel.trim(),
       isTemplate,
       isFavorite,
       rating: rating || null,
       notes: notes.trim(),
-      tags,
+      tags: tags.slice(0, MAX_TAG_COUNT),
     })
 
     if (err) {
@@ -358,6 +399,19 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             </div>
 
             <div>
+              <label className="label">Suggested Model</label>
+              <input
+                type="text"
+                value={suggestedModel}
+                readOnly
+                aria-label="Suggested model"
+                className="input bg-night-900/60 text-night-300"
+                placeholder="No suggested model saved"
+              />
+              <p className="text-[10px] text-night-600 mt-1">Saved from Generator model advice and not editable here.</p>
+            </div>
+
+            <div>
               <label className="label">Style Profile (preview only)</label>
               <select
                 value={selectedStyleProfileId}
@@ -412,7 +466,20 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
             {/* Tags */}
             <div>
-              <label className="label">Tags</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label !mb-0">Tags</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-night-500">{tags.length}/{MAX_TAG_COUNT}</span>
+                  <button
+                    type="button"
+                    onClick={handleGenerateTags}
+                    disabled={generatingTags || !promptText.trim() || tags.length >= MAX_TAG_COUNT}
+                    className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
+                  >
+                    {generatingTags ? 'Generating...' : 'Add Tags with AI'}
+                  </button>
+                </div>
+              </div>
               <div className="input flex flex-wrap gap-1.5 min-h-[42px] cursor-text" onClick={() => document.getElementById('tag-input')?.focus()}>
                 {tags.map((tag) => (
                   <span key={tag} className="tag-removable flex-shrink-0">
@@ -433,11 +500,12 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleTagKeyDown}
                   onBlur={addTag}
+                  disabled={tags.length >= MAX_TAG_COUNT}
                   className="bg-transparent border-none outline-none text-sm text-night-200 placeholder-night-500 min-w-[120px] flex-1"
-                  placeholder={tags.length === 0 ? 'Add tags, press Enter…' : ''}
+                  placeholder={tags.length >= MAX_TAG_COUNT ? 'Maximum of 15 tags reached' : tags.length === 0 ? 'Add tags, press Enter…' : ''}
                 />
               </div>
-              <p className="text-[10px] text-night-600 mt-1">Press Enter or comma to add a tag</p>
+              <p className="text-[10px] text-night-600 mt-1">Press Enter or comma to add a tag. Maximum 15 tags.</p>
             </div>
 
             {/* Notes */}

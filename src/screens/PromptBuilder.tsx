@@ -90,6 +90,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
       promptText: composedPrompt,
       negativePrompt: composedNegative,
       model: '',
+      suggestedModel: '',
       notes: 'Created with Prompt Builder',
       tags: [],
     })

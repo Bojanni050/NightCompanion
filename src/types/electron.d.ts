@@ -79,6 +79,9 @@ type NightcafeHuggingFaceSyncInfo = {
     pending: number
   }
 }
+type GeneratedTagsResult = {
+  tags: string[]
+}
 type ModelAdvisorRecommendation = { modelName: string; explanation: string }
 type ModelAdvisorResult = {
   mode: 'rule' | 'ai'
@@ -141,6 +144,7 @@ declare global {
         generateNegativePrompt(input?: { prompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
         improveNegativePrompt(input?: { negativePrompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
         generateTitle(input?: { prompt?: string }): Promise<IpcResult<{ title: string }>>
+        generateTags(input?: { title?: string; prompt?: string; negativePrompt?: string; existingTags?: string[]; maxTags?: number }): Promise<IpcResult<GeneratedTagsResult>>
         quickExpand(input?: { idea?: string; presetName?: string; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description?: string } }): Promise<IpcResult<{ prompt: string }>>
         adviseModel(input?: { prompt?: string; mode?: 'rule' | 'ai' }): Promise<IpcResult<ModelAdvisorResult>>
       }

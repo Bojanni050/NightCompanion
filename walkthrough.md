@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Suggested model field + AI tags on prompts)
+
+- Findings: User asked for a non-editable `Suggested Model` field in prompt edit/library views, populated from Generator saves, plus an AI-assisted tag option with a maximum of 15 tags.
+- Conclusions: `suggestedModel` must be persisted separately from the editable `model` field so generator advice can be preserved even when library prompts are edited later; AI tag generation belongs in the existing generator AI IPC because it already has provider routing and request logging.
+- Actions: Added `suggested_model` to prompts and prompt versions in [src/lib/schema.ts](src/lib/schema.ts) with migration `drizzle/0014_prompt_suggested_model.sql`; updated prompt persistence/version snapshots in [electron/ipc/prompts.ts](electron/ipc/prompts.ts); added `generator:generateTags` in [electron/ipc/ai.ts](electron/ipc/ai.ts) with max-15 tag normalization and request logging, plus bridge/types in [electron/preload.ts](electron/preload.ts) and [src/types/electron.d.ts](src/types/electron.d.ts); updated [src/components/PromptForm.tsx](src/components/PromptForm.tsx) with read-only `Suggested Model`, `Add Tags with AI`, and a hard 15-tag limit; updated [src/screens/Generator.tsx](src/screens/Generator.tsx) to save `suggestedModel` from the recommended model; updated [src/screens/Library.tsx](src/screens/Library.tsx) to show suggested model metadata.
+
 ## 2026-03-15 (Prompt edit form: local image upload)
 
 - Findings: User asked for a prompt image upload option directly in the Prompt Library edit form, with files stored under the user profile in `NightCompanion/images`.

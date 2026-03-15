@@ -307,6 +307,9 @@ export default function Library() {
                         {prompt.updatedAt !== prompt.createdAt && (
                           <span>Updated</span>
                         )}
+                        {prompt.suggestedModel && (
+                          <span className="truncate">Suggested: {prompt.suggestedModel}</span>
+                        )}
                       </div>
 
                       <p className="text-xs text-night-300 mb-3 leading-relaxed line-clamp-3 h-[3.75rem]">{preview}</p>
@@ -346,6 +349,9 @@ export default function Library() {
                         </p>
                         {prompt.model && (
                           <p className="text-[10px] text-night-500 mt-2 truncate">{prompt.model}</p>
+                        )}
+                        {prompt.suggestedModel && prompt.suggestedModel !== prompt.model && (
+                          <p className="text-[10px] text-night-500 mt-1 truncate">Suggested model: {prompt.suggestedModel}</p>
                         )}
                       </div>
                     </div>

@@ -682,6 +682,7 @@ export default function Generator() {
       promptText: generatedPrompt,
       negativePrompt: negativePrompt.trim(),
       model: recommendedModel.trim(),
+      suggestedModel: recommendedModel.trim(),
       notes: 'Generated with Magic Random (AI)',
       tags: ['ai-random'],
     })
@@ -927,6 +928,7 @@ export default function Generator() {
                     min={0}
                     max={2}
                     step={1}
+                    aria-label="Quickstart creativity level"
                     value={(['focused', 'balanced', 'wild'] as CreativityLevel[]).indexOf(quickStartCreativity)}
                     onChange={(e) => {
                       const levels: CreativityLevel[] = ['focused', 'balanced', 'wild']

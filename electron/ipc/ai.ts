@@ -11,6 +11,7 @@ const AI_REQUEST_LOG_FILE = 'ai-api-requests.jsonl'
 const TITLE_MAX_LENGTH = 140
 const DEFAULT_MAX_WORDS = 70
 const MAX_ALLOWED_WORDS = 100
+const MAX_GENERATED_TAGS = 15
 
 const LANGUAGE_INSTRUCTION = "CRITICAL: All output, including descriptions, reasoning, and analysis, MUST use English (UK) spelling and terminology (e.g., 'colour', 'centre', 'maximise')."
 
@@ -282,6 +283,39 @@ function normalizeGeneratedTitle(value: string) {
     .replace(/^["'`]+|["'`]+$/g, '')
     .slice(0, TITLE_MAX_LENGTH)
     .trim()
+}
+
+function normalizeGeneratedTag(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/^#+/, '')
+    .replace(/['"`]/g, '')
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 40)
+}
+
+function parseGeneratedTags(raw: string, existingTags: string[], maxTags: number) {
+  const normalizedExisting = existingTags.map(normalizeGeneratedTag).filter(Boolean)
+  const seen = new Set(normalizedExisting)
+  const nextTags = [...normalizedExisting]
+
+  const parsedCandidates = raw
+    .split(/[,\n]/)
+    .map(normalizeGeneratedTag)
+    .filter(Boolean)
+
+  for (const tag of parsedCandidates) {
+    if (seen.has(tag)) continue
+    seen.add(tag)
+    nextTags.push(tag)
+    if (nextTags.length >= maxTags) break
+  }
+
+  return nextTags.slice(0, maxTags)
 }
 
 function getAiRequestLogPath() {
@@ -628,6 +662,155 @@ export function registerAiIpc({
           },
           requestPayload,
           responsePrompt: resultPrompt || null,
+          error: errorMessage,
+        })
+      } catch (loggingError) {
+        console.error('Failed to write AI request log:', loggingError)
+      }
+    }
+  })
+
+  ipcMain.handle('generator:generateTags', async (_, input?: { title?: string; prompt?: string; negativePrompt?: string; existingTags?: string[]; maxTags?: number }) => {
+    const requestId = crypto.randomUUID()
+    const startedAt = Date.now()
+    let requestModel = ''
+    let requestProvider = ''
+    let requestPayload: Record<string, unknown> | null = null
+    let responseStatus: number | null = null
+    let resultTags: string[] = []
+    let errorMessage: string | null = null
+
+    try {
+      const prompt = input?.prompt?.trim() || ''
+      const title = input?.title?.trim() || ''
+      const negativePrompt = input?.negativePrompt?.trim() || ''
+      const existingTags = Array.isArray(input?.existingTags) ? input?.existingTags.map((tag) => String(tag || '').trim()).filter(Boolean) : []
+      const maxTags = Number.isFinite(input?.maxTags) ? Math.max(1, Math.min(MAX_GENERATED_TAGS, Math.floor(input?.maxTags as number))) : MAX_GENERATED_TAGS
+
+      if (!prompt) {
+        return { error: 'Enter a prompt first before generating tags.' }
+      }
+
+      const { providerId, modelId, stored } = await getAdvisorRouteSelection()
+      if (!providerId || !modelId) {
+        return { error: 'No advisor route is selected. Configure AI Configuration → Research & Reasoning first.' }
+      }
+
+      requestProvider = providerId
+      requestModel = modelId
+
+      const tagInstruction = [
+        'You generate concise library tags for AI image prompts.',
+        LANGUAGE_INSTRUCTION,
+        `Return only a comma-separated list of up to ${maxTags} tags.`,
+        'Use lowercase tags only.',
+        'Prefer short tags of one to three words.',
+        'Do not include numbering, explanations, or duplicate ideas.',
+        'Focus on subject, style, mood, lighting, setting, and medium when relevant.',
+      ].join(' ')
+
+      const userContent = [
+        title ? `Title: ${title}` : '',
+        `Prompt: ${prompt}`,
+        negativePrompt ? `Negative prompt: ${negativePrompt}` : '',
+        existingTags.length > 0 ? `Existing tags: ${existingTags.join(', ')}` : '',
+      ].filter(Boolean).join('\n')
+
+      if (providerId === 'openrouter') {
+        const settings = await getOpenRouterSettings()
+        if (!settings.apiKey) {
+          return { error: 'OpenRouter API key is missing. Add it in Settings first.' }
+        }
+
+        requestPayload = {
+          model: modelId,
+          temperature: 0.3,
+          max_tokens: 160,
+          messages: [
+            { role: 'system', content: tagInstruction },
+            { role: 'user', content: userContent },
+          ],
+        }
+
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${settings.apiKey}`,
+            'Content-Type': 'application/json',
+            ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
+            ...(settings.appName ? { 'X-Title': settings.appName } : {}),
+          },
+          body: JSON.stringify(requestPayload),
+        })
+
+        responseStatus = response.status
+        if (!response.ok) {
+          const errText = await response.text()
+          throw new Error(`OpenRouter request failed (${response.status}): ${errText.slice(0, 300)}`)
+        }
+
+        const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
+        const raw = payload.choices?.[0]?.message?.content?.trim() || ''
+        if (!raw) throw new Error('No generated tags returned.')
+
+        resultTags = parseGeneratedTags(raw, existingTags, maxTags)
+        return { data: { tags: resultTags } }
+      }
+
+      const localEndpointsRaw = stored.localEndpoints
+      const localEndpoints = Array.isArray(localEndpointsRaw)
+        ? (localEndpointsRaw as Array<Record<string, unknown>>)
+        : []
+      const endpoint = localEndpoints.find((item) => String(item.provider || '') === providerId)
+      const baseUrl = endpoint && typeof endpoint.baseUrl === 'string' ? endpoint.baseUrl : ''
+      if (!baseUrl) {
+        return { error: `Local provider "${providerId}" is not configured. Set its Base URL in AI Configuration → Configure Providers.` }
+      }
+
+      requestPayload = {
+        model: modelId,
+        temperature: 0.3,
+        max_tokens: 160,
+        messages: [
+          { role: 'system', content: tagInstruction },
+          { role: 'user', content: userContent },
+        ],
+      }
+
+      const response = await fetch(`${normalizeBaseUrl(baseUrl)}/chat/completions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload),
+      })
+
+      responseStatus = response.status
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(`Local AI request failed (${response.status}): ${errText.slice(0, 300)}`)
+      }
+
+      const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
+      const raw = payload.choices?.[0]?.message?.content?.trim() || ''
+      if (!raw) throw new Error('No generated tags returned.')
+
+      resultTags = parseGeneratedTags(raw, existingTags, maxTags)
+      return { data: { tags: resultTags } }
+    } catch (error) {
+      errorMessage = String(error)
+      return { error: String(error) }
+    } finally {
+      try {
+        const loggingEnabled = await getAiApiRequestLoggingEnabled()
+        if (loggingEnabled) await appendAiRequestLog({
+          timestamp: new Date().toISOString(),
+          requestId,
+          endpoint: 'generator:generateTags',
+          provider: requestProvider,
+          model: requestModel,
+          durationMs: Date.now() - startedAt,
+          status: responseStatus,
+          requestPayload,
+          responsePrompt: resultTags,
           error: errorMessage,
         })
       } catch (loggingError) {
