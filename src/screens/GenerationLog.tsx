@@ -1,8 +1,39 @@
 import { useState, useEffect } from 'react'
 import type { GenerationEntry, NewGenerationEntry } from '../types'
+import { Star, StarHalf } from 'lucide-react'
 
 type LogFormData = Omit<NewGenerationEntry, 'createdAt' | 'updatedAt'>
 type FormState = { mode: 'closed' } | { mode: 'create' } | { mode: 'edit'; entry: GenerationEntry }
+
+function getStarFill(rating: number, starIndex: number) {
+  if (rating >= starIndex) return 'full'
+  if (rating >= starIndex - 0.5) return 'half'
+  return 'empty'
+}
+
+function isSameRating(left: number, right: number) {
+  return Math.abs(left - right) < 0.001
+}
+
+function RatingStars({ rating }: { rating: number | null }) {
+  const safeRating = rating ?? 0
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((value) => {
+        const fill = getStarFill(safeRating, value)
+        return (
+          <span key={value} className={fill === 'empty' ? 'text-night-600' : 'text-yellow-400'}>
+            {fill === 'full' && <Star size={14} fill="currentColor" />}
+            {fill === 'half' && <StarHalf size={14} fill="currentColor" />}
+            {fill === 'empty' && <Star size={14} />}
+          </span>
+        )
+      })}
+      <span className="text-[10px] text-night-500 ml-1">{safeRating ? safeRating.toFixed(1) : '0.0'}</span>
+    </div>
+  )
+}
 
 export default function GenerationLog() {
   const [entries, setEntries] = useState<GenerationEntry[]>([])
@@ -33,8 +64,6 @@ export default function GenerationLog() {
     await fetchEntries()
     setForm({ mode: 'closed' })
   }
-
-  const stars = (n: number | null) => n ? '★'.repeat(n) + '☆'.repeat(5 - n) : '☆☆☆☆☆'
 
   return (
     <div className="flex flex-col h-full">
@@ -76,7 +105,7 @@ export default function GenerationLog() {
                 )}
                 <div className="p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-yellow-400 tracking-wider">{stars(e.rating)}</span>
+                    <RatingStars rating={e.rating} />
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => setForm({ mode: 'edit', entry: e })} className="p-1 rounded text-night-400 hover:text-white hover:bg-night-700 text-xs">✎</button>
                       <button onClick={() => handleDelete(e.id)} className="p-1 rounded text-night-500 hover:text-red-400 hover:bg-night-700 text-xs">✕</button>
@@ -97,7 +126,9 @@ export default function GenerationLog() {
                   <p className="text-xs text-night-300 truncate">{e.promptSnapshot || '(no prompt)'}</p>
                   {e.notes && <p className="text-[10px] text-night-500 truncate mt-0.5">{e.notes}</p>}
                 </div>
-                <span className="text-xs text-yellow-400 flex-shrink-0">{stars(e.rating)}</span>
+                <div className="flex-shrink-0">
+                  <RatingStars rating={e.rating} />
+                </div>
                 <span className="text-[10px] text-night-600 flex-shrink-0">{new Date(e.createdAt).toLocaleDateString()}</span>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => setForm({ mode: 'edit', entry: e })} className="p-1.5 rounded text-night-400 hover:text-white hover:bg-night-700 text-xs">✎</button>
@@ -142,8 +173,29 @@ function GenerationForm({ initial, onSubmit, onClose }: { initial?: GenerationEn
             <label className="label">Rating</label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} type="button" onClick={() => setRating(rating === n ? 0 : n)} className={`w-9 h-9 rounded-lg border transition-colors text-base ${rating >= n ? 'text-yellow-400 border-yellow-600/50 bg-yellow-900/20' : 'text-night-600 border-night-600/50 hover:text-night-400'}`}>★</button>
+                <div key={n} className={`relative w-9 h-9 rounded-lg border transition-colors ${rating >= n - 0.5 ? 'text-yellow-400 border-yellow-600/50 bg-yellow-900/20' : 'text-night-600 border-night-600/50 hover:text-night-400'}`}>
+                  <button
+                    type="button"
+                    onClick={() => setRating((prev) => (isSameRating(prev, n - 0.5) ? 0 : n - 0.5))}
+                    className="absolute inset-y-0 left-0 w-1/2 z-10"
+                    aria-label={`Set rating ${n - 0.5}`}
+                    title={`Set rating ${n - 0.5}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setRating((prev) => (isSameRating(prev, n) ? 0 : n))}
+                    className="absolute inset-y-0 right-0 w-1/2 z-10"
+                    aria-label={`Set rating ${n}`}
+                    title={`Set rating ${n}`}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    {getStarFill(rating, n) === 'full' && <Star size={16} fill="currentColor" />}
+                    {getStarFill(rating, n) === 'half' && <StarHalf size={16} fill="currentColor" />}
+                    {getStarFill(rating, n) === 'empty' && <Star size={16} />}
+                  </div>
+                </div>
               ))}
+              <span className="text-xs text-night-400 min-w-[3rem] ml-1">{rating ? rating.toFixed(1) : '0.0'}/5</span>
             </div>
           </div>
           <div><label className="label">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} className="textarea" rows={2} placeholder="What worked, what didn't…" /></div>

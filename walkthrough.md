@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (App-wide halve sterren)
+
+- Findings: User vroeg om halve sterren app-wide toe te staan, niet alleen in Prompt Library/Form.
+- Conclusions: Naast prompts moest ook Generation Log worden omgezet naar 0.5-stappen, inclusief databasekolom en UI in zowel lijst/kaartweergave als edit/create modal.
+- Actions: `generation_log.rating` omgezet van integer naar real in [src/lib/schema.ts](src/lib/schema.ts) met migratie [drizzle/0016_generation_log_half_star_ratings.sql](drizzle/0016_generation_log_half_star_ratings.sql) en journal update; [src/screens/GenerationLog.tsx](src/screens/GenerationLog.tsx) uitgebreid met half-star rendering (`Star`/`StarHalf`) en half-step input (links/rechts klikzones per ster) inclusief 1-decimal label; gevalideerd met `npm run db:migrate` en `npm run build`.
+
 ## 2026-03-15 (Halve sterren bij promptwaardering)
 
 - Findings: User vroeg om halve sterren toe te staan bij waardering in plaats van alleen hele sterren.
