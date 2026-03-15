@@ -1,5 +1,7 @@
 ## 2026-03-15
 
+- De Prompt Library lightbox toont nu optioneel extra afbeeldingscontext: onderaan de prompttekst met sterwaardering en rechtsboven het gebruikte model.
+- De lightbox-overlay is togglebaar via de `Info` knop en ook met de `I`-toets; `Esc` sluit de lightbox.
 - Promptwaardering ondersteunt nu halve sterren (stappen van 0.5) in zowel de Prompt Library-kaarten als het prompt edit-formulier.
 - Halve sterren zijn nu app-wide: ook Generation Log ondersteunt 0.5-waarderingen in de lijst/kaartweergave en het logformulier.
 - De Prompt Library lightbox opent en sluit nu met een vloeiende animatie (fade + scale) voor een zachtere visuele overgang.

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Prompt } from '../types'
 import PromptForm from '../components/PromptForm'
-import { BookTemplate, Check, Copy, Edit3, Filter, Heart, Plus, Search, SlidersHorizontal, Star, StarHalf, Trash2 } from 'lucide-react'
+import { BookTemplate, Check, Copy, Edit3, Eye, EyeOff, Filter, Heart, Plus, Search, SlidersHorizontal, Star, StarHalf, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const PAGE_SIZE = 20
@@ -12,6 +12,14 @@ type FormState =
   | { mode: 'edit'; prompt: Prompt }
 
 type FilterType = 'all' | 'templates' | 'favorites'
+
+type LightboxItem = {
+  url: string
+  title: string
+  promptText: string
+  rating: number
+  model: string
+}
 
 function getStarFill(rating: number, starIndex: number) {
   if (rating >= starIndex) return 'full'
@@ -35,15 +43,21 @@ export default function Library() {
   const [currentPage, setCurrentPage] = useState(0)
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [form, setForm] = useState<FormState>({ mode: 'closed' })
-  const [lightboxImage, setLightboxImage] = useState<{ url: string; title: string } | null>(null)
+  const [lightboxImage, setLightboxImage] = useState<LightboxItem | null>(null)
   const [lightboxVisible, setLightboxVisible] = useState(false)
+  const [lightboxOverlayVisible, setLightboxOverlayVisible] = useState(true)
 
-  const openLightbox = useCallback((image: { url: string; title: string }) => {
+  const openLightbox = useCallback((image: LightboxItem) => {
     setLightboxImage(image)
+    setLightboxOverlayVisible(true)
   }, [])
 
   const closeLightbox = useCallback(() => {
     setLightboxVisible(false)
+  }, [])
+
+  const toggleLightboxOverlay = useCallback(() => {
+    setLightboxOverlayVisible((prev) => !prev)
   }, [])
 
   useEffect(() => {
@@ -72,6 +86,26 @@ export default function Library() {
       window.clearTimeout(timeout)
     }
   }, [lightboxImage, lightboxVisible])
+
+  useEffect(() => {
+    if (!lightboxImage) return
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        closeLightbox()
+      }
+
+      if (event.key.toLowerCase() === 'i') {
+        setLightboxOverlayVisible((prev) => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [closeLightbox, lightboxImage])
 
   const fetchPrompts = useCallback(async () => {
     setLoading(true)
@@ -299,7 +333,15 @@ export default function Library() {
                           src={prompt.imageUrl}
                           alt={prompt.title || 'Prompt image'}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02] cursor-zoom-in"
-                          onClick={() => openLightbox({ url: prompt.imageUrl, title: prompt.title || 'Prompt image' })}
+                          onClick={() =>
+                            openLightbox({
+                              url: prompt.imageUrl,
+                              title: prompt.title || 'Prompt image',
+                              promptText: prompt.promptText,
+                              rating: prompt.rating ?? 0,
+                              model: prompt.model || prompt.suggestedModel || '',
+                            })
+                          }
                           onError={(event) => {
                             ;(event.currentTarget.parentElement as HTMLDivElement | null)?.classList.add('hidden')
                           }}
@@ -478,6 +520,20 @@ export default function Library() {
             type="button"
             onClick={(event) => {
               event.stopPropagation()
+              toggleLightboxOverlay()
+            }}
+            className={`absolute top-4 left-4 z-[101] inline-flex items-center gap-2 rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+            aria-label={lightboxOverlayVisible ? 'Hide overlay information' : 'Show overlay information'}
+            title={lightboxOverlayVisible ? 'Hide overlay information (I)' : 'Show overlay information (I)'}
+          >
+            {lightboxOverlayVisible ? <EyeOff size={15} /> : <Eye size={15} />}
+            Info
+          </button>
+
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
               closeLightbox()
             }}
             className={`absolute top-4 right-4 z-[101] rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
@@ -485,12 +541,53 @@ export default function Library() {
             Close
           </button>
 
+          {lightboxImage.model && (
+            <div
+              className={`absolute top-16 right-4 z-[101] max-w-[min(42rem,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-black/45 px-4 py-2 text-right text-white shadow-2xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">Used model</p>
+              <p className="mt-1 text-sm font-medium text-white/95 break-words">{lightboxImage.model}</p>
+            </div>
+          )}
+
           <img
             src={lightboxImage.url}
             alt={lightboxImage.title}
             onClick={(event) => event.stopPropagation()}
             className={`relative z-[101] max-w-[96vw] max-h-[94vh] object-contain rounded-2xl shadow-2xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
           />
+
+          <div
+            className={`pointer-events-none absolute inset-x-4 bottom-4 z-[101] flex justify-center transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+          >
+            <div
+              className="pointer-events-auto w-full max-w-3xl rounded-[28px] border border-white/15 bg-black/45 px-5 py-4 text-white shadow-2xl backdrop-blur-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="flex items-center justify-center gap-1 text-yellow-300">
+                {[1, 2, 3, 4, 5].map((value) => {
+                  const fill = getStarFill(lightboxImage.rating, value)
+
+                  if (fill === 'full') {
+                    return <Star key={value} size={16} fill="currentColor" />
+                  }
+
+                  if (fill === 'half') {
+                    return <StarHalf key={value} size={16} fill="currentColor" />
+                  }
+
+                  return <Star key={value} size={16} className="text-white/35" />
+                })}
+                <span className="ml-2 text-sm font-medium text-white/90">
+                  {lightboxImage.rating > 0 ? lightboxImage.rating.toFixed(1) : '0.0'} / 5.0
+                </span>
+              </div>
+              <p className="mt-3 text-center text-sm leading-relaxed text-white/92 whitespace-pre-wrap">
+                {lightboxImage.promptText}
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

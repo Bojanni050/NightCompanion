@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Library lightbox metadata overlay)
+
+- Findings: User wilde in de Library lightbox extra context op de afbeelding: onderaan de prompt met sterwaardering, rechtsboven het gebruikte model, en de mogelijkheid om die overlay te togglen.
+- Conclusions: De lightbox moet niet alleen een afbeelding bevatten maar ook promptmetadata meenemen in de open-state; een aparte overlay-toggle voorkomt visuele drukte en blijft bruikbaar met toetsenbordbediening.
+- Actions: In [src/screens/Library.tsx](src/screens/Library.tsx) lightbox state uitgebreid met `promptText`, `rating` en `model`; een togglebare info-overlay toegevoegd met knop linksboven en `I`-sneltoets; rechtsboven een `Used model` badge toegevoegd; onderaan een glazen metadata-panel toegevoegd met sterweergave en volledige prompttekst; `Esc` sluit de lightbox.
+
 ## 2026-03-15 (App-wide halve sterren)
 
 - Findings: User vroeg om halve sterren app-wide toe te staan, niet alleen in Prompt Library/Form.
