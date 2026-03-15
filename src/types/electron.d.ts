@@ -43,9 +43,37 @@ type OpenRouterModel = {
   requestPrice: string | null
   imagePrice: string | null
 }
-type NightcafeModelOption = { modelName: string; modelType: string; mediaType: string }
+type NightcafeModelOption = {
+  modelName: string
+  modelType: string
+  mediaType: string
+  hfModelId?: string | null
+  hfCardSummary?: string
+  hfDownloads?: number | null
+  hfLikes?: number | null
+  hfLastModified?: string | Date | null
+  hfSyncStatus?: string
+}
 type NightcafeModelSupport = { modelName: string; supportsNegativePrompt: boolean }
 type NightcafePresetOption = { presetName: string; category: string }
+type NightcafeHuggingFaceSyncStats = {
+  total: number
+  processed: number
+  skippedFresh: number
+  matched: number
+  unmatched: number
+  failed: number
+}
+type NightcafeHuggingFaceSyncInfo = {
+  lastSyncedAt: string | Date | null
+  total: number
+  counts: {
+    matched: number
+    unmatched: number
+    error: number
+    pending: number
+  }
+}
 type ModelAdvisorRecommendation = { modelName: string; explanation: string }
 type ModelAdvisorResult = {
   mode: 'rule' | 'ai'
@@ -114,6 +142,8 @@ declare global {
       nightcafeModels: {
         list(filters?: { mediaType?: 'image' | 'video' }): Promise<IpcResult<NightcafeModelOption[]>>
         getSupport(input?: { modelName?: string }): Promise<IpcResult<NightcafeModelSupport>>
+        refreshHuggingFace(input?: { force?: boolean }): Promise<IpcResult<NightcafeHuggingFaceSyncStats>>
+        getHuggingFaceSyncInfo(): Promise<IpcResult<NightcafeHuggingFaceSyncInfo>>
       }
       nightcafePresets: {
         list(): Promise<IpcResult<NightcafePresetOption[]>>

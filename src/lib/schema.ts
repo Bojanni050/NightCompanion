@@ -143,6 +143,13 @@ export const nightcafeModels = pgTable(
     typographyScore: varchar('typography_score', { length: 16 }).default('').notNull(),
     costTier: varchar('cost_tier', { length: 16 }).default('').notNull(),
     supportsNegativePrompt: boolean('supports_negative_prompt').default(false).notNull(),
+    hfModelId: varchar('hf_model_id', { length: 255 }),
+    hfCardSummary: text('hf_card_summary').default('').notNull(),
+    hfDownloads: integer('hf_downloads'),
+    hfLikes: integer('hf_likes'),
+    hfLastModified: timestamp('hf_last_modified'),
+    hfSyncedAt: timestamp('hf_synced_at'),
+    hfSyncStatus: varchar('hf_sync_status', { length: 24 }).default('pending').notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [

@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { notInArray } from 'drizzle-orm'
 import * as schema from '../../src/lib/schema'
 import { nightcafeModels, nightcafePresets } from '../../src/lib/schema'
+import { syncNightCafeHuggingFaceModelcards } from './huggingfaceSync'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
 
@@ -311,7 +312,22 @@ async function syncNightCafePresetsFromCsv(db: Database) {
   console.log(`NightCafe presets synced: ${rows.length} total`)
 }
 
-export async function syncNightCafeData({ db }: { db: Database }) {
+export async function syncNightCafeData({
+  db,
+  forceHuggingFace = false,
+}: {
+  db: Database
+  forceHuggingFace?: boolean
+}) {
   await syncNightCafeModelsFromCsv(db)
   await syncNightCafePresetsFromCsv(db)
+
+  const stats = await syncNightCafeHuggingFaceModelcards({
+    db,
+    force: forceHuggingFace,
+  })
+
+  console.log(
+    `NightCafe Hugging Face sync: processed ${stats.processed}/${stats.total}, matched ${stats.matched}, unmatched ${stats.unmatched}, failed ${stats.failed}, skipped fresh ${stats.skippedFresh}`
+  )
 }

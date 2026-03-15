@@ -62,6 +62,32 @@ export type NightcafeModelOption = {
   modelName: string
   modelType: string
   mediaType: string
+  hfModelId?: string | null
+  hfCardSummary?: string
+  hfDownloads?: number | null
+  hfLikes?: number | null
+  hfLastModified?: string | Date | null
+  hfSyncStatus?: string
+}
+
+export type NightcafeHuggingFaceSyncStats = {
+  total: number
+  processed: number
+  skippedFresh: number
+  matched: number
+  unmatched: number
+  failed: number
+}
+
+export type NightcafeHuggingFaceSyncInfo = {
+  lastSyncedAt: string | Date | null
+  total: number
+  counts: {
+    matched: number
+    unmatched: number
+    error: number
+    pending: number
+  }
 }
 
 export type NightcafeModelSupport = {
@@ -194,6 +220,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('nightcafeModels:list', filters),
     getSupport: (input?: { modelName?: string }): Promise<IpcResult<NightcafeModelSupport>> =>
       ipcRenderer.invoke('nightcafeModels:getSupport', input),
+    refreshHuggingFace: (input?: { force?: boolean }): Promise<IpcResult<NightcafeHuggingFaceSyncStats>> =>
+      ipcRenderer.invoke('nightcafeModels:refreshHuggingFace', input),
+    getHuggingFaceSyncInfo: (): Promise<IpcResult<NightcafeHuggingFaceSyncInfo>> =>
+      ipcRenderer.invoke('nightcafeModels:getHuggingFaceSyncInfo'),
   },
   nightcafePresets: {
     list: (): Promise<IpcResult<NightcafePresetOption[]>> =>

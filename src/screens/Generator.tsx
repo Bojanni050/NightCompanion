@@ -26,6 +26,15 @@ type PresetOption = {
   category: string
 }
 
+type NightcafeModelCardMeta = {
+  hfModelId?: string | null
+  hfCardSummary?: string
+  hfDownloads?: number | null
+  hfLikes?: number | null
+  hfLastModified?: string | Date | null
+  hfSyncStatus?: string
+}
+
 type PromptViewTab = 'final' | 'diff'
 type NegativePromptViewTab = 'final' | 'diff'
 type CreativityLevel = 'focused' | 'balanced' | 'wild'
@@ -85,6 +94,7 @@ export default function Generator() {
   const [recommendedModel, setRecommendedModel] = useState('')
   const [recommendedModelReason, setRecommendedModelReason] = useState('')
   const [recommendedModelMode, setRecommendedModelMode] = useState<'rule' | 'ai' | null>(null)
+  const [recommendedModelMeta, setRecommendedModelMeta] = useState<NightcafeModelCardMeta | null>(null)
   const [supportsNegativePrompt, setSupportsNegativePrompt] = useState<boolean | null>(null)
   const [modelAdviceBusy, setModelAdviceBusy] = useState(false)
   const [modelAdviceNote, setModelAdviceNote] = useState<string | null>(null)
@@ -285,6 +295,45 @@ export default function Generator() {
       ignore = true
     }
   }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadRecommendedModelMeta() {
+      const modelName = recommendedModel.trim()
+      if (!modelName) {
+        setRecommendedModelMeta(null)
+        return
+      }
+
+      const result = await window.electronAPI.nightcafeModels.list()
+      if (ignore || result.error || !result.data) {
+        setRecommendedModelMeta(null)
+        return
+      }
+
+      const match = result.data.find((item) => item.modelName === modelName)
+      if (!match) {
+        setRecommendedModelMeta(null)
+        return
+      }
+
+      setRecommendedModelMeta({
+        hfModelId: match.hfModelId,
+        hfCardSummary: match.hfCardSummary,
+        hfDownloads: match.hfDownloads,
+        hfLikes: match.hfLikes,
+        hfLastModified: match.hfLastModified,
+        hfSyncStatus: match.hfSyncStatus,
+      })
+    }
+
+    void loadRecommendedModelMeta()
+
+    return () => {
+      ignore = true
+    }
+  }, [recommendedModel])
 
   useEffect(() => {
     const stored = localStorage.getItem(GENERATOR_UI_STATE_KEY)
@@ -719,6 +768,18 @@ export default function Generator() {
 
   const showNegativePromptControls = supportsNegativePrompt !== false
 
+  const formatCompactNumber = (value: number | null | undefined) => {
+    if (!Number.isFinite(value as number)) return '—'
+    return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value as number)
+  }
+
+  const formatDate = (value: string | Date | null | undefined) => {
+    if (!value) return '—'
+    const parsed = typeof value === 'string' ? new Date(value) : value
+    if (Number.isNaN(parsed.getTime())) return '—'
+    return parsed.toLocaleDateString()
+  }
+
   return (
     <div className="no-drag-region h-full overflow-y-auto px-8 pt-8 pb-10">
       <div className="max-w-4xl">
@@ -1037,6 +1098,25 @@ export default function Generator() {
                   <p>{recommendedModelMode === 'ai' ? 'AI-based advice' : recommendedModelMode === 'rule' ? 'Rule-based advice' : 'No advice yet'}</p>
                   <p>NightCafe</p>
                 </div>
+
+                {recommendedModelMeta && (
+                  <div className="mt-3 rounded-lg border border-night-700/60 bg-night-900/40 p-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-night-300">
+                      <span>HF sync: <span className="text-white">{recommendedModelMeta.hfSyncStatus || 'unknown'}</span></span>
+                      <span>Downloads: <span className="text-white">{formatCompactNumber(recommendedModelMeta.hfDownloads)}</span></span>
+                      <span>Likes: <span className="text-white">{formatCompactNumber(recommendedModelMeta.hfLikes)}</span></span>
+                      <span>Updated: <span className="text-white">{formatDate(recommendedModelMeta.hfLastModified)}</span></span>
+                    </div>
+
+                    {recommendedModelMeta.hfModelId && (
+                      <p className="mt-1 text-[11px] text-night-400">Hugging Face: {recommendedModelMeta.hfModelId}</p>
+                    )}
+
+                    {recommendedModelMeta.hfCardSummary && (
+                      <p className="mt-2 text-xs text-night-300">{recommendedModelMeta.hfCardSummary}</p>
+                    )}
+                  </div>
+                )}
 
                 {modelAdviceBusy && (
                   <p className="mt-2 text-[11px] text-night-400">Modeladvies ophalen...</p>

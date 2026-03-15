@@ -85,6 +85,13 @@
       "when": 1773538800000,
       "tag": "0011_nightcafe_negative_prompt_support",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1773583200000,
+      "tag": "0012_nightcafe_huggingface_modelcards",
+      "breakpoints": true
     }
   ]
 }

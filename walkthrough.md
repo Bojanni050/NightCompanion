@@ -1,5 +1,17 @@
 # Walkthrough
 
+## 2026-03-15 (Settings: laatste Hugging Face sync tijd zichtbaar)
+
+- Findings: User vroeg om expliciet de laatste Hugging Face sync-tijd in Settings te tonen.
+- Conclusions: Een compacte sync-info endpoint (`lastSyncedAt` + statusaantallen) maakt de refresh-sectie informatief zonder extra pagina of complexiteit.
+- Actions: Toegevoegd `nightcafeModels:getHuggingFaceSyncInfo` in [electron/ipc/nightcafe.ts](electron/ipc/nightcafe.ts) met `lastSyncedAt` en tellingen per status (`matched/unmatched/error/pending`); bridge/types uitgebreid in [electron/preload.ts](electron/preload.ts) en [src/types/electron.d.ts](src/types/electron.d.ts); [src/screens/Settings.tsx](src/screens/Settings.tsx) laadt nu sync-info bij openen en na handmatige refresh, en toont `Laatste sync` + status-overzicht; gevalideerd met `npm run build`.
+
+## 2026-03-15 (NightCafe modelinformatie verrijkt met Hugging Face modelcards)
+
+- Findings: User vroeg om NightCafe modelinformatie te verrijken met modelcard-data van Hugging Face, inclusief handmatige refresh en automatische sync.
+- Conclusions: Een veilige aanpak is NightCafe-only verrijking met persistente metadata (`summary`, `downloads`, `likes`, `lastModified`) via startup TTL-sync (24u) plus force-refresh vanuit Settings; bestaande flows moeten non-blocking blijven als HF-data ontbreekt.
+- Actions: Uitgebreid `nightcafe_models` schema met HF-velden in [src/lib/schema.ts](src/lib/schema.ts) en migratie `drizzle/0012_nightcafe_huggingface_modelcards.sql` (+ journal); nieuwe service [electron/services/huggingfaceSync.ts](electron/services/huggingfaceSync.ts) toegevoegd voor model matching/search/details met bounded concurrency, timeout en status (`matched/unmatched/error`); startup pad in [electron/services/nightcafeSync.ts](electron/services/nightcafeSync.ts) uitgebreid met TTL-gebaseerde HF-sync; IPC in [electron/ipc/nightcafe.ts](electron/ipc/nightcafe.ts) uitgebreid met enriched `nightcafeModels:list` payload en `nightcafeModels:refreshHuggingFace`; bridge/types geüpdatet in [electron/preload.ts](electron/preload.ts) en [src/types/electron.d.ts](src/types/electron.d.ts); handmatige refreshknop + sync-resultaat toegevoegd in [src/screens/Settings.tsx](src/screens/Settings.tsx); `Suggested Model` kaart in [src/screens/Generator.tsx](src/screens/Generator.tsx) toont nu HF summary/likes/downloads/update/sync-status voor zichtbaar verrijkte modelinformatie; gevalideerd met `npm run build`.
+
 ## 2026-03-15 (Suggested Model onder Negative Prompt)
 
 - Findings: User wilde de `Suggested Model`-kaart visueel onder het `Negative Prompt`-blok plaatsen op de Generator-pagina.
