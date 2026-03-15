@@ -19,6 +19,7 @@ export const prompts = pgTable(
   {
     id: serial('id').primaryKey(),
     title: varchar('title', { length: 255 }).notNull(),
+    imageUrl: text('image_url').default('').notNull(),
     promptText: text('prompt_text').notNull(),
     negativePrompt: text('negative_prompt').default(''),
     tags: text('tags').array().default([]).notNull(),
@@ -46,6 +47,7 @@ export const promptVersions = pgTable(
     promptId: integer('prompt_id').notNull().references(() => prompts.id, { onDelete: 'cascade' }),
     versionNumber: integer('version_number').notNull(),
     title: varchar('title', { length: 255 }).notNull(),
+    imageUrl: text('image_url').default('').notNull(),
     promptText: text('prompt_text').notNull(),
     negativePrompt: text('negative_prompt').default('').notNull(),
     tags: text('tags').array().default([]).notNull(),

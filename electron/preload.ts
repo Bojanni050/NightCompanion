@@ -1,6 +1,12 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../src/lib/schema'
 
+type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
+  imageDataUrl?: string | null
+  imageFileName?: string | null
+  removeImage?: boolean
+}
+
 export type PromptFilters = {
   search?: string
   tags?: string[]
@@ -144,11 +150,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('prompts:list', filters),
     get: (id: number): Promise<IpcResult<Prompt | undefined>> =>
       ipcRenderer.invoke('prompts:get', id),
-    create: (data: NewPrompt): Promise<IpcResult<Prompt>> =>
+    create: (data: PromptMutationInput): Promise<IpcResult<Prompt>> =>
       ipcRenderer.invoke('prompts:create', data),
     listVersions: (promptId: number): Promise<IpcResult<PromptVersion[]>> =>
       ipcRenderer.invoke('prompts:listVersions', promptId),
-    update: (id: number, data: Partial<NewPrompt>): Promise<IpcResult<Prompt>> =>
+    update: (id: number, data: Partial<PromptMutationInput>): Promise<IpcResult<Prompt>> =>
       ipcRenderer.invoke('prompts:update', id, data),
     delete: (id: number): Promise<IpcResult<void>> =>
       ipcRenderer.invoke('prompts:delete', id),

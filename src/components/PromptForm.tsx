@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import type { Prompt, PromptVersion, NewPrompt, StyleProfile } from '../types'
+import type { Prompt, PromptVersion, StyleProfile, PromptMutationInput } from '../types'
 import PromptPreview from './PromptPreview'
 
-type FormData = Omit<NewPrompt, 'createdAt' | 'updatedAt'>
+type FormData = PromptMutationInput
 
 type Props = {
   initial?: Prompt
@@ -19,6 +19,10 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [isFavorite, setIsFavorite] = useState(initial?.isFavorite ?? false)
   const [rating, setRating] = useState<number>(initial?.rating ?? 0)
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? '')
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null)
+  const [imageFileName, setImageFileName] = useState<string | null>(null)
+  const [readingImage, setReadingImage] = useState(false)
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>(initial?.tags ?? [])
   const [submitting, setSubmitting] = useState(false)
@@ -31,6 +35,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
   const titleRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
   const isEdit = !!initial
 
   useEffect(() => {
@@ -101,6 +106,9 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
   const restoreFromVersion = (version: PromptVersion) => {
     setTitle(version.title)
+    setImageUrl(version.imageUrl ?? '')
+    setImageDataUrl(null)
+    setImageFileName(null)
     setPromptText(version.promptText)
     setNegativePrompt(version.negativePrompt)
     setModel(version.model)
@@ -122,6 +130,32 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
   const removeTag = (tag: string) => setTags((prev) => prev.filter((t) => t !== tag))
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setReadingImage(true)
+    setError(null)
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file)
+      setImageUrl(dataUrl)
+      setImageDataUrl(dataUrl)
+      setImageFileName(file.name)
+    } catch {
+      setError('Could not read the selected image.')
+    } finally {
+      setReadingImage(false)
+      if (imageInputRef.current) imageInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setImageUrl('')
+    setImageDataUrl(null)
+    setImageFileName(null)
+  }
+
   const handleTagKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
@@ -140,6 +174,10 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
     const err = await onSubmit({
       title: title.trim(),
+      imageUrl: imageDataUrl ? '' : imageUrl.trim(),
+      imageDataUrl,
+      imageFileName,
+      removeImage: !imageDataUrl && !imageUrl.trim() && Boolean(initial?.imageUrl),
       promptText: promptText.trim(),
       negativePrompt: negativePrompt.trim(),
       model: model.trim(),
@@ -197,6 +235,70 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
               />
             </div>
 
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label !mb-0">Prompt Image</label>
+                <span className="text-[10px] text-night-500">optional</span>
+              </div>
+
+              {imageUrl ? (
+                <div className="rounded-2xl border border-night-700 bg-night-900/40 overflow-hidden">
+                  <div className="aspect-[16/9] bg-night-950/60">
+                    <img
+                      src={imageUrl}
+                      alt="Prompt preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-night-700/60">
+                    <p className="text-[11px] text-night-400 truncate">
+                      {imageFileName || 'Stored prompt image'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => imageInputRef.current?.click()}
+                        className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
+                        disabled={readingImage}
+                      >
+                        Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="btn-ghost border border-red-900/50 px-2.5 py-1 text-[11px] text-red-300 hover:text-red-200"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => imageInputRef.current?.click()}
+                  className="w-full rounded-2xl border border-dashed border-night-600 bg-night-900/30 px-4 py-5 text-left transition-colors hover:border-amber-500/40 hover:bg-night-900/50"
+                  disabled={readingImage}
+                >
+                  <p className="text-sm font-medium text-night-200">
+                    {readingImage ? 'Reading image…' : 'Upload prompt image'}
+                  </p>
+                  <p className="mt-1 text-xs text-night-500">
+                    Saved locally under your user profile in NightCompanion/images.
+                  </p>
+                </button>
+              )}
+
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                aria-label="Upload prompt image"
+                className="hidden"
+              />
+            </div>
+
             {/* Prompt text */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -235,6 +337,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 <select
                   value={modelOptions.includes(model) ? model : ''}
                   onChange={(e) => setModel(e.target.value)}
+                  aria-label="Select model"
                   className="input w-1/2"
                 >
                   <option value="">— kies model —</option>
@@ -259,6 +362,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
               <select
                 value={selectedStyleProfileId}
                 onChange={(e) => setSelectedStyleProfileId(e.target.value ? Number(e.target.value) : '')}
+                aria-label="Select style profile"
                 className="input"
               >
                 <option value="">none</option>
@@ -393,7 +497,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             )}
             </div>
 
-            <div className="border-t border-night-700/50 lg:border-t-0 lg:border-l border-night-700/50 overflow-y-auto p-4 md:p-5">
+            <div className="border-t border-night-700/50 lg:border-t-0 lg:border-l overflow-y-auto p-4 md:p-5">
               <div className="lg:sticky lg:top-0">
                 <PromptPreview
                   promptText={promptText}
@@ -427,4 +531,20 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
       </div>
     </div>
   )
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        resolve(reader.result)
+        return
+      }
+
+      reject(new Error('Invalid file read result.'))
+    }
+    reader.onerror = () => reject(reader.error || new Error('Could not read file.'))
+    reader.readAsDataURL(file)
+  })
 }

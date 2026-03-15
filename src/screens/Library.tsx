@@ -166,7 +166,7 @@ export default function Library() {
               className="w-full pl-10 pr-4 py-2.5 bg-night-900 border border-night-700 rounded-xl text-white placeholder-night-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 text-sm"
             />
           </div>
-          <select value={modelFilter} onChange={(e) => setModelFilter(e.target.value)} className="input sm:w-56">
+          <select value={modelFilter} onChange={(e) => setModelFilter(e.target.value)} aria-label="Filter prompts by model" className="input sm:w-56">
             <option value="">Alle modellen</option>
             {allModels.map((m) => (
               <option key={m} value={m}>{m}</option>
@@ -245,6 +245,18 @@ export default function Library() {
 
                 return (
                   <div key={prompt.id} className="bg-night-900 border border-night-700 rounded-2xl flex flex-col hover:border-night-500 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group w-full min-w-0 overflow-hidden">
+                    {prompt.imageUrl ? (
+                      <div className="aspect-[16/9] bg-night-950/60 overflow-hidden border-b border-night-700/60">
+                        <img
+                          src={prompt.imageUrl}
+                          alt={prompt.title || 'Prompt image'}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          onError={(event) => {
+                            ;(event.currentTarget.parentElement as HTMLDivElement | null)?.classList.add('hidden')
+                          }}
+                        />
+                      </div>
+                    ) : null}
                     <div className="p-5 pb-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2 min-w-0">

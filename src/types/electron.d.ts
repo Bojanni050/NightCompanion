@@ -2,6 +2,11 @@ import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, G
 
 type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
 type PromptFilters = { search?: string; tags?: string[]; model?: string }
+type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
+  imageDataUrl?: string | null
+  imageFileName?: string | null
+  removeImage?: boolean
+}
 type OpenRouterSettings = { apiKey: string; model: string; siteUrl: string; appName: string }
 type ProviderMetaStore = {
   model_gen: string
@@ -99,9 +104,9 @@ declare global {
       prompts: {
         list(filters?: PromptFilters): Promise<IpcResult<Prompt[]>>
         get(id: number): Promise<IpcResult<Prompt | undefined>>
-        create(data: NewPrompt): Promise<IpcResult<Prompt>>
+        create(data: PromptMutationInput): Promise<IpcResult<Prompt>>
         listVersions(promptId: number): Promise<IpcResult<PromptVersion[]>>
-        update(id: number, data: Partial<NewPrompt>): Promise<IpcResult<Prompt>>
+        update(id: number, data: Partial<PromptMutationInput>): Promise<IpcResult<Prompt>>
         delete(id: number): Promise<IpcResult<void>>
       }
       styleProfiles: {

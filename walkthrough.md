@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Prompt edit form: local image upload)
+
+- Findings: User asked for a prompt image upload option directly in the Prompt Library edit form, with files stored under the user profile in `NightCompanion/images`.
+- Conclusions: This requires a real prompt-level `imageUrl` field in the database plus prompt-specific file lifecycle handling in Electron IPC; reusing the character upload pattern only at the UI layer would miss persistence and cleanup.
+- Actions: Added `image_url` to `prompts` and `prompt_versions` in [src/lib/schema.ts](src/lib/schema.ts) with migration `drizzle/0013_prompt_images.sql`; updated [electron/ipc/prompts.ts](electron/ipc/prompts.ts) to save prompt images under the home-directory path `NightCompanion/images`, preserve historical image references in prompt versions, and delete all referenced local prompt images when a prompt is deleted; extended bridge/types in [electron/preload.ts](electron/preload.ts), [src/types/electron.d.ts](src/types/electron.d.ts), and [src/types/index.ts](src/types/index.ts); added upload/replace/remove image UI with preview to [src/components/PromptForm.tsx](src/components/PromptForm.tsx); updated [src/screens/Library.tsx](src/screens/Library.tsx) to render prompt thumbnails when present.
+
 ## 2026-03-15 (Magic Quickstart: NightCafe preset dropdown toegevoegd)
 
 - Findings: User vroeg om een NightCafe preset-keuzelijst direct in het Magic Quickstart blok.
