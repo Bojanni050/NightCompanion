@@ -1,5 +1,17 @@
 # Walkthrough
 
+## 2026-03-15 (Prompt Preview: modeladvies badge)
+
+- Findings: User bevestigde dat de Prompt Preview expliciet moet tonen of automatisch modeladvies actief is.
+- Conclusions: Een compacte statusregel in de Preview-metadata (`Modeladvies: Aan/Uit`) geeft directe zichtbaarheid zonder extra UI-complexiteit.
+- Actions: Uitgebreid [src/components/PromptPreview.tsx](src/components/PromptPreview.tsx) met optionele `modelAdviceEnabled` prop en visuele statusweergave; [src/screens/Generator.tsx](src/screens/Generator.tsx) geüpdatet om `autoModelAdviceEnabled` door te geven aan `PromptPreview`; validatie uitgevoerd met `npm run build`.
+
+## 2026-03-15 (Generator: automatische AI-modelaanbeveling met toggle)
+
+- Findings: User wilde alle zichtbare `Model Advisor`-elementen van de Generator verwijderen en modeladvies automatisch laten ophalen na promptgeneratie.
+- Conclusions: De meest consistente UX is één schakelaar voor automatische AI-modelaanbeveling; wanneer ingeschakeld wordt na `Magic Random` en `Magic Quickstart` automatisch `generator:adviseModel` in AI-modus aangeroepen met de gegenereerde prompttekst.
+- Actions: Verwijderd: volledige `Model Advisor`-kaart en handmatige adviesknoppen op [src/screens/Generator.tsx](src/screens/Generator.tsx); toegevoegd: toggle `Automatisch AI-modeladvies na promptgeneratie`, statusnotitie, en aanbevolen-modelweergave; save-flow gebruikt nu automatisch het laatst geadviseerde model (`recommendedModel`) bij `Save to Library`; state persistent gemaakt via `generatorUiState`; gevalideerd met `npm run build`.
+
 ## 2026-03-15 (NightCafe Negative Prompt Support opgeslagen in DB)
 
 - Findings: Volgens het NightCafe-artikel over negatieve prompts zijn negatieve prompts alleen ondersteund voor Stable Diffusion-families (incl. SDXL/checkpoint), Coherent en Artistic.

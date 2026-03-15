@@ -50,19 +50,8 @@ type GeneratorPersistedState = {
   quickStartIdea?: string
   quickStartCreativity?: CreativityLevel
   quickStartCharacterId?: string | null
-  advisorResult?: {
-    mode: 'rule' | 'ai'
-    recommendation: {
-      modelName: string
-      explanation: string
-    }
-    alternatives: Array<{
-      modelName: string
-      explanation: string
-    }>
-    matchedSignals: string[]
-  } | null
-  advisorSelectedModel?: string
+  autoModelAdviceEnabled?: boolean
+  recommendedModel?: string
 }
 
 function buildDefaultTitle(value: string) {
@@ -91,6 +80,10 @@ export default function Generator() {
   const [improvingNegative, setImprovingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
   const [savedTitle, setSavedTitle] = useState('')
+  const [autoModelAdviceEnabled, setAutoModelAdviceEnabled] = useState(true)
+  const [recommendedModel, setRecommendedModel] = useState('')
+  const [modelAdviceBusy, setModelAdviceBusy] = useState(false)
+  const [modelAdviceNote, setModelAdviceNote] = useState<string | null>(null)
   const [greylistEnabled, setGreylistEnabled] = useState(true)
   const [greylistWords, setGreylistWords] = useState<string[]>(DEFAULT_GREYLIST)
   const [greylistInput, setGreylistInput] = useState('')
@@ -102,23 +95,7 @@ export default function Generator() {
   const [showCharacterPicker, setShowCharacterPicker] = useState(false)
   const [expandingIdea, setExpandingIdea] = useState(false)
   const [quickStartStatus, setQuickStartStatus] = useState<string | null>(null)
-  const [advisorResult, setAdvisorResult] = useState<{
-    mode: 'rule' | 'ai'
-    recommendation: {
-      modelName: string
-      explanation: string
-    }
-    alternatives: Array<{
-      modelName: string
-      explanation: string
-    }>
-    matchedSignals: string[]
-  } | null>(null)
-  const [advisorStatus, setAdvisorStatus] = useState<string | null>(null)
-  const [advisorSourceLabel, setAdvisorSourceLabel] = useState<string | null>(null)
-  const [advisingRule, setAdvisingRule] = useState(false)
   const [advisingAi, setAdvisingAi] = useState(false)
-  const [advisorSelectedModel, setAdvisorSelectedModel] = useState('')
 
   useEffect(() => {
     let ignore = false
@@ -180,6 +157,10 @@ export default function Generator() {
       setNegativePromptViewTab('final')
       setQuickStartStatus(null)
       setTab('generator')
+
+      if (autoModelAdviceEnabled) {
+        void requestAiModelAdvice(nextPrompt, 'Quickstart Prompt')
+      }
     } catch (error) {
       setQuickStartStatus(error instanceof Error ? error.message : 'Error: Failed to expand idea.')
     } finally {
@@ -187,53 +168,42 @@ export default function Generator() {
     }
   }
 
-  const handleModelAdvice = async (
-    mode: 'rule' | 'ai',
-    promptValue: string,
-    sourceLabel: string
-  ) => {
+  const requestAiModelAdvice = async (promptValue: string, sourceLabel: string) => {
     const prompt = promptValue.trim()
-    if (!prompt) {
-      setAdvisorStatus(`Error: ${sourceLabel} is leeg, dus er is geen tekst voor modeladvies.`)
-      return
-    }
+    if (!prompt) return
 
-    setAdvisorStatus(null)
-    setAdvisorSourceLabel(sourceLabel)
-    if (mode === 'rule') setAdvisingRule(true)
-    if (mode === 'ai') setAdvisingAi(true)
+    setAdvisingAi(true)
+    setModelAdviceBusy(true)
+    setModelAdviceNote(null)
 
     try {
       const result = await window.electronAPI.generator.adviseModel({
         prompt,
-        mode,
+        mode: 'ai',
       })
 
       if (!result) {
-        setAdvisorStatus('Error: Advisor returned an empty response.')
+        setModelAdviceNote('AI-modeladvies gaf geen response terug.')
         return
       }
 
       if (result.error) {
-        setAdvisorStatus(result.error)
+        setModelAdviceNote(`AI-modeladvies mislukt: ${result.error}`)
         return
       }
 
-      if (!result.data) {
-        setAdvisorStatus('Error: Advisor returned no data.')
+      if (!result.data?.recommendation?.modelName) {
+        setModelAdviceNote('AI-modeladvies bevatte geen bruikbaar model.')
         return
       }
 
-      setAdvisorResult(result.data)
-      if (!advisorSelectedModel && result.data.recommendation?.modelName) {
-        setAdvisorSelectedModel(result.data.recommendation.modelName)
-      }
-      setAdvisorStatus(mode === 'rule' ? `${sourceLabel}: rule-based advies klaar.` : `${sourceLabel}: AI-advies klaar.`)
+      setRecommendedModel(result.data.recommendation.modelName)
+      setModelAdviceNote(`${sourceLabel}: AI-modeladvies bijgewerkt.`)
     } catch (error) {
-      setAdvisorStatus(error instanceof Error ? error.message : 'Error: Failed to get model advice.')
+      setModelAdviceNote(error instanceof Error ? error.message : 'AI-modeladvies is mislukt.')
     } finally {
-      if (mode === 'rule') setAdvisingRule(false)
-      if (mode === 'ai') setAdvisingAi(false)
+      setAdvisingAi(false)
+      setModelAdviceBusy(false)
     }
   }
 
@@ -266,12 +236,11 @@ export default function Generator() {
     setNegativePromptViewTab('final')
     setStatus(null)
     setSavedTitle('')
+    setAutoModelAdviceEnabled(true)
+    setRecommendedModel('')
+    setModelAdviceNote(null)
     setQuickStartIdea('')
     setQuickStartStatus(null)
-    setAdvisorResult(null)
-    setAdvisorStatus(null)
-    setAdvisorSourceLabel(null)
-    setAdvisorSelectedModel('')
   }
 
   useEffect(() => {
@@ -309,11 +278,11 @@ export default function Generator() {
       setNegativeImprovementDiff(parsed.negativeImprovementDiff ?? null)
       setSavedTitle(parsed.savedTitle ?? '')
       setImprovementDiff(parsed.improvementDiff ?? null)
+      setAutoModelAdviceEnabled(parsed.autoModelAdviceEnabled ?? true)
+      setRecommendedModel(parsed.recommendedModel ?? '')
       setQuickStartIdea(parsed.quickStartIdea ?? '')
       setQuickStartCreativity(parsed.quickStartCreativity ?? 'balanced')
       setQuickStartCharacterId(parsed.quickStartCharacterId ?? null)
-      setAdvisorResult(parsed.advisorResult ?? null)
-      setAdvisorSelectedModel(parsed.advisorSelectedModel ?? '')
 
       const nextPromptViewTab = parsed.promptViewTab === 'diff' && parsed.improvementDiff ? 'diff' : 'final'
       setPromptViewTab(nextPromptViewTab)
@@ -326,6 +295,8 @@ export default function Generator() {
       setGeneratedPrompt('')
       setNegativePrompt('')
       setSavedTitle('')
+      setAutoModelAdviceEnabled(true)
+      setRecommendedModel('')
       setImprovementDiff(null)
       setNegativeImprovementDiff(null)
       setPromptViewTab('final')
@@ -333,9 +304,7 @@ export default function Generator() {
       setQuickStartIdea('')
       setQuickStartCreativity('balanced')
       setQuickStartCharacterId(null)
-      setAdvisorResult(null)
-      setAdvisorSourceLabel(null)
-      setAdvisorSelectedModel('')
+      setModelAdviceNote(null)
     }
   }, [])
 
@@ -350,18 +319,18 @@ export default function Generator() {
         negativePromptViewTab,
         negativeImprovementDiff,
         savedTitle,
+        autoModelAdviceEnabled,
+        recommendedModel,
         promptViewTab,
         improvementDiff,
         quickStartIdea,
         quickStartCreativity,
         quickStartCharacterId,
-        advisorResult,
-        advisorSelectedModel,
       } satisfies GeneratorPersistedState))
     } catch (e) {
       console.error('Failed to save generator state to localStorage:', e)
     }
-  }, [tab, selectedPreset, maxWords, generatedPrompt, negativePrompt, negativePromptViewTab, negativeImprovementDiff, savedTitle, promptViewTab, improvementDiff, quickStartIdea, quickStartCreativity, quickStartCharacterId, advisorResult, advisorSelectedModel])
+  }, [tab, selectedPreset, maxWords, generatedPrompt, negativePrompt, negativePromptViewTab, negativeImprovementDiff, savedTitle, autoModelAdviceEnabled, recommendedModel, promptViewTab, improvementDiff, quickStartIdea, quickStartCreativity, quickStartCharacterId])
 
   useEffect(() => {
     const stored = localStorage.getItem('generatorGreylist')
@@ -432,6 +401,10 @@ export default function Generator() {
         if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
         return buildDefaultTitle(nextPrompt)
       })
+
+      if (autoModelAdviceEnabled) {
+        void requestAiModelAdvice(nextPrompt, 'Generated Prompt')
+      }
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to generate prompt.')
     } finally {
@@ -629,7 +602,7 @@ export default function Generator() {
       title: savedTitle.trim(),
       promptText: generatedPrompt,
       negativePrompt: negativePrompt.trim(),
-      model: advisorSelectedModel.trim(),
+      model: recommendedModel.trim(),
       notes: 'Generated with Magic Random (AI)',
       tags: ['ai-random'],
     })
@@ -742,6 +715,7 @@ export default function Generator() {
             negativePrompt={negativePrompt}
             maxWords={maxWords}
             greylistWords={greylistEnabled ? greylistWords : []}
+            modelAdviceEnabled={autoModelAdviceEnabled}
             model={selectedPreset ? `NightCafe preset: ${selectedPreset}` : 'Magic Random AI'}
           />
         </div>
@@ -918,6 +892,30 @@ export default function Generator() {
                       Clear all
                     </button>
                   </div>
+
+                  <div className="mt-4 rounded-lg border border-night-700/50 bg-night-900/40 p-3">
+                    <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-night-300">
+                      <input
+                        type="checkbox"
+                        checked={autoModelAdviceEnabled}
+                        onChange={(e) => setAutoModelAdviceEnabled(e.target.checked)}
+                        className="h-3.5 w-3.5 accent-glow-purple"
+                        aria-label="Automatisch modeladvies"
+                      />
+                      Automatisch AI-modeladvies na promptgeneratie
+                    </label>
+                    {modelAdviceBusy && (
+                      <p className="mt-2 text-[11px] text-night-400">AI-modeladvies ophalen...</p>
+                    )}
+                    {modelAdviceNote && (
+                      <p className="mt-2 text-[11px] text-night-300">{modelAdviceNote}</p>
+                    )}
+                    {recommendedModel && (
+                      <p className="mt-1 text-[11px] text-night-400">
+                        Aanbevolen model: <span className="text-night-200">{recommendedModel}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {greylistCard}
@@ -925,77 +923,6 @@ export default function Generator() {
             </div>
 
             <div className="card mt-5 p-5">
-              <div className="mb-5 rounded-xl border border-night-600/50 bg-night-900/30 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-semibold text-white">Model Advisor</h2>
-                    <p className="mt-1 text-xs text-night-400">Analyseert de tekst uit het geselecteerde promptveld en adviseert het beste NightCafe-model.</p>
-                  </div>
-                  <span className="rounded-md border border-night-600/50 bg-night-900/60 px-2 py-1 text-[10px] uppercase tracking-wide text-night-300">
-                    Rule + AI
-                  </span>
-                </div>
-
-                <p className="mt-3 text-xs text-night-400">
-                  Gebruik de adviesknoppen onder Generated Prompt of Improved Prompt om dat veld direct te analyseren.
-                </p>
-
-                {advisorResult && (
-                  <div className="mt-3 rounded-lg border border-night-600/50 bg-night-900/50 p-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs text-night-300">Mode: <span className="font-medium text-white">{advisorResult.mode === 'rule' ? 'Rule-based' : 'AI-based'}</span></p>
-                      <p className="text-xs text-night-400">Signals: {advisorResult.matchedSignals.join(', ')}</p>
-                    </div>
-
-                    <div className="mt-2 rounded-md border border-glow-purple/40 bg-glow-purple/10 p-3">
-                      <p className="text-[11px] uppercase tracking-wide text-glow-purple">Aanbevolen model</p>
-                      <p className="mt-1 text-sm font-semibold text-white">{advisorResult.recommendation.modelName}</p>
-                      <p className="mt-1 text-xs text-night-300">{advisorResult.recommendation.explanation}</p>
-                      <div className="mt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAdvisorSelectedModel(advisorResult.recommendation.modelName)
-                            setAdvisorStatus('Aanbevolen model wordt nu gebruikt bij Save to Library.')
-                          }}
-                          className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
-                        >
-                          Gebruik aanbevolen model
-                        </button>
-                      </div>
-                    </div>
-
-                    {advisorResult.alternatives.length > 0 && (
-                      <div className="mt-3 grid grid-cols-1 gap-2">
-                        {advisorResult.alternatives.map((alternative) => (
-                          <div key={alternative.modelName} className="rounded-md border border-night-600/50 bg-night-900/60 p-2.5">
-                            <p className="text-xs font-medium text-night-100">{alternative.modelName}</p>
-                            <p className="mt-1 text-[11px] text-night-400">{alternative.explanation}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {advisorStatus && (
-                  <p className={`mt-3 text-xs ${advisorStatus.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
-                    {advisorStatus}
-                  </p>
-                )}
-
-                {advisorSourceLabel && (
-                  <p className="mt-2 text-[11px] text-night-400">
-                    Laatst geanalyseerd veld: <span className="text-night-200">{advisorSourceLabel}</span>
-                  </p>
-                )}
-
-                {advisorSelectedModel && (
-                  <p className="mt-2 text-[11px] text-night-400">
-                    Save model: <span className="text-night-200">{advisorSelectedModel}</span>
-                  </p>
-                )}
-              </div>
 
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-white">Generated Prompt</h2>
@@ -1008,25 +935,6 @@ export default function Generator() {
                 onChange={(e) => setGeneratedPrompt(e.target.value)}
                 placeholder="Your generated prompt will appear here."
               />
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleModelAdvice('rule', generatedPrompt, 'Generated Prompt')}
-                  disabled={advisingRule || advisingAi || loading || improving || generatingNegative || improvingNegative}
-                  className="btn-ghost border border-night-600/50"
-                >
-                  {advisingRule ? 'Analyzing (Rule)...' : 'Adviseer model voor Generated Prompt'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleModelAdvice('ai', generatedPrompt, 'Generated Prompt')}
-                  disabled={advisingRule || advisingAi || loading || improving || generatingNegative || improvingNegative}
-                  className="btn-primary"
-                >
-                  {advisingAi ? 'Analyzing (AI)...' : 'AI-advies voor Generated Prompt'}
-                </button>
-              </div>
 
               <div className="mt-4">
                 <div className="flex items-center justify-between">
@@ -1126,25 +1034,6 @@ export default function Generator() {
                       placeholder="Improved prompt result"
                     />
                   )}
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleModelAdvice('rule', improvementDiff.improvedPrompt, 'Improved Prompt')}
-                      disabled={advisingRule || advisingAi || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-ghost border border-night-600/50"
-                    >
-                      {advisingRule ? 'Analyzing (Rule)...' : 'Adviseer model voor Improved Prompt'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleModelAdvice('ai', improvementDiff.improvedPrompt, 'Improved Prompt')}
-                      disabled={advisingRule || advisingAi || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-primary"
-                    >
-                      {advisingAi ? 'Analyzing (AI)...' : 'AI-advies voor Improved Prompt'}
-                    </button>
-                  </div>
                 </div>
               )}
 

@@ -6,6 +6,7 @@ type PromptPreviewProps = {
   styleSnippet?: string
   styleNegative?: string
   model?: string
+  modelAdviceEnabled?: boolean
   maxWords?: number
   greylistWords?: string[]
   onSave?: () => void
@@ -81,6 +82,7 @@ export default function PromptPreview({
   styleSnippet = '',
   styleNegative = '',
   model = '',
+  modelAdviceEnabled,
   maxWords = DEFAULT_MAX_WORDS,
   greylistWords = [],
   onSave,
@@ -172,6 +174,14 @@ export default function PromptPreview({
 
       <div className="mt-3 text-[11px] text-night-400 space-y-1">
         <p>Model: <span className="text-night-200">{model || '—'}</span></p>
+        {typeof modelAdviceEnabled === 'boolean' && (
+          <p>
+            Modeladvies:{' '}
+            <span className={modelAdviceEnabled ? 'text-green-300' : 'text-night-300'}>
+              {modelAdviceEnabled ? 'Aan' : 'Uit'}
+            </span>
+          </p>
+        )}
         <p>
           Woordtelling: <span className={wordToneClass}>{wordCount}/{maxWords}</span>
           <span className="text-night-500"> · </span>
