@@ -142,6 +142,7 @@ export const nightcafeModels = pgTable(
     realismScore: varchar('realism_score', { length: 16 }).default('').notNull(),
     typographyScore: varchar('typography_score', { length: 16 }).default('').notNull(),
     costTier: varchar('cost_tier', { length: 16 }).default('').notNull(),
+    supportsNegativePrompt: boolean('supports_negative_prompt').default(false).notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [

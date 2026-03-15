@@ -78,6 +78,13 @@
       "when": 1773374400000,
       "tag": "0010_prompt_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773538800000,
+      "tag": "0011_nightcafe_negative_prompt_support",
+      "breakpoints": true
     }
   ]
 }

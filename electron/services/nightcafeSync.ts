@@ -108,6 +108,19 @@ function makeModelKey(name: string, modelType: string) {
   return `${name.trim().toLowerCase()}::${modelType}`
 }
 
+function supportsNegativePromptByNightCafeRule(modelName: string, description: string) {
+  const haystack = `${modelName} ${description}`.toLowerCase()
+
+  const isCoherentOrArtistic = haystack.includes('coherent') || haystack.includes('artistic')
+  const isStableDiffusionFamily =
+    haystack.includes('stable diffusion') ||
+    haystack.includes('sdxl') ||
+    /(^|[^a-z0-9])sd\s*(1\.4|1\.5|xl|\d)/i.test(haystack) ||
+    haystack.includes('checkpoint')
+
+  return isCoherentOrArtistic || isStableDiffusionFamily
+}
+
 function parseNightCafeModelsCsv(csv: string) {
   const lines = csv
     .split(/\r?\n/)
@@ -132,6 +145,7 @@ function parseNightCafeModelsCsv(csv: string) {
     realismScore: string
     typographyScore: string
     costTier: string
+    supportsNegativePrompt: boolean
     updatedAt: Date
   }>()
 
@@ -162,6 +176,10 @@ function parseNightCafeModelsCsv(csv: string) {
       realismScore: (record['Realism (★)'] || '').trim(),
       typographyScore: (record['Typography (★)'] || '').trim(),
       costTier: (record['Kosten ($)'] || '').trim(),
+      supportsNegativePrompt: supportsNegativePromptByNightCafeRule(
+        modelName,
+        (record.Beschrijving || '').trim()
+      ),
       updatedAt: new Date(),
     })
   }
@@ -193,6 +211,7 @@ async function syncNightCafeModelsFromCsv(db: Database) {
           realismScore: row.realismScore,
           typographyScore: row.typographyScore,
           costTier: row.costTier,
+          supportsNegativePrompt: row.supportsNegativePrompt,
           updatedAt: new Date(),
         },
       })

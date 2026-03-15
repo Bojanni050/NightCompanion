@@ -1,5 +1,23 @@
 # Walkthrough
 
+## 2026-03-15 (NightCafe Negative Prompt Support opgeslagen in DB)
+
+- Findings: Volgens het NightCafe-artikel over negatieve prompts zijn negatieve prompts alleen ondersteund voor Stable Diffusion-families (incl. SDXL/checkpoint), Coherent en Artistic.
+- Conclusions: De juiste oplossing is een expliciet capability-veld per model in `nightcafe_models`, zodat de app niet hoeft te gokken op basis van alleen huidige UI-state.
+- Actions: Toegevoegd `supports_negative_prompt` in `nightcafe_models` via migratie `drizzle/0011_nightcafe_negative_prompt_support.sql`; bestaande records direct geclassificeerd met SQL-regels op basis van modelnaam/beschrijving; `src/lib/schema.ts` uitgebreid met `supportsNegativePrompt`; `electron/services/nightcafeSync.ts` bijgewerkt om dit veld bij elke CSV-sync opnieuw te berekenen volgens artikelregels; `npm run db:migrate` uitgevoerd en `npm run build` gevalideerd.
+
+## 2026-03-15 (Model Advisor Uses Prompt Fields Directly)
+
+- Findings: User wanted the dedicated Model Advisor text field removed and the advisor actions moved closer to the actual prompt outputs.
+- Conclusions: The cleanest flow is to keep Model Advisor as a result panel only, and place the rule-based and AI-based analysis buttons directly under the Generated Prompt and Improved Prompt sections so each action uses that field's text.
+- Actions: Updated `src/screens/Generator.tsx` to remove the `advisorInput` UI/state/localStorage persistence, place advisor buttons under the `Generated Prompt` textarea and under the `Improved Prompt` section, and pass the respective field text into `handleModelAdvice(...)` for model recommendation.
+
+## 2026-03-15 (Generator Prompt Preview Placement)
+
+- Findings: The shared prompt preview on Generator was positioned inside the Quick Start content column instead of directly beneath the Quickstart/Prompt Builder tab switcher.
+- Conclusions: The preview is easier to scan and feels more global to the page when it sits immediately below the tab controls, before the selected tab content.
+- Actions: Updated `src/screens/Generator.tsx` to render the shared `PromptPreview` directly under the Generator tab switcher and removed the older embedded preview block from the right-side Magic Random controls column.
+
 ## 2026-03-15 (Model Advisor: 1-click Apply Recommended Model)
 
 - Findings: User approved adding a direct action to apply the advisor recommendation so saved prompts retain the advised NightCafe model.
