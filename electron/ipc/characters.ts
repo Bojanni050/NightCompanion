@@ -7,6 +7,7 @@ import { writeFile, mkdir, unlink } from 'fs/promises'
 import { fileURLToPath, pathToFileURL } from 'url'
 import * as schema from '../../src/lib/schema'
 import { characters } from '../../src/lib/schema'
+import { getManagedNightCompanionRoots, isPathWithin, resolveNightCompanionSubdir } from '../services/storagePaths'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
 
@@ -35,10 +36,7 @@ type CharacterPayload = {
 }
 
 function getCharactersImageDir() {
-  const localAppData = process.env.LOCALAPPDATA
-    || path.join(app.getPath('home'), 'AppData', 'Local')
-
-  return path.join(localAppData, 'NightCompanion', 'characters')
+  return resolveNightCompanionSubdir('characters')
 }
 
 function getImageExtension(mimeType: string) {
@@ -88,10 +86,12 @@ async function deleteCharacterImageFile(fileUrl: string) {
 
   if (parsed.protocol !== 'file:') return
 
-  const imageDir = path.resolve(getCharactersImageDir())
+  const managedRoots = getManagedNightCompanionRoots().map((root) => path.resolve(root))
   const targetPath = path.resolve(fileURLToPath(parsed))
 
-  if (!targetPath.startsWith(imageDir)) {
+  const isInManagedRoot = managedRoots.some((root) => isPathWithin(root, targetPath))
+
+  if (!isInManagedRoot) {
     throw new Error('Refused to delete file outside character image directory.')
   }
 

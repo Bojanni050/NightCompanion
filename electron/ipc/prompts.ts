@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import { randomUUID } from 'crypto'
 import { mkdir, unlink, writeFile } from 'fs/promises'
 import { drizzle } from 'drizzle-orm/postgres-js'
@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'url'
 import * as schema from '../../src/lib/schema'
 import { prompts, promptVersions } from '../../src/lib/schema'
 import type { NewPrompt } from '../../src/lib/schema'
+import { getManagedNightCompanionRoots, isPathWithin, resolveNightCompanionSubdir } from '../services/storagePaths'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
 type PromptFilters = { search?: string; tags?: string[]; model?: string }
@@ -18,7 +19,7 @@ type PromptMutationInput = Partial<NewPrompt> & {
 }
 
 function getPromptImageDir() {
-  return path.join(app.getPath('home'), 'NightCompanion', 'images')
+  return resolveNightCompanionSubdir('images')
 }
 
 function getImageExtension(mimeType: string) {
@@ -68,10 +69,12 @@ async function deletePromptImageFile(fileUrl: string) {
 
   if (parsed.protocol !== 'file:') return
 
-  const imageDir = path.resolve(getPromptImageDir())
+  const managedRoots = getManagedNightCompanionRoots().map((root) => path.resolve(root))
   const targetPath = path.resolve(fileURLToPath(parsed))
 
-  if (!targetPath.startsWith(imageDir)) {
+  const isInManagedRoot = managedRoots.some((root) => isPathWithin(root, targetPath))
+
+  if (!isInManagedRoot) {
     throw new Error('Refused to delete file outside prompt image directory.')
   }
 

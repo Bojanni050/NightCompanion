@@ -36,6 +36,7 @@ export type AiConfigStateStore = {
   advisorModelRoute?: unknown
   aiApiRequestLoggingEnabled?: boolean
   nativeWindowFrameEnabled?: boolean
+  nightCompanionFolderPath?: string
 }
 
 export type LocalEndpointStore = {
@@ -197,6 +198,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('settings:getAiConfigState'),
     saveAiConfigState: (input: AiConfigStateStore): Promise<IpcResult<AiConfigStateStore>> =>
       ipcRenderer.invoke('settings:saveAiConfigState', input),
+    getNightCompanionFolderPath: (): Promise<IpcResult<string>> =>
+      ipcRenderer.invoke('settings:getNightCompanionFolderPath'),
+    saveNightCompanionFolderPath: (input: string): Promise<IpcResult<string>> =>
+      ipcRenderer.invoke('settings:saveNightCompanionFolderPath', input),
+    resetNightCompanionFolderPath: (): Promise<IpcResult<string>> =>
+      ipcRenderer.invoke('settings:resetNightCompanionFolderPath'),
+    selectNightCompanionFolderPath: (): Promise<IpcResult<string | null>> =>
+      ipcRenderer.invoke('settings:selectNightCompanionFolderPath'),
     getLocalEndpoints: (): Promise<IpcResult<LocalEndpointStore[]>> =>
       ipcRenderer.invoke('settings:getLocalEndpoints'),
     saveLocalEndpoints: (input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>> =>

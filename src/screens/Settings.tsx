@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, Settings as SettingsIcon } from 'lucide-react'
+import { FolderOpen, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
 
 type HfSyncInfo = {
   lastSyncedAt: string | Date | null
@@ -16,6 +16,9 @@ export default function Settings() {
   const [loading, setLoading] = useState(true)
   const [aiApiRequestLoggingEnabled, setAiApiRequestLoggingEnabled] = useState(false)
   const [nativeWindowFrameEnabled, setNativeWindowFrameEnabled] = useState(false)
+  const [nightCompanionFolderPath, setNightCompanionFolderPath] = useState('')
+  const [savingNightCompanionFolderPath, setSavingNightCompanionFolderPath] = useState(false)
+  const [nightCompanionFolderMessage, setNightCompanionFolderMessage] = useState<string | null>(null)
   const [isRefreshingHf, setIsRefreshingHf] = useState(false)
   const [hfSyncMessage, setHfSyncMessage] = useState<string | null>(null)
   const [hfSyncInfo, setHfSyncInfo] = useState<HfSyncInfo | null>(null)
@@ -34,15 +37,17 @@ export default function Settings() {
     let active = true
 
     const load = async () => {
-      const [settingsResult] = await Promise.all([
+      const [settingsResult, folderPathResult] = await Promise.all([
         window.electronAPI.settings.getAiConfigState(),
-        loadHuggingFaceSyncInfo(),
+        window.electronAPI.settings.getNightCompanionFolderPath(),
       ])
+      await loadHuggingFaceSyncInfo()
       if (!active)
         return
 
       setAiApiRequestLoggingEnabled(Boolean(settingsResult.data?.aiApiRequestLoggingEnabled))
       setNativeWindowFrameEnabled(Boolean(settingsResult.data?.nativeWindowFrameEnabled))
+      setNightCompanionFolderPath(folderPathResult.data || '')
       setLoading(false)
     }
 
@@ -88,6 +93,61 @@ export default function Settings() {
     setIsRefreshingHf(false)
   }
 
+  async function handleBrowseNightCompanionFolder() {
+    const result = await window.electronAPI.settings.selectNightCompanionFolderPath()
+    if (result.error) {
+      setNightCompanionFolderMessage(result.error)
+      return
+    }
+
+    if (!result.data) return
+    setNightCompanionFolderPath(result.data)
+    setNightCompanionFolderMessage(null)
+  }
+
+  async function handleSaveNightCompanionFolder() {
+    const nextPath = nightCompanionFolderPath.trim()
+    if (!nextPath) {
+      setNightCompanionFolderMessage('Folder path is required.')
+      return
+    }
+
+    setSavingNightCompanionFolderPath(true)
+    setNightCompanionFolderMessage(null)
+
+    const result = await window.electronAPI.settings.saveNightCompanionFolderPath(nextPath)
+
+    if (result.error || !result.data) {
+      setNightCompanionFolderMessage(result.error || 'Opslaan van folderpad is mislukt.')
+      setSavingNightCompanionFolderPath(false)
+      return
+    }
+
+    setNightCompanionFolderPath(result.data)
+    setNightCompanionFolderMessage('NightCompanion folder location opgeslagen.')
+    setSavingNightCompanionFolderPath(false)
+  }
+
+  async function handleResetNightCompanionFolder() {
+    const confirmed = window.confirm('Reset NightCompanion folder location to the default AppData Local path?')
+    if (!confirmed) return
+
+    setSavingNightCompanionFolderPath(true)
+    setNightCompanionFolderMessage(null)
+
+    const result = await window.electronAPI.settings.resetNightCompanionFolderPath()
+
+    if (result.error || !result.data) {
+      setNightCompanionFolderMessage(result.error || 'Reset naar standaardlocatie is mislukt.')
+      setSavingNightCompanionFolderPath(false)
+      return
+    }
+
+    setNightCompanionFolderPath(result.data)
+    setNightCompanionFolderMessage('NightCompanion folder teruggezet naar standaardlocatie.')
+    setSavingNightCompanionFolderPath(false)
+  }
+
   const formattedLastSyncedAt = (() => {
     if (!hfSyncInfo?.lastSyncedAt) return 'Nog niet gesynchroniseerd'
     const parsed = new Date(hfSyncInfo.lastSyncedAt)
@@ -116,8 +176,8 @@ export default function Settings() {
             </div>
             <button
               type="button"
-              role="switch"
-              aria-checked={nativeWindowFrameEnabled}
+              aria-label="Toggle native Windows title bar"
+              title="Toggle native Windows title bar"
               disabled={loading}
               onClick={() => {
                 if (!loading) void handleNativeWindowFrameToggle()
@@ -141,8 +201,8 @@ export default function Settings() {
             </div>
             <button
               type="button"
-              role="switch"
-              aria-checked={aiApiRequestLoggingEnabled}
+              aria-label="Toggle AI API request logging"
+              title="Toggle AI API request logging"
               disabled={loading}
               onClick={() => {
                 if (!loading) void handleToggle()
@@ -157,6 +217,49 @@ export default function Settings() {
                 }`}
               />
             </button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-night-700/50 space-y-3">
+            <div>
+              <p className="text-sm font-semibold text-white">NightCompanion folder location</p>
+              <p className="text-xs text-night-400">Default: C:\Users\&lt;user&gt;\AppData\Local\NightCompanion</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={nightCompanionFolderPath}
+                onChange={(event) => setNightCompanionFolderPath(event.target.value)}
+                placeholder="Select folder path"
+                className="flex-1 rounded-xl border border-night-700 bg-night-900 px-3 py-2 text-sm text-night-100 placeholder-night-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+              />
+              <button
+                type="button"
+                onClick={() => void handleBrowseNightCompanionFolder()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+                Browse
+              </button>
+              <button
+                type="button"
+                disabled={savingNightCompanionFolderPath || loading}
+                onClick={() => void handleSaveNightCompanionFolder()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                disabled={savingNightCompanionFolderPath || loading}
+                onClick={() => void handleResetNightCompanionFolder()}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Reset default
+              </button>
+            </div>
+            {nightCompanionFolderMessage && (
+              <p className="text-xs text-night-300">{nightCompanionFolderMessage}</p>
+            )}
           </div>
 
           <div className="mt-6 pt-6 border-t border-night-700/50 space-y-3">

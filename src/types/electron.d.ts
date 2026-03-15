@@ -23,6 +23,7 @@ type AiConfigStateStore = {
   advisorModelRoute?: unknown
   aiApiRequestLoggingEnabled?: boolean
   nativeWindowFrameEnabled?: boolean
+  nightCompanionFolderPath?: string
 }
 type LocalEndpointStore = {
   id?: string
@@ -132,6 +133,10 @@ declare global {
         saveProviderMeta(providerId: string, input: Partial<ProviderMetaStore>): Promise<IpcResult<ProviderMetaStore>>
         getAiConfigState(): Promise<IpcResult<AiConfigStateStore>>
         saveAiConfigState(input: AiConfigStateStore): Promise<IpcResult<AiConfigStateStore>>
+        getNightCompanionFolderPath(): Promise<IpcResult<string>>
+        saveNightCompanionFolderPath(input: string): Promise<IpcResult<string>>
+        resetNightCompanionFolderPath(): Promise<IpcResult<string>>
+        selectNightCompanionFolderPath(): Promise<IpcResult<string | null>>
         getLocalEndpoints(): Promise<IpcResult<LocalEndpointStore[]>>
         saveLocalEndpoints(input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>>
         saveOpenRouter(input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>>

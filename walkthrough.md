@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-15 (Configureerbare NightCompanion opslagmap + AppData Local default)
+
+- Findings: User wilde dat image-bestanden standaard onder `C:\Users\<user>\AppData\Local\NightCompanion` worden opgeslagen en via Settings aanpasbaar zijn.
+- Conclusions: Een centrale path-resolver met fallback naar Local AppData voorkomt verspreide hardcoded paden en maakt consistent beheer mogelijk voor prompt- en character-images.
+- Actions: Toegevoegd [electron/services/storagePaths.ts](electron/services/storagePaths.ts) met default/configured root-resolutie; prompt- en character-image opslag gemigreerd in [electron/ipc/prompts.ts](electron/ipc/prompts.ts) en [electron/ipc/characters.ts](electron/ipc/characters.ts); nieuwe settings IPC-methodes toegevoegd in [electron/ipc/settings.ts](electron/ipc/settings.ts), geëxposed in [electron/preload.ts](electron/preload.ts), getypt in [src/types/electron.d.ts](src/types/electron.d.ts), en UI-besturing toegevoegd in [src/screens/Settings.tsx](src/screens/Settings.tsx) (`Browse` + `Save` + `Reset default` voor folderlocatie).
+
 ## 2026-03-15 (Lightbox GPU-smoothness polish)
 
 - Findings: User vroeg om een mini performance polish voor de Library-lightbox op tragere GPU's.

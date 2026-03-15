@@ -1,9 +1,10 @@
-import { app, ipcMain } from 'electron'
+import { app, dialog, ipcMain } from 'electron'
 import path from 'path'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import * as schema from '../../src/lib/schema'
 import { openRouterModels } from '../../src/lib/schema'
+import { getConfiguredNightCompanionFolderPath, getDefaultNightCompanionFolderPath } from '../services/storagePaths'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
 
@@ -30,6 +31,7 @@ type AiConfigStateStore = {
   advisorModelRoute?: unknown
   aiApiRequestLoggingEnabled?: boolean
   nativeWindowFrameEnabled?: boolean
+  nightCompanionFolderPath?: string
 }
 
 type LocalEndpointStore = {
@@ -146,6 +148,9 @@ function normalizeAiConfigState(input: unknown): AiConfigStateStore | undefined 
   if (typeof input.nativeWindowFrameEnabled === 'boolean') {
     normalized.nativeWindowFrameEnabled = input.nativeWindowFrameEnabled
   }
+  if (typeof input.nightCompanionFolderPath === 'string') {
+    normalized.nightCompanionFolderPath = input.nightCompanionFolderPath.trim()
+  }
 
   return normalized
 }
@@ -240,6 +245,17 @@ export async function getAiApiRequestLoggingEnabled() {
 export async function getNativeWindowFrameEnabled() {
   const stored = await readStoredSettings()
   return Boolean(stored.aiConfig?.nativeWindowFrameEnabled)
+}
+
+export async function getNightCompanionFolderPath() {
+  const stored = await readStoredSettings()
+  const configuredPath = stored.aiConfig?.nightCompanionFolderPath
+
+  if (typeof configuredPath === 'string' && configuredPath.trim()) {
+    return path.resolve(configuredPath.trim())
+  }
+
+  return getConfiguredNightCompanionFolderPath()
 }
 
 async function listOpenRouterModelsFromDb(db: Database) {
@@ -474,6 +490,90 @@ export function registerSettingsIpc({
       }
 
       return { data: nextAiConfig }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:getNightCompanionFolderPath', async () => {
+    try {
+      const data = await getNightCompanionFolderPath()
+      return { data }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:saveNightCompanionFolderPath', async (_, folderPath: string) => {
+    try {
+      const nextPath = typeof folderPath === 'string' ? folderPath.trim() : ''
+      if (!nextPath) {
+        throw new Error('Folder path is required.')
+      }
+      if (!path.isAbsolute(nextPath)) {
+        throw new Error('Folder path must be an absolute path.')
+      }
+
+      const resolvedPath = path.resolve(nextPath)
+      await mkdir(resolvedPath, { recursive: true })
+
+      const stored = await readStoredSettings()
+      const nextAiConfig: AiConfigStateStore = {
+        ...(stored.aiConfig || {}),
+        nightCompanionFolderPath: resolvedPath,
+      }
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(stored.openRouter),
+        providerMeta: stored.providerMeta,
+        aiConfig: nextAiConfig,
+        localEndpoints: stored.localEndpoints,
+      })
+
+      return { data: resolvedPath }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:resetNightCompanionFolderPath', async () => {
+    try {
+      const defaultPath = path.resolve(getDefaultNightCompanionFolderPath())
+      await mkdir(defaultPath, { recursive: true })
+
+      const stored = await readStoredSettings()
+      const nextAiConfig: AiConfigStateStore = {
+        ...(stored.aiConfig || {}),
+        nightCompanionFolderPath: defaultPath,
+      }
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(stored.openRouter),
+        providerMeta: stored.providerMeta,
+        aiConfig: nextAiConfig,
+        localEndpoints: stored.localEndpoints,
+      })
+
+      return { data: defaultPath }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:selectNightCompanionFolderPath', async () => {
+    try {
+      const currentPath = await getNightCompanionFolderPath()
+      const result = await dialog.showOpenDialog({
+        title: 'Select NightCompanion folder',
+        defaultPath: currentPath || getDefaultNightCompanionFolderPath(),
+        properties: ['openDirectory', 'createDirectory'],
+      })
+
+      if (result.canceled || result.filePaths.length === 0) {
+        return { data: null }
+      }
+
+      return { data: result.filePaths[0] }
     } catch (error) {
       return { error: String(error) }
     }
