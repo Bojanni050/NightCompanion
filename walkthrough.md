@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-16 (ProviderConfigForm opgesplitst in modulaire componenten)
+
+- Findings: `src/screens/Settings/ProviderConfigForm.tsx` was 21KB met hardcoded OpenRouter-specifieke logica (key validatie, test verbinding, model refresh, prijs formatting) door elkaar gemengd in één monolithisch component.
+- Conclusions: Provider-specifieke logica moet worden geïsoleerd via een adapter pattern; generieke UI componenten (API key input, model selectie, activatie knoppen) moeten herbruikbaar zijn; een provider registry maakt toekomstige providers eenvoudig toe te voegen zonder bestaande code te wijzigen.
+- Actions: Nieuwe modulaire structuur aangemaakt in `src/screens/Settings/ProviderConfig/` met: `types.ts` (provider-agnostische interfaces), `providerRegistry.ts` (extensible provider factory), `adapters/openRouter.ts` (OpenRouter-specifieke implementatie), `components/ApiKeyInput.tsx` (herbruikbare key input met mask/visibility toggle), `components/ModelAndActivation.tsx` (model selector grid + role activation buttons), `forms/ProviderConfigForm.tsx` (samengestelde container component ~11KB); oude monolithische form vervangen door re-export; gevalideerd met `npm run build`.
+
 ## 2026-03-16 (Shared loading skeletons for key screens)
 
 - Findings: First-load states in `Dashboard`, `Library`, `StyleProfiles`, and `GenerationLog` used spinner/text placeholders, which can feel slow and abrupt when Electron IPC responses are delayed.
