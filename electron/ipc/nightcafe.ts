@@ -44,6 +44,7 @@ export function registerNightCafeIpc({ db }: { db: Database }) {
 
   ipcMain.handle('nightcafePresets:list', async () => {
     try {
+      console.log('[nightcafePresets:list] Querying database...')
       const data = await db
         .select({
           presetName: nightcafePresets.presetName,
@@ -53,8 +54,10 @@ export function registerNightCafeIpc({ db }: { db: Database }) {
         .from(nightcafePresets)
         .orderBy(nightcafePresets.presetName)
 
+      console.log(`[nightcafePresets:list] Found ${data.length} presets`)
       return { data: data as NightcafePresetOption[] }
     } catch (error) {
+      console.error('[nightcafePresets:list] Error:', error)
       return { error: String(error) }
     }
   })

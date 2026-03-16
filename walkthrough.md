@@ -2,9 +2,133 @@
 
 ## 2026-03-16 (Generator pagina: NightCafe preset dropdowns empty fix)
 
-- Findings: De NightCafe preset dropdowns in Generator waren leeg omdat de CSV-bestanden niet gevonden werden in development mode; `app.getAppPath()` en `process.resourcesPath` werkten niet correct buiten de gecompileerde app.
-- Conclusions: Extra fallback paden nodig voor development mode met `process.cwd()`, plus betere logging om path-resolutie problemen te diagnosticeren.
-- Actions: In `electron/services/nightcafeSync.ts` extra `process.cwd()` pad toegevoegd aan `getNightCafePresetsCandidates()` en `getNightCafePresetPromptsCandidates()`; logging toegevoegd aan `readNightCafePresetsCsv()` om geprobeerde paden en gevonden bestanden te tonen; gevalideerd met `npm run build`.
+- Findings: De NightCafe preset dropdowns in Generator waren leeg door twee problemen: (1) de `preset_prompt` kolom ontbrak in de database omdat migratie 0017 niet was toegepast, en (2) in development mode werden de CSV-bestanden niet gevonden via `app.getAppPath()` en `process.resourcesPath`.
+- Conclusions: Database migratie 0017 toepassen om de `preset_prompt` kolom toe te voegen aan `nightcafe_presets`, en extra fallback paden (`process.cwd()`) nodig voor development mode.
+- Actions: Migratie `drizzle/0017_nightcafe_preset_prompt.sql` aangemaakt en toegepast via `npm run db:migrate`; in `electron/services/nightcafeSync.ts` extra `process.cwd()` pad toegevoegd aan `getNightCafePresetsCandidates()` en `getNightCafePresetPromptsCandidates()`; logging toegevoegd aan `readNightCafePresetsCsv()`; gevalideerd met `npm run build`. Console toont nu: "Nightcafe presets synced: 44 total".
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## 2026-03-16 (Generator pagina: Greylist verplaatst en sliders toegevoegd)
 
