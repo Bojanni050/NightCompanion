@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-16 (Characters screen opgesplitst in onderhoudbare componenten)
+
+- Findings: `src/screens/Characters.tsx` was te groot (~27KB) en combineerde meerdere verantwoordelijkheden in één bestand.
+- Conclusions: Opsplitsen in gerichte presentational componenten (form modal, trait editor, image uploader, card/detail panel) maakt onderhoud en testbaarheid beter zonder functionele wijziging.
+- Actions: Nieuwe componenten toegevoegd in [src/components/characters/types.ts](src/components/characters/types.ts), [src/components/characters/CharacterFormModal.tsx](src/components/characters/CharacterFormModal.tsx), [src/components/characters/CharacterTraitEditor.tsx](src/components/characters/CharacterTraitEditor.tsx), [src/components/characters/CharacterImageUploader.tsx](src/components/characters/CharacterImageUploader.tsx), [src/components/characters/CharacterCard.tsx](src/components/characters/CharacterCard.tsx), [src/components/characters/CharacterDetailPanel.tsx](src/components/characters/CharacterDetailPanel.tsx); [src/screens/Characters.tsx](src/screens/Characters.tsx) gereduceerd tot state/orchestration + helperfuncties; gevalideerd met `npm run build`.
+
 ## 2026-03-16 (Globale fallback voor stille IPC-fouten)
 
 - Findings: User gaf aan dat sommige IPC-fouten stil mislukken zonder toast, waardoor er geen zichtbare feedback is.

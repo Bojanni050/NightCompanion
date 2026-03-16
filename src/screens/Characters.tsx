@@ -1,45 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  Check,
-  Edit3,
-  Image as ImageIcon,
-  Loader2,
-  Plus,
-  Search,
-  Save,
-  ThumbsDown,
-  ThumbsUp,
-  Trash2,
-  X,
-} from 'lucide-react'
+import type { ChangeEvent, CSSProperties } from 'react'
+import { Loader2, Plus, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
+import CharacterCard from '../components/characters/CharacterCard'
+import CharacterFormModal from '../components/characters/CharacterFormModal'
+import type { CharacterDetail, CharacterImage, CharacterRecord } from '../components/characters/types'
 
 const PAGE_SIZE = 12
 const STORAGE_KEY = 'nightcompanion.characters'
-
-interface CharacterImage {
-  id: string
-  url: string
-  isMain: boolean
-  createdAt: string
-}
-
-interface CharacterDetail {
-  id: string
-  detail: string
-  category: string
-  worksWell: boolean
-}
-
-interface CharacterRecord {
-  id: string
-  name: string
-  description: string
-  images: CharacterImage[]
-  details: CharacterDetail[]
-  createdAt: string
-  updatedAt: string
-}
 
 type EditorState =
   | { mode: 'closed' }
@@ -253,7 +221,7 @@ export default function Characters() {
     toast.success('Character deleted')
   }
 
-  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageUpload(e: ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0) return
 
@@ -292,6 +260,10 @@ export default function Characters() {
     }
   }
 
+  function handleSetMainImage(imageId: string) {
+    setFormImages((prev) => prev.map((item) => ({ ...item, isMain: item.id === imageId })))
+  }
+
   function addTrait() {
     const value = detailText.trim()
     if (!value) return
@@ -308,11 +280,26 @@ export default function Characters() {
     setDetailText('')
   }
 
+  async function removeImageFromForm(image: CharacterImage) {
+    if (isLocalFileUrl(image.url)) {
+      await deleteLocalImage(image.url)
+    }
+
+    setFormImages((prev) => prev.filter((item) => item.id !== image.id))
+  }
+
+  async function deleteLocalImage(fileUrl: string) {
+    const result = await window.electronAPI.characters.deleteImage({ fileUrl })
+    if (result.error) {
+      console.warn('Could not delete local image:', result.error)
+    }
+  }
+
   return (
     <div className="flex flex-col h-full">
       <div
         className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-8 pt-8 pb-5"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        style={{ WebkitAppRegion: 'no-drag' } as CSSProperties}
       >
         <div>
           <h1 className="text-2xl font-semibold text-white tracking-tight">Characters</h1>
@@ -341,7 +328,7 @@ export default function Characters() {
 
       <div
         className="flex-1 overflow-y-auto px-8 pb-8"
-        style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        style={{ WebkitAppRegion: 'no-drag' } as CSSProperties}
       >
         {loading ? (
           <div className="flex items-center justify-center py-28 text-night-400">
@@ -400,185 +387,33 @@ export default function Characters() {
       </div>
 
       {editor.mode !== 'closed' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-2xl card border-night-700 shadow-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-night-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">
-                {editor.mode === 'edit' ? 'Edit Character' : 'New Character'}
-              </h3>
-              <button onClick={closeEditor} className="text-night-400 hover:text-white" title="Close">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              <div>
-                <label className="label">Name</label>
-                <input
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="e.g. Cyberpunk Detective"
-                  className="input"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="label">Description</label>
-                <textarea
-                  value={formDesc}
-                  onChange={(e) => setFormDesc(e.target.value)}
-                  placeholder="Core traits, visual style, personality..."
-                  className="textarea min-h-24"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="label">Character Images</label>
-                <div className="flex flex-wrap gap-2">
-                  {formImages.map((img) => (
-                    <div key={img.id} className="relative w-20 h-20 rounded-xl overflow-hidden border border-night-700 bg-night-900 group">
-                      <img src={img.url} className="w-full h-full object-cover" alt="Character preview" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormImages((prev) => prev.map((item) => ({ ...item, isMain: item.id === img.id })))
-                        }}
-                        className={`absolute inset-0 flex items-center justify-center text-[10px] font-semibold uppercase transition-opacity ${img.isMain ? 'bg-black/50 opacity-100 text-white' : 'opacity-0 group-hover:opacity-100 bg-black/60 text-night-100'}`}
-                      >
-                        {img.isMain ? 'Main' : 'Set Main'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeImageFromForm(img)}
-                        className="absolute top-1 right-1 p-1 rounded bg-black/50 text-white opacity-0 group-hover:opacity-100"
-                        title="Remove image"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-20 h-20 rounded-xl border border-dashed border-night-700 text-night-400 hover:text-night-200 hover:border-night-500 transition-colors flex flex-col items-center justify-center"
-                    disabled={uploading}
-                  >
-                    {uploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                    <span className="text-[10px] mt-1">Add</span>
-                  </button>
-                </div>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  accept="image/*"
-                  multiple
-                  title="Upload character images"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-night-700 space-y-3">
-                <label className="label">Character Traits</label>
-
-                <div className="card p-3 border-night-700 space-y-3">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={detailText}
-                      onChange={(e) => setDetailText(e.target.value)}
-                      placeholder="e.g. Wears a leather jacket"
-                      className="input"
-                    />
-                    <select
-                      value={detailCategory}
-                      onChange={(e) => setDetailCategory(e.target.value)}
-                      className="input w-36"
-                      title="Trait category"
-                    >
-                      <option value="clothing">Clothing</option>
-                      <option value="lighting">Lighting</option>
-                      <option value="pose">Pose</option>
-                      <option value="style">Style</option>
-                      <option value="expression">Expression</option>
-                      <option value="environment">Environment</option>
-                      <option value="appearance">Appearance</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="inline-flex rounded-lg border border-night-700 overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => setDetailWorks(true)}
-                        className={`px-2 py-1.5 ${detailWorks ? 'bg-emerald-600/20 text-emerald-400' : 'bg-night-800 text-night-400'}`}
-                        title="Works well"
-                      >
-                        <ThumbsUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDetailWorks(false)}
-                        className={`px-2 py-1.5 ${!detailWorks ? 'bg-red-600/20 text-red-400' : 'bg-night-800 text-night-400'}`}
-                        title="Issues reported"
-                      >
-                        <ThumbsDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    <button type="button" onClick={addTrait} className="btn-ghost border border-night-700">
-                      <Plus className="w-3.5 h-3.5" />
-                      Add Trait
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2 max-h-44 overflow-y-auto">
-                  {formDetails.length === 0 ? (
-                    <div className="text-xs text-night-500 italic py-2">No traits added yet.</div>
-                  ) : (
-                    formDetails.map((detail) => (
-                      <div
-                        key={detail.id}
-                        className="flex items-center justify-between rounded-lg border border-night-700 p-2 bg-night-900"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          {detail.worksWell ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <X className="w-3.5 h-3.5 text-red-400" />
-                          )}
-                          <span className="text-xs text-night-200 truncate">{detail.detail}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-night-800 border border-night-700 text-night-400 uppercase">
-                            {detail.category}
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setFormDetails((prev) => prev.filter((item) => item.id !== detail.id))}
-                          className="text-night-500 hover:text-red-400"
-                          title="Remove trait"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-night-700 flex items-center justify-end gap-3">
-              <button onClick={closeEditor} className="btn-ghost">Cancel</button>
-              <button onClick={handleSaveCharacter} disabled={saving || !formName.trim()} className="btn-primary">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save Character
-              </button>
-            </div>
-          </div>
-        </div>
+        <CharacterFormModal
+          mode={editor.mode}
+          saving={saving}
+          uploading={uploading}
+          formName={formName}
+          formDesc={formDesc}
+          formImages={formImages}
+          formDetails={formDetails}
+          detailText={detailText}
+          detailCategory={detailCategory}
+          detailWorks={detailWorks}
+          fileInputRef={fileInputRef}
+          onClose={closeEditor}
+          onSave={handleSaveCharacter}
+          onFormNameChange={setFormName}
+          onFormDescChange={setFormDesc}
+          onImageUpload={handleImageUpload}
+          onSetMainImage={handleSetMainImage}
+          onRemoveImage={(image) => {
+            void removeImageFromForm(image)
+          }}
+          onDetailTextChange={setDetailText}
+          onDetailCategoryChange={setDetailCategory}
+          onDetailWorksChange={setDetailWorks}
+          onAddTrait={addTrait}
+          onRemoveTrait={(id) => setFormDetails((prev) => prev.filter((item) => item.id !== id))}
+        />
       )}
 
       {lightboxImage && (
@@ -596,146 +431,6 @@ export default function Characters() {
             className="max-w-full max-h-[90vh] rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />
-        </div>
-      )}
-    </div>
-  )
-
-  async function removeImageFromForm(image: CharacterImage) {
-    if (isLocalFileUrl(image.url)) {
-      await deleteLocalImage(image.url)
-    }
-
-    setFormImages((prev) => prev.filter((item) => item.id !== image.id))
-  }
-
-  async function deleteLocalImage(fileUrl: string) {
-    const result = await window.electronAPI.characters.deleteImage({ fileUrl })
-    if (result.error) {
-      console.warn('Could not delete local image:', result.error)
-    }
-  }
-}
-
-function CharacterCard({
-  character,
-  isExpanded,
-  onToggleExpand,
-  onEdit,
-  onDelete,
-  onViewImage,
-}: {
-  character: CharacterRecord
-  isExpanded: boolean
-  onToggleExpand: () => void
-  onEdit: () => void
-  onDelete: () => void
-  onViewImage: (url: string) => void
-}) {
-  const mainImage = character.images.find((image) => image.isMain) || character.images[0]
-  const additionalImages = character.images.filter((image) => image.id !== mainImage?.id)
-
-  return (
-    <div
-      className={`card border-night-700 hover:border-night-500 transition-all overflow-hidden cursor-pointer ${isExpanded ? 'ring-1 ring-glow-purple/50' : ''}`}
-      onClick={onToggleExpand}
-    >
-      <div className="p-5 pb-3">
-        <div className="flex items-start justify-between mb-2">
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-white truncate">{character.name}</h3>
-            <span className="text-[10px] text-glow-soft">Character</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit()
-              }}
-              className="p-1.5 rounded-lg hover:bg-night-800 text-night-400 hover:text-night-100"
-              title="Edit character"
-            >
-              <Edit3 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onDelete()
-              }}
-              className="p-1.5 rounded-lg hover:bg-red-900/30 text-night-400 hover:text-red-300"
-              title="Delete character"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-
-        <p className="text-xs text-night-400 line-clamp-3 min-h-[3rem]">
-          {character.description || 'No description provided.'}
-        </p>
-      </div>
-
-      <div className="px-5 pb-5">
-        <div
-          className="relative aspect-square rounded-xl overflow-hidden bg-night-950 border border-night-800"
-          onClick={(e) => {
-            e.stopPropagation()
-            if (mainImage?.url) onViewImage(mainImage.url)
-          }}
-        >
-          {mainImage?.url ? (
-            <img src={mainImage.url} alt={character.name} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-night-700">
-              <ImageIcon className="w-10 h-10" />
-            </div>
-          )}
-          {mainImage?.url && (
-            <div className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5 rounded bg-glow-purple/80 text-white uppercase">
-              Main
-            </div>
-          )}
-        </div>
-
-        {additionalImages.length > 0 && (
-          <div className="grid grid-cols-4 gap-2 mt-2">
-            {additionalImages.slice(0, 4).map((image) => (
-              <button
-                key={image.id}
-                className="aspect-square rounded-md overflow-hidden border border-night-800"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onViewImage(image.url)
-                }}
-                title="View image"
-              >
-                <img src={image.url} alt="Character gallery" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {isExpanded && (
-        <div className="border-t border-night-700 p-5 pt-4 space-y-2" onClick={(e) => e.stopPropagation()}>
-          <h4 className="text-xs uppercase tracking-wide text-night-500">Traits</h4>
-          {character.details.length === 0 ? (
-            <div className="text-xs italic text-night-600">No traits recorded.</div>
-          ) : (
-            character.details.map((detail) => (
-              <div key={detail.id} className="flex items-center gap-2 text-xs text-night-200">
-                {detail.worksWell ? (
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                ) : (
-                  <X className="w-3.5 h-3.5 text-red-400" />
-                )}
-                <span className="truncate">{detail.detail}</span>
-                <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-night-800 border border-night-700 text-night-400">
-                  {detail.category}
-                </span>
-              </div>
-            ))
-          )}
         </div>
       )}
     </div>
