@@ -6,6 +6,12 @@
 - Conclusions: Een centrale `invoke`-interceptor in preload moet onverwachte IPC failures altijd loggen en een renderer-brede fallback hook aanbieden voor minimale gebruikersfeedback.
 - Actions: In [electron/preload.ts](electron/preload.ts) alle `ipcRenderer.invoke` calls omgezet naar `invokeWithFallback` met globale error logging (`console.error`) en nieuwe `onUnexpectedIpcError` subscription API; in [src/types/electron.d.ts](src/types/electron.d.ts) de nieuwe payload + API getypt; in [src/App.tsx](src/App.tsx) globale fallback toast toegevoegd via `sonner` bij onverwachte IPC-fout; gevalideerd met `npm run build`.
 
+## 2026-03-16 (Fallback IPC toast deduplicatie)
+
+- Findings: User bevestigde dat fallback toasts gewenst zijn maar zonder spam bij meerdere identieke fouten kort na elkaar.
+- Conclusions: Een korte cooldown per foutsignatuur (`channel + message`) voorkomt toast-spam terwijl logging en eerste feedback intact blijven.
+- Actions: In [src/App.tsx](src/App.tsx) deduplicatie toegevoegd voor `onUnexpectedIpcError` met `Map`-gebaseerde cooldown (`2500ms`) per unieke foutkey; identieke fouten binnen cooldown tonen geen extra toast.
+
 ## 2026-03-15 (Configureerbare NightCompanion opslagmap + AppData Local default)
 
 - Findings: User wilde dat image-bestanden standaard onder `C:\Users\<user>\AppData\Local\NightCompanion` worden opgeslagen en via Settings aanpasbaar zijn.

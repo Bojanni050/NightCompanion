@@ -19,3 +19,4 @@
 
 - Onverwachte IPC-fouten worden nu centraal onderschept in preload en altijd naar de console gelogd.
 - De app toont nu een globale fallback toast bij onverwachte IPC invoke-fouten, zodat stille failures zichtbaar worden voor de gebruiker.
+- Identieke fallback IPC-fouten worden kort gededupliceerd (cooldown), zodat de UI geen toast-spam toont bij foutcascades.

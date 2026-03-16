@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import Dashboard from './screens/Dashboard'
 import AIConfig from './screens/AIConfig'
@@ -14,6 +14,7 @@ import { Toaster, toast } from 'sonner'
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard')
   const [nativeWindowFrameEnabled, setNativeWindowFrameEnabled] = useState(false)
+  const lastUnexpectedIpcToastAtRef = useRef<Map<string, number>>(new Map())
 
   useEffect(() => {
     let active = true
@@ -33,8 +34,20 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    const toastCooldownMs = 2500
+
     return window.electronAPI.onUnexpectedIpcError((payload) => {
       console.error('[renderer] Unexpected IPC invoke failure', payload)
+
+      const key = `${payload.channel}:${payload.message}`
+      const now = Date.now()
+      const lastShownAt = lastUnexpectedIpcToastAtRef.current.get(key) ?? 0
+
+      if (now - lastShownAt < toastCooldownMs) {
+        return
+      }
+
+      lastUnexpectedIpcToastAtRef.current.set(key, now)
       toast.error('Unexpected app error. Please try again.')
     })
   }, [])
