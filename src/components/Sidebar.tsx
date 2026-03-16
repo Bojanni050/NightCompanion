@@ -15,12 +15,6 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Overview & quick actions',
   },
   {
-    id: 'ai-config',
-    label: 'AI Configuration',
-    icon: '✧',
-    description: 'Provider & model routing',
-  },
-  {
     id: 'generator',
     label: 'Generator',
     icon: '⚡',
@@ -55,6 +49,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Settings',
     icon: '⚙',
     description: 'OpenRouter credentials',
+  },
+  {
+    id: 'ai-config',
+    label: 'AI Configuration',
+    icon: '✧',
+    description: 'Provider & model routing',
   },
 ]
 
