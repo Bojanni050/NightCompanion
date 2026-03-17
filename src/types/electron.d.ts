@@ -1,4 +1,4 @@
-﻿import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../lib/schema'
+﻿import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry, Greylist } from '../lib/schema'
 
 type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
 type PromptFilters = { search?: string; tags?: string[]; model?: string }
@@ -175,6 +175,11 @@ declare global {
         delete(id: string): Promise<IpcResult<{ ok: boolean }>>
         saveImage(input: { dataUrl: string; fileName?: string }): Promise<IpcResult<{ fileUrl: string }>>
         deleteImage(input: { fileUrl: string }): Promise<IpcResult<{ ok: boolean }>>
+      }
+      greylist: {
+        get(): Promise<IpcResult<Greylist>>
+        save(input: { words: string[] }): Promise<IpcResult<Greylist>>
+        update(input: { words: string[] }): Promise<IpcResult<Greylist>>
       }
       onUnexpectedIpcError(listener: (payload: IpcUnexpectedErrorPayload) => void): () => void
     }

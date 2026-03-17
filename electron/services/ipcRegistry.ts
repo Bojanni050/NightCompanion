@@ -7,6 +7,7 @@ import { registerNightCafeIpc } from '../ipc/nightcafe'
 import { registerCharactersIpc } from '../ipc/characters'
 import { registerSettingsIpc, type OpenRouterSettings } from '../ipc/settings'
 import { registerAiIpc } from '../ipc/ai'
+import { registerGreylistHandlers } from '../ipc/greylist'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
 
@@ -30,4 +31,5 @@ export function registerIpcHandlers({
   registerCharactersIpc({ db })
   registerSettingsIpc({ db, onNativeWindowFrameChanged })
   registerAiIpc({ db, getOpenRouterSettings, getAiApiRequestLoggingEnabled })
+  registerGreylistHandlers(db)
 }

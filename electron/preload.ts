@@ -1,5 +1,5 @@
 ﻿import { contextBridge, ipcRenderer } from 'electron'
-import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry } from '../src/lib/schema'
+import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry, Greylist } from '../src/lib/schema'
 
 type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
   imageDataUrl?: string | null
@@ -312,6 +312,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invokeWithFallback('characters:saveImage', input),
     deleteImage: (input: { fileUrl: string }): Promise<IpcResult<{ ok: boolean }>> =>
       invokeWithFallback('characters:deleteImage', input),
+  },
+  greylist: {
+    get: (): Promise<IpcResult<Greylist>> =>
+      invokeWithFallback('greylist:get'),
+    save: (input: { words: string[] }): Promise<IpcResult<Greylist>> =>
+      invokeWithFallback('greylist:save', input),
+    update: (input: { words: string[] }): Promise<IpcResult<Greylist>> =>
+      invokeWithFallback('greylist:update', input),
   },
   onUnexpectedIpcError: (listener: IpcUnexpectedErrorListener): (() => void) => {
     ipcUnexpectedErrorListeners.add(listener)

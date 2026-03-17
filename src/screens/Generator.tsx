@@ -426,33 +426,43 @@ export default function Generator() {
   }, [tab, selectedPreset, maxWords, generatedPrompt, negativePrompt, negativePromptViewTab, negativeImprovementDiff, savedTitle, recommendedModel, recommendedModelReason, recommendedModelMode, supportsNegativePrompt, promptViewTab, improvementDiff, quickStartIdea, quickStartCreativity, magicRandomCreativity, quickStartCharacterId])
 
   useEffect(() => {
-    const stored = localStorage.getItem('generatorGreylist')
-    if (!stored) return
+    let ignore = false
 
-    try {
-      const parsed = JSON.parse(stored) as { enabled?: boolean; words?: string[] }
-      const words = (parsed.words ?? [])
-        .map((word) => normalizeGreylistWord(word))
-        .filter((word) => word.length > 0)
-
-      setGreylistEnabled(parsed.enabled ?? true)
-      setGreylistWords(words.length > 0 ? Array.from(new Set(words)) : DEFAULT_GREYLIST)
-    } catch {
-      setGreylistEnabled(true)
-      setGreylistWords(DEFAULT_GREYLIST)
+    async function loadGreylist() {
+      try {
+        const result = await window.electronAPI.greylist.get()
+        if (ignore || result.error || !result.data) {
+          setGreylistWords(DEFAULT_GREYLIST)
+          return
+        }
+        setGreylistWords(result.data.words || DEFAULT_GREYLIST)
+      } catch (error) {
+        console.error('Failed to load greylist:', error)
+        setGreylistWords(DEFAULT_GREYLIST)
+      }
     }
+
+    loadGreylist()
+
+    return () => { ignore = true }
   }, [])
 
   useEffect(() => {
-    try {
-      localStorage.setItem('generatorGreylist', JSON.stringify({
-        enabled: greylistEnabled,
-        words: greylistWords,
-      }))
-    } catch (e) {
-      console.error('Failed to save greylist to localStorage:', e)
+    let ignore = false
+
+    async function saveGreylist() {
+      if (ignore) return
+      try {
+        await window.electronAPI.greylist.save({ words: greylistWords })
+      } catch (error) {
+        console.error('Failed to save greylist to database:', error)
+      }
     }
-  }, [greylistEnabled, greylistWords])
+
+    saveGreylist()
+
+    return () => { ignore = true }
+  }, [greylistWords])
 
   const handleGenerate = async () => {
     setStatus(null)

@@ -213,6 +213,23 @@ export const characters = pgTable(
   ]
 )
 
+// ─── Greylist ────────────────────────────────────────────────────────────────────
+
+export const greylistTable = pgTable(
+  'greylist',
+  {
+    id: serial('id').primaryKey(),
+    words: text('words').array().default([]).notNull(),
+    userId: varchar('user_id', { length: 255 }).default('').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    index('greylist_user_id_idx').on(table.userId),
+    index('greylist_created_at_idx').on(table.createdAt),
+  ]
+)
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type Prompt = typeof prompts.$inferSelect
@@ -237,3 +254,6 @@ export type NewNightcafePreset = typeof nightcafePresets.$inferInsert
 
 export type Character = typeof characters.$inferSelect
 export type NewCharacter = typeof characters.$inferInsert
+
+export type Greylist = typeof greylistTable.$inferSelect
+export type NewGreylist = typeof greylistTable.$inferInsert

@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-17 (Greylist database persistence)
+
+- Findings: Greylist words were only stored in localStorage, making them non-permanent across app reinstalls and devices.
+- Conclusions: Greylist should be stored in the database for persistence, with proper table schema and IPC handlers.
+- Actions: Added `greylistTable` schema to `src/lib/schema.ts`; created migration `drizzle/0018_greylist_table.sql` and applied via `apply-greylist-migration.ts`; implemented IPC handlers in `electron/ipc/greylist.ts`; added API to preload and electron types; updated `src/screens/Generator.tsx` to use database storage instead of localStorage; validated with `npm run build`.
+
 ## 2026-03-16 (Generator pagina: NightCafe preset dropdowns empty fix)
 
 - Findings: De NightCafe preset dropdowns in Generator waren leeg door twee problemen: (1) de `preset_prompt` kolom ontbrak in de database omdat migratie 0017 niet was toegepast, en (2) in development mode werden de CSV-bestanden niet gevonden via `app.getAppPath()` en `process.resourcesPath`.
