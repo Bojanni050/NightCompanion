@@ -85,6 +85,30 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
 
   const handleSaveToLibrary = async () => {
     if (!composedPrompt || !savedTitle.trim()) return
+
+    // Check for duplicates
+    const existingPromptsResult = await window.electronAPI.prompts.list()
+    if (existingPromptsResult.error || !existingPromptsResult.data) {
+      setSaveMsg('Error: Failed to check for duplicates.')
+      return
+    }
+
+    const duplicate = existingPromptsResult.data.find(
+      prompt => 
+        prompt.promptText.trim() === composedPrompt.trim() && 
+        prompt.title.trim() === savedTitle.trim()
+    )
+
+    if (duplicate) {
+      await window.electronAPI.dialog.showMessageBox({
+        type: 'warning',
+        title: 'Duplicate Prompt',
+        message: 'A prompt with this title and content already exists in your library.',
+        buttons: ['OK']
+      })
+      return
+    }
+
     const result = await window.electronAPI.prompts.create({
       title: savedTitle.trim(),
       promptText: composedPrompt,
