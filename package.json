@@ -25,11 +25,10 @@
     "jiti": "^2.6.1",
     "lucide-react": "^0.577.0",
     "postgres": "^3.4.5",
-    "sonner": "^2.0.7",
-    "typescript-eslint": "^8.57.1"
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.39.4",
     "@types/node": "^22.13.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
@@ -39,14 +38,18 @@
     "drizzle-kit": "^0.30.4",
     "electron": "^34.2.0",
     "electron-builder": "^25.1.8",
-    "eslint": "^10.0.3",
-    "globals": "^17.4.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^15.15.0",
     "postcss": "^8.5.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
+    "typescript-eslint": "^8.57.1",
     "vite": "^6.2.1",
     "wait-on": "^8.0.3"
   }
