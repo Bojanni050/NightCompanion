@@ -4,12 +4,12 @@ import { eq } from 'drizzle-orm'
 import * as schema from '../../src/lib/schema'
 import { greylistTable } from '../../src/lib/schema'
 
-export function registerGreylistHandlers(db: any) {
-  const drizzleDb = drizzle(db, { schema })
+type Database = ReturnType<typeof drizzle<typeof schema>>
 
+export function registerGreylistHandlers(db: Database) {
   ipcMain.handle('greylist:get', async () => {
     try {
-      const greylist = await drizzleDb.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
+      const greylist = await db.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
       return { success: true, data: greylist[0] || null }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to get greylist' }
@@ -18,14 +18,14 @@ export function registerGreylistHandlers(db: any) {
 
   ipcMain.handle('greylist:save', async (_, { words }: { words: string[] }) => {
     try {
-      const existing = await drizzleDb.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
+      const existing = await db.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
       
       if (existing[0]) {
-        await drizzleDb.update(greylistTable)
+        await db.update(greylistTable)
           .set({ words, updatedAt: new Date() })
           .where(eq(greylistTable.userId, ''))
       } else {
-        await drizzleDb.insert(greylistTable).values({
+        await db.insert(greylistTable).values({
           words,
           userId: '',
           createdAt: new Date(),
@@ -33,7 +33,7 @@ export function registerGreylistHandlers(db: any) {
         })
       }
       
-      const updated = await drizzleDb.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
+      const updated = await db.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
       return { success: true, data: updated[0] }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to save greylist' }
@@ -42,11 +42,11 @@ export function registerGreylistHandlers(db: any) {
 
   ipcMain.handle('greylist:update', async (_, { words }: { words: string[] }) => {
     try {
-      await drizzleDb.update(greylistTable)
+      await db.update(greylistTable)
         .set({ words, updatedAt: new Date() })
         .where(eq(greylistTable.userId, ''))
       
-      const updated = await drizzleDb.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
+      const updated = await db.select().from(greylistTable).where(eq(greylistTable.userId, '')).limit(1)
       return { success: true, data: updated[0] }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Failed to update greylist' }
