@@ -321,6 +321,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     update: (input: { words: string[] }): Promise<IpcResult<Greylist>> =>
       invokeWithFallback('greylist:update', input),
   },
+  dialog: {
+    showErrorBox: (title: string, content: string): Promise<void> =>
+      invokeWithFallback('dialog:showErrorBox', { title, content }),
+    showMessageBox: (options: { type?: 'info' | 'warning' | 'error'; title: string; message: string; buttons?: string[] }): Promise<{ response: number; checkboxChecked?: boolean }> =>
+      invokeWithFallback('dialog:showMessageBox', options),
+  },
   onUnexpectedIpcError: (listener: IpcUnexpectedErrorListener): (() => void) => {
     ipcUnexpectedErrorListeners.add(listener)
 

@@ -181,6 +181,10 @@ declare global {
         save(input: { words: string[] }): Promise<IpcResult<Greylist>>
         update(input: { words: string[] }): Promise<IpcResult<Greylist>>
       }
+      dialog: {
+        showErrorBox(title: string, content: string): Promise<void>
+        showMessageBox(options: { type?: 'info' | 'warning' | 'error'; title: string; message: string; buttons?: string[] }): Promise<{ response: number; checkboxChecked?: boolean }>
+      }
       onUnexpectedIpcError(listener: (payload: IpcUnexpectedErrorPayload) => void): () => void
     }
   }

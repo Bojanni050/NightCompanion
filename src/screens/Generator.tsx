@@ -713,7 +713,12 @@ export default function Generator() {
     )
 
     if (duplicate) {
-      setStatus('Error: A prompt with this title and content already exists in your library.')
+      await window.electronAPI.dialog.showMessageBox({
+        type: 'warning',
+        title: 'Duplicate Prompt',
+        message: 'A prompt with this title and content already exists in your library.',
+        buttons: ['OK']
+      })
       return
     }
 
