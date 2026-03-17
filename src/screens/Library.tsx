@@ -384,7 +384,13 @@ export default function Library() {
                           </button>
                           <button
                             onClick={async () => {
-                              if (!window.confirm('Prompt verwijderen?')) return
+                              const result = await window.electronAPI.dialog.showMessageBox({
+                                type: 'warning',
+                                title: 'Prompt Verwijderen',
+                                message: 'Weet u zeker dat u deze prompt wilt verwijderen?',
+                                buttons: ['Annuleren', 'Verwijderen']
+                              })
+                              if (result.response !== 1) return // 1 is the second button (Verwijderen)
                               await handleDelete(prompt.id)
                             }}
                             className="p-1.5 hover:bg-red-900/20 text-night-500 hover:text-red-400 rounded-lg transition-colors"
