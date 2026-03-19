@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-19 (Fix greylist migration for fresh DB)
+
+- Findings: Startup database check failed with `PostgresError: relation "greylist" does not exist` because migration `drizzle/0018_greylist_table.sql` only used `ALTER TABLE greylist ...`, which breaks on databases where the table was never created.
+- Conclusions: Migration should be idempotent on fresh installs by creating the table if missing, while still safely adding columns/indexes for existing installs.
+- Actions: Updated `drizzle/0018_greylist_table.sql` to `CREATE TABLE IF NOT EXISTS greylist (...)` before applying `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` and indexes; validated with `npm run build`.
+
 ## 2026-03-17 (Greylist database persistence)
 
 - Findings: Greylist words were only stored in localStorage, making them non-permanent across app reinstalls and devices.
