@@ -172,7 +172,6 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(0)
-  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({})
 
   const sortedModels = useMemo(() => {
     return [...models].sort((first, second) => {
@@ -234,8 +233,11 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
   }, [sortedModels, query])
 
   useEffect(() => {
-    if (highlightedIndex >= filteredModels.length)
-      setHighlightedIndex(0)
+    if (highlightedIndex >= filteredModels.length) {
+      queueMicrotask(() => {
+        setHighlightedIndex(0)
+      })
+    }
   }, [filteredModels, highlightedIndex])
 
   function openDropdown() {
@@ -284,7 +286,6 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
         type="button"
         onClick={() => isOpen ? setIsOpen(false) : openDropdown()}
         aria-haspopup="listbox"
-        aria-expanded={isOpen}
         className="group flex items-center gap-2 w-full rounded-2xl border border-cyan-500/35 bg-slate-800/90 px-3 py-2.5 text-left hover:border-cyan-400/50 transition-colors"
       >
         <span className="w-16 shrink-0 text-[11px] leading-4 text-teal-300 font-semibold text-right">
@@ -316,6 +317,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
             <input
               ref={searchInputRef}
               type="text"
+              aria-label="Search models"
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value)
@@ -327,7 +329,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
             />
           </div>
 
-          <div className="overflow-auto pr-1 space-y-2">
+          <div role="listbox" aria-label="Model options" className="overflow-auto pr-1 space-y-2">
             {filteredModels.length === 0 ? (
               <div className="px-3 py-2 text-sm text-slate-400">No models found</div>
             ) : (
@@ -340,15 +342,13 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
                 const capabilityChips = getCapabilityChips(capabilityTags)
                 const promptPerMillion = formatPerMillion(model.promptPrice)
                 const completionPerMillion = formatPerMillion(model.completionPrice)
-                const isExpanded = Boolean(expandedDescriptions[model.id])
-                const showReadMore = description.length > 120
                 const isHighlighted = index === highlightedIndex
                 const isSelected = model.id === value
 
                 return (
                   <div
                     key={model.id}
-                    role="button"
+                    role="option"
                     tabIndex={-1}
                     className={`rounded-2xl border p-3 transition-colors cursor-pointer ${
                       isHighlighted ? 'border-cyan-500/55 bg-slate-800/80' : 'border-slate-700 bg-slate-900 hover:border-slate-600 hover:bg-slate-800/60'
@@ -393,30 +393,10 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
                         {description && (
                           <>
                             <div
-                              className={`mt-1.5 text-xs text-slate-400 ${isExpanded ? '' : 'line-clamp-2'}`}
+                              className="mt-1.5 text-xs text-slate-400 line-clamp-2"
                             >
                               {description}
                             </div>
-                            {showReadMore && (
-                              <button
-                                type="button"
-                                className="mt-1 text-xs text-slate-300 hover:text-white"
-                                onMouseDown={(event) => {
-                                  event.preventDefault()
-                                  event.stopPropagation()
-                                }}
-                                onClick={(event) => {
-                                  event.preventDefault()
-                                  event.stopPropagation()
-                                  setExpandedDescriptions((previous) => ({
-                                    ...previous,
-                                    [model.id]: !previous[model.id],
-                                  }))
-                                }}
-                              >
-                                {isExpanded ? 'Show less' : 'Show more'}
-                              </button>
-                            )}
                           </>
                         )}
                       </div>
