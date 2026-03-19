@@ -12,6 +12,12 @@
 - Conclusions: A small reusable layout wrapper keeps styling consistent and prevents JSX wrapper drift.
 - Actions: Added `src/components/PageContainer.tsx` and refactored centered screens (`src/screens/Settings.tsx`, `src/screens/Generator.tsx`, `src/screens/StyleProfiles.tsx`, `src/screens/GenerationLog.tsx`, `src/screens/AIConfig.tsx`) to use it; kept `src/screens/Dashboard.tsx`, `src/screens/Library.tsx`, and `src/screens/Characters.tsx` full width; validated with `npm run build`.
 
+## 2026-03-19 (OpenRouter model capabilities + role filtering)
+
+- Findings: AIConfig showed irrelevant OpenRouter models (e.g. Vision role listing models without image input support).
+- Conclusions: Parse OpenRouter `/api/v1/models` metadata into a capabilities list and filter model pickers per role (Vision => only `vision` models, Research & Reasoning => only `reasoning`/`web_search` models) while keeping existing selections visible.
+- Actions: Added `capabilities` JSONB column to `openrouter_models` via `drizzle/0019_openrouter_model_capabilities.sql` (+ journal entry); extended OpenRouter model sync in `electron/ipc/settings.ts` to derive `capabilities` from `architecture.*_modalities`, `supported_parameters`, and pricing hints; plumbed capabilities through `electron/preload.ts` + `src/types/electron.d.ts` and used them in `src/screens/AIConfig.tsx`; filtered Vision + Research & Reasoning role model lists in `src/screens/Settings/Dashboard.tsx`; validated with `npm run build`.
+
 ## 2026-03-17 (Greylist database persistence)
 
 - Findings: Greylist words were only stored in localStorage, making them non-permanent across app reinstalls and devices.

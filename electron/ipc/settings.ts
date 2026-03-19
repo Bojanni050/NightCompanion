@@ -55,6 +55,7 @@ type OpenRouterModel = {
   displayName: string
   description: string
   contextLength: number | null
+  capabilities: Array<'vision' | 'reasoning' | 'web_search' | 'code' | 'audio' | 'video' | 'text'>
   promptPrice: string | null
   completionPrice: string | null
   requestPrice: string | null
@@ -265,6 +266,7 @@ async function listOpenRouterModelsFromDb(db: Database) {
       displayName: openRouterModels.displayName,
       description: openRouterModels.description,
       contextLength: openRouterModels.contextLength,
+      capabilities: openRouterModels.capabilities,
       promptPrice: openRouterModels.promptPrice,
       completionPrice: openRouterModels.completionPrice,
       requestPrice: openRouterModels.requestPrice,
@@ -302,13 +304,48 @@ async function syncOpenRouterModels(db: Database, settings: OpenRouterSettings) 
       name?: string
       description?: string
       context_length?: number
+      architecture?: {
+        input_modalities?: string[]
+        output_modalities?: string[]
+      }
+      supported_parameters?: string[]
       pricing?: {
         prompt?: string
         completion?: string
         request?: string
         image?: string
+        web_search?: string
+        internal_reasoning?: string
       }
     }>
+  }
+
+  function getCapabilities(input: {
+    architecture?: { input_modalities?: string[]; output_modalities?: string[] }
+    supported_parameters?: string[]
+    pricing?: { web_search?: string; internal_reasoning?: string }
+  }): OpenRouterModel['capabilities'] {
+    const capabilities = new Set<OpenRouterModel['capabilities'][number]>()
+
+    const inputModalities = input.architecture?.input_modalities ?? []
+    const outputModalities = input.architecture?.output_modalities ?? []
+    const supportedParams = input.supported_parameters ?? []
+
+    if (inputModalities.includes('image') || inputModalities.includes('file')) capabilities.add('vision')
+    if (inputModalities.includes('audio') || outputModalities.includes('audio')) capabilities.add('audio')
+    if (outputModalities.includes('video')) capabilities.add('video')
+
+    if (supportedParams.includes('reasoning') || supportedParams.includes('include_reasoning')) capabilities.add('reasoning')
+    if (supportedParams.includes('web_search')) capabilities.add('web_search')
+    if (supportedParams.includes('tools') || supportedParams.includes('tool_choice')) capabilities.add('code')
+
+    const webSearchPrice = Number(input.pricing?.web_search || '')
+    if (Number.isFinite(webSearchPrice) && webSearchPrice > 0) capabilities.add('web_search')
+    const internalReasoningPrice = Number(input.pricing?.internal_reasoning || '')
+    if (Number.isFinite(internalReasoningPrice) && internalReasoningPrice > 0) capabilities.add('reasoning')
+
+    capabilities.add('text')
+    return Array.from(capabilities)
   }
 
   const normalized = (payload.data ?? [])
@@ -321,6 +358,11 @@ async function syncOpenRouterModels(db: Database, settings: OpenRouterSettings) 
         displayName: item.name?.trim() || modelId,
         description: item.description?.trim() || '',
         contextLength: typeof item.context_length === 'number' ? item.context_length : null,
+        capabilities: getCapabilities({
+          architecture: item.architecture,
+          supported_parameters: item.supported_parameters,
+          pricing: item.pricing,
+        }),
         promptPrice: item.pricing?.prompt?.trim() || null,
         completionPrice: item.pricing?.completion?.trim() || null,
         requestPrice: item.pricing?.request?.trim() || null,
@@ -338,6 +380,7 @@ async function syncOpenRouterModels(db: Database, settings: OpenRouterSettings) 
         displayName: item.displayName,
         description: item.description,
         contextLength: item.contextLength,
+        capabilities: item.capabilities,
         promptPrice: item.promptPrice,
         completionPrice: item.completionPrice,
         requestPrice: item.requestPrice,

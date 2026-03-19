@@ -119,6 +119,7 @@ export const openRouterModels = pgTable(
     displayName: varchar('display_name', { length: 255 }).notNull(),
     description: text('description').default('').notNull(),
     contextLength: integer('context_length'),
+    capabilities: jsonb('capabilities').$type<Array<'vision' | 'reasoning' | 'web_search' | 'code' | 'audio' | 'video' | 'text'>>().default([]).notNull(),
     promptPrice: varchar('prompt_price', { length: 32 }),
     completionPrice: varchar('completion_price', { length: 32 }),
     requestPrice: varchar('request_price', { length: 32 }),

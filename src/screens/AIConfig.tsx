@@ -388,7 +388,7 @@ export function AIConfig() {
           completionPrice: item.completionPrice,
         }),
         provider: 'openrouter',
-        capabilities: item.modelId.toLowerCase().includes('vision') ? ['vision'] : undefined,
+        capabilities: item.capabilities,
         promptPrice: item.promptPrice,
         completionPrice: item.completionPrice,
         requestPrice: item.requestPrice,

@@ -45,6 +45,7 @@ type OpenRouterModel = {
   displayName: string
   description: string
   contextLength: number | null
+  capabilities: Array<'vision' | 'reasoning' | 'web_search' | 'code' | 'audio' | 'video' | 'text'>
   promptPrice: string | null
   completionPrice: string | null
   requestPrice: string | null

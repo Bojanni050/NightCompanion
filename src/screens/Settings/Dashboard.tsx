@@ -85,6 +85,15 @@ function formatProviderLabel(id: string): string {
 
 const ROLES: DashboardRole[] = ['generation', 'improvement', 'vision', 'general']
 
+function matchesRoleCapability(role: DashboardRole, model: ModelOption): boolean {
+  const capabilities = model.capabilities || []
+  if (role === 'vision') return capabilities.includes('vision')
+  if (role === 'general') {
+    return capabilities.includes('reasoning') || capabilities.includes('web_search')
+  }
+  return true
+}
+
 export function Dashboard({
   onConfigure,
   configuredCount,
@@ -99,18 +108,31 @@ export function Dashboard({
   void setDynamicModels
   void getToken
 
-  function getRoleModelOptions(providerId: string): ModelOption[] {
+  function getRoleModelOptions(role: DashboardRole, providerId: string, selectedModelId: string): ModelOption[] {
     const dynamicProviderModels = dynamicModels[providerId]
-    if (dynamicProviderModels && dynamicProviderModels.length > 0)
-      return dynamicProviderModels
+    if (dynamicProviderModels && dynamicProviderModels.length > 0) {
+      const filtered = dynamicProviderModels.filter((model) => matchesRoleCapability(role, model))
+      if (selectedModelId && !filtered.some((m) => m.id === selectedModelId)) {
+        const selected = dynamicProviderModels.find((m) => m.id === selectedModelId)
+        return selected ? [selected, ...filtered] : filtered
+      }
+      return filtered
+    }
 
-    return (modelsByProvider[providerId] || []).map((modelId) => ({
+    const fallback: ModelOption[] = (modelsByProvider[providerId] || []).map((modelId) => ({
       id: modelId,
       name: modelId,
       displayName: modelId,
       provider: providerId,
-      capabilities: modelId.toLowerCase().includes('vision') ? ['Vision'] : ['Text'],
+      capabilities: modelId.toLowerCase().includes('vision') ? ['vision'] : ['text'],
     }))
+
+    const filtered = fallback.filter((model) => matchesRoleCapability(role, model))
+    if (selectedModelId && !filtered.some((m) => m.id === selectedModelId)) {
+      const selected = fallback.find((m) => m.id === selectedModelId)
+      return selected ? [selected, ...filtered] : filtered
+    }
+    return filtered
   }
 
   return (
@@ -124,7 +146,7 @@ export function Dashboard({
         {ROLES.map((role) => {
             const meta = ROLE_META[role]
             const routing = roleRouting[role]
-            const modelOptions = getRoleModelOptions(routing.providerId)
+            const modelOptions = getRoleModelOptions(role, routing.providerId, routing.modelId)
 
             return (
               <section key={role} className={`rounded-2xl border p-5 ${meta.cardClass}`}>
