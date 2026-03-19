@@ -25,8 +25,10 @@ function formatPerMillion(priceText: string | null | undefined): string | null {
 
   const parsed = Number(priceText)
   if (!Number.isFinite(parsed)) return null
+  if (parsed < 0) return null
 
   const perMillion = parsed * 1_000_000
+  if (perMillion === 0) return '$0.00'
   if (perMillion > 0 && perMillion < 0.01) return '<$0.01'
   return `$${perMillion.toFixed(2)}`
 }
