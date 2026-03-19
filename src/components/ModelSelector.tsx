@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { Brain, ChevronDown, Code2, Eye, FileText, Globe, Mic, Video } from 'lucide-react'
 
 import type { ModelOption } from '../screens/Settings/types'
 
@@ -59,6 +59,111 @@ function getProviderDisplayName(provider: string | undefined): string {
     lmstudio: 'LM Studio',
   }
   return map[provider.toLowerCase()] ?? (provider.charAt(0).toUpperCase() + provider.slice(1))
+}
+
+type CapabilityKey = 'text' | 'vision' | 'reasoning' | 'web_search' | 'code' | 'audio' | 'video'
+
+function normalizeCapability(value: string): CapabilityKey | null {
+  const key = value.trim().toLowerCase()
+  if (key === 'text') return 'text'
+  if (key === 'vision') return 'vision'
+  if (key === 'reasoning') return 'reasoning'
+  if (key === 'web_search') return 'web_search'
+  if (key === 'code') return 'code'
+  if (key === 'audio') return 'audio'
+  if (key === 'video') return 'video'
+  return null
+}
+
+function getCapabilityChips(capabilities: string[]): Array<{
+  key: CapabilityKey
+  label: string
+  icon: React.ReactNode
+  className: string
+}> {
+  const normalized = new Set<CapabilityKey>()
+  for (const item of capabilities) {
+    const key = normalizeCapability(item)
+    if (key) normalized.add(key)
+  }
+
+  if (normalized.size === 0) normalized.add('text')
+
+  const ordered: CapabilityKey[] = ['text', 'vision', 'reasoning', 'web_search', 'code', 'audio', 'video']
+  const chips: Array<{
+    key: CapabilityKey
+    label: string
+    icon: React.ReactNode
+    className: string
+  }> = []
+
+  for (const key of ordered) {
+    if (!normalized.has(key)) continue
+    if (key === 'text') {
+      chips.push({
+        key,
+        label: 'Text',
+        icon: <FileText className="w-3 h-3" />,
+        className: 'bg-slate-500/15 text-slate-200 border-slate-500/25',
+      })
+      continue
+    }
+    if (key === 'vision') {
+      chips.push({
+        key,
+        label: 'Vision',
+        icon: <Eye className="w-3 h-3" />,
+        className: 'bg-teal-500/15 text-teal-300 border-teal-500/25',
+      })
+      continue
+    }
+    if (key === 'reasoning') {
+      chips.push({
+        key,
+        label: 'Reasoning',
+        icon: <Brain className="w-3 h-3" />,
+        className: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/25',
+      })
+      continue
+    }
+    if (key === 'web_search') {
+      chips.push({
+        key,
+        label: 'Web search',
+        icon: <Globe className="w-3 h-3" />,
+        className: 'bg-blue-500/15 text-blue-300 border-blue-500/25',
+      })
+      continue
+    }
+    if (key === 'code') {
+      chips.push({
+        key,
+        label: 'Code',
+        icon: <Code2 className="w-3 h-3" />,
+        className: 'bg-amber-500/15 text-amber-300 border-amber-500/25',
+      })
+      continue
+    }
+    if (key === 'audio') {
+      chips.push({
+        key,
+        label: 'Audio',
+        icon: <Mic className="w-3 h-3" />,
+        className: 'bg-cyan-500/15 text-cyan-300 border-cyan-500/25',
+      })
+      continue
+    }
+    if (key === 'video') {
+      chips.push({
+        key,
+        label: 'Video',
+        icon: <Video className="w-3 h-3" />,
+        className: 'bg-rose-500/15 text-rose-300 border-rose-500/25',
+      })
+    }
+  }
+
+  return chips
 }
 
 export default function ModelSelector({ value, onChange, models, placeholder, className, sortMode = 'alphabetical' }: ModelSelectorProps) {
@@ -232,6 +337,7 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
                 const providerName = getProviderDisplayName(model.provider)
                 const description = model.description?.trim() || ''
                 const capabilityTags = model.capabilities ?? []
+                const capabilityChips = getCapabilityChips(capabilityTags)
                 const promptPerMillion = formatPerMillion(model.promptPrice)
                 const completionPerMillion = formatPerMillion(model.completionPrice)
                 const isExpanded = Boolean(expandedDescriptions[model.id])
@@ -273,31 +379,21 @@ export default function ModelSelector({ value, onChange, models, placeholder, cl
                               ● {providerName.toLowerCase()}
                             </span>
                           )}
-                          {capabilityTags.map((capability) => {
-                            const normalized = capability.toLowerCase()
-                            const isReasoning = normalized.includes('reason')
-                            const isVision = normalized.includes('vision') || normalized.includes('image')
-                            const chipClass = isReasoning
-                              ? 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/25'
-                              : isVision
-                                ? 'bg-teal-500/15 text-teal-300 border-teal-500/25'
-                                : 'bg-slate-500/15 text-slate-200 border-slate-500/25'
-
-                            return (
-                              <span key={`${model.id}-${capability}`} className={`px-2 py-0.5 rounded-md text-[10px] border leading-none ${chipClass}`}>
-                                {capability}
-                              </span>
-                            )
-                          })}
+                          {capabilityChips.map((capability) => (
+                            <span
+                              key={`${model.id}-${capability.key}`}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] border leading-none ${capability.className}`}
+                            >
+                              {capability.icon}
+                              {capability.label}
+                            </span>
+                          ))}
                         </div>
 
                         {description && (
                           <>
                             <div
-                              className={`mt-1.5 text-xs text-slate-400 ${isExpanded ? '' : 'overflow-hidden'}`}
-                              style={isExpanded
-                                ? undefined
-                                : { display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+                              className={`mt-1.5 text-xs text-slate-400 ${isExpanded ? '' : 'line-clamp-2'}`}
                             >
                               {description}
                             </div>
