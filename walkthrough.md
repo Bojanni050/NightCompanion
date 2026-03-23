@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-24 (Generator cards aligned for Quickstart and Magic Random)
+
+- Findings: Magic Random blok miste een consistente titel/header zoals Magic Quickstart, knoppen stonden niet op dezelfde plek en de twee kaarten hadden ongelijke visuele hoogte.
+- Conclusions: Beide kaarten moesten dezelfde kaartstructuur krijgen (`h-full` + `flex` layout), met actieknoppen rechtsonder voor consistente scanbaarheid en interactie.
+- Actions: In `src/screens/Generator.tsx` de generator-grid op `items-stretch` gezet; beide kaarten aangepast naar `h-full flex flex-col`; Magic Random header toegevoegd met titel en subtitel in dezelfde stijl als Quickstart; acties voor beide blokken naar een bottom-right actiesectie verplaatst (`mt-auto ... justify-end`); JSX-structuur opgeschoond na mergeconflict; gevalideerd met `npm run build`.
+
 ## 2026-03-24 (Leesbare modeluitleg in Suggested Model)
 
 - Findings: De rule-based modeluitleg gebruikte technische scoretekst (art/realism/typography/prompting), wat voor eindgebruikers weinig begrijpelijk is.
