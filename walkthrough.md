@@ -1,5 +1,17 @@
 # Walkthrough
 
+## 2026-03-24 (Copy/Clear actions under Negative Prompt controls)
+
+- Findings: In de Generated Prompt-kaart ontbraken directe `Copy Prompt` en `Clear all` acties onder de `Generate Negative Prompt`/`Improve Negative Prompt` knoppen.
+- Conclusions: Door dezelfde snelle acties direct onder de negative-controls te plaatsen wordt de workflow sneller zonder extra scroll of contextwissel.
+- Actions: In `src/screens/Generator.tsx` onder de bestaande negative action row een tweede actie-row toegevoegd met `Copy Prompt` (`handleCopy`) en `Clear all` (`handleClearAll`), beide met bestaande knopstijlen; gevalideerd met `npm run build`.
+
+## 2026-03-24 (Fixed subtitle height in Generator cards)
+
+- Findings: De subtitles in de headers van `Magic Quickstart` en `Magic Random` hadden verschillende visuele hoogte, waardoor de kaartkoppen niet netjes uitlijnen.
+- Conclusions: Een vaste minimale hoogte op beide subtitle-regels houdt de headerlay-out consistent zonder inhoudelijke tekstwijzigingen.
+- Actions: In `src/screens/Generator.tsx` beide subtitle-paragrafen voorzien van `min-h-8` (`Magic Quickstart` en `Magic Random`) zodat de headerhoogte gelijk blijft; gevalideerd met `npm run build`.
+
 ## 2026-03-24 (Read-only generated prompt field in Magic Random card)
 
 - Findings: Magic Random had no preview text area in the card itself, waardoor de kaartindeling afweek van Magic Quickstart.

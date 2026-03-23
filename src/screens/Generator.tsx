@@ -1240,6 +1240,24 @@ export default function Generator() {
                       {improvingNegative ? 'Improving negative...' : 'Improve Negative Prompt'}
                     </button>
                   </div>
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCopy}
+                      disabled={!generatedPrompt}
+                      className="btn-ghost border border-night-600/50"
+                    >
+                      Copy Prompt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearAll}
+                      disabled={loading}
+                      className="btn-ghost border border-night-600/50"
+                    >
+                      Clear all
+                    </button>
+                  </div>
 
                   {negativeImprovementDiff && (
                     <div className="mt-3 rounded-xl border border-night-600/50 bg-night-900/30 p-3">
