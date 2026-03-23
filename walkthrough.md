@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-23 (Add character option to Magic Random AI)
+
+- Findings: User requested to add character selection to the Magic Random (AI) option on the Generator page, similar to the existing character picker in Magic Quickstart.
+- Conclusions: The Magic Random section needed a character picker UI and the backend IPC handler needed to support creativity and character parameters for consistent behavior with Quickstart.
+- Actions: Added character picker to Magic Random AI card in `src/screens/Generator.tsx`; updated `magicRandom` IPC types in `src/types/electron.d.ts` and `electron/preload.ts`; extended `generator:magicRandom` handler in `electron/ipc/ai.ts` to accept `creativity` and `character` parameters; implemented creativity-based temperature mapping (focused: 0.7, balanced: 1.0, wild: 1.3) and character context injection in prompt generation; validated with `npm run build`.
+
 ## 2026-03-21 (Fix garbled UTF-8 characters in Generator UI)
 
 - Findings: UI showed garbled characters like `â¯º` instead of proper icons due to UTF-8 emoji/special characters being misinterpreted.
@@ -41,130 +47,6 @@
 - Findings: De NightCafe preset dropdowns in Generator waren leeg door twee problemen: (1) de `preset_prompt` kolom ontbrak in de database omdat migratie 0017 niet was toegepast, en (2) in development mode werden de CSV-bestanden niet gevonden via `app.getAppPath()` en `process.resourcesPath`.
 - Conclusions: Database migratie 0017 toepassen om de `preset_prompt` kolom toe te voegen aan `nightcafe_presets`, en extra fallback paden (`process.cwd()`) nodig voor development mode.
 - Actions: Migratie `drizzle/0017_nightcafe_preset_prompt.sql` aangemaakt en toegepast via `npm run db:migrate`; in `electron/services/nightcafeSync.ts` extra `process.cwd()` pad toegevoegd aan `getNightCafePresetsCandidates()` en `getNightCafePresetPromptsCandidates()`; logging toegevoegd aan `readNightCafePresetsCsv()`; gevalideerd met `npm run build`. Console toont nu: "Nightcafe presets synced: 44 total".
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## 2026-03-16 (Generator pagina: Greylist verplaatst en sliders toegevoegd)
 
@@ -844,8 +726,6 @@
 - Conclusions: Save should explicitly persist a trimmed negative prompt value and block save while negative generation/improvement is still in-flight.
 - Actions: Updated `src/screens/Generator.tsx` `handleSaveToLibrary` to save `negativePrompt.trim()` and added guard/disabled state to prevent saving during `generatingNegative`/`improvingNegative`; validated with `npm run build`.
 
-
-
 ## 2026-03-14 � Magic Quickstart merged into Quickstart tab
 
 - Removed the separate **Quick Start** tab from Generator
@@ -854,9 +734,8 @@
 - **Magic Random AI controls** (NightCafe Preset, Max Words slider, action buttons, greylist) render as the RIGHT column in the same tab
 - Tab type narrowed from `'generator' | 'builder' | 'quickstart'` to `'generator' | 'builder'`; localStorage load maps legacy `'quickstart'` value ? `'generator'`
 
-
 ## 2026-03-14 � Quickstart Prompt Preview
 
 - Added PromptPreview to the **Magic Quickstart** card in src/screens/Generator.tsx so the Quickstart flow now shows a live preview
-- Preview uses generatedPrompt || quickStartIdea as prompt source, includes current 
-egativePrompt, maxWords, and greylist highlighting when enabled
+- Preview uses generatedPrompt || quickStartIdea as prompt source, includes current
+  egativePrompt, maxWords, and greylist highlighting when enabled

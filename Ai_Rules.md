@@ -3,6 +3,7 @@
 This file is the **single source of truth** for all AI rules in this project.
 
 Changes here are automatically synchronized to:
+
 - Cursor (.cursorrules)
 - GitHub Copilot (.github/copilot-instructions.md)
 - Windsurf (.windsurfrules)
@@ -13,15 +14,17 @@ Changes here are automatically synchronized to:
 
 ## 📋 General Rules
 
-## NightCompanion 
+## NightCompanion
 
 ## General
+
 - Always run `npm run build` to validate before marking a task complete.
 - Always update `walkthrough.md` after every meaningful change (format below).
 - Update `nightcompanion.md` when user-facing functionality changes.
 - Never install a new dependency without checking if an existing one covers the need.
 
 ## Project Structure
+
 - Screens → `src/screens/`
 - Shared components → `src/components/`
 - Hooks → `src/hooks/`
@@ -34,6 +37,7 @@ Changes here are automatically synchronized to:
 - Migrations → `drizzle/<number>_<name>.sql` + register in `drizzle/meta/_journal.json`
 
 ## IPC Rules
+
 - Channel naming: `domain:action` — e.g. `prompts:list`, `settings:saveOpenRouter`.
 - Every IPC domain has its own file: `electron/ipc/<domain>.ts`.
 - Each file exports one `register<Domain>Ipc({ db, ... })` function.
@@ -47,6 +51,7 @@ Changes here are automatically synchronized to:
   5. Call via `window.electronAPI.<domain>.<action>()` in renderer
 
 ## Database Rules
+
 - All tables defined in `src/lib/schema.ts` using Drizzle ORM.
 - Use `jsonb(...).$type<T>().default([]).notNull()` for JSON arrays — never `text`.
 - Use `uuid('id').defaultRandom().primaryKey()` for UUID primary keys.
@@ -57,6 +62,7 @@ Changes here are automatically synchronized to:
 - Default sort: `desc(table.createdAt)`.
 
 ## Storage Rules
+
 - Never use `localStorage` for persistent data — always use Electron IPC to `settings.json` or DB.
 - Images are stored via `electron/services/storagePaths.ts` (`resolveNightCompanionSubdir`).
 - Default path: `%LocalAppData%\NightCompanion\` (user-configurable via Settings).
@@ -64,6 +70,7 @@ Changes here are automatically synchronized to:
 - Store images as files with `file://` URLs — never as base64 in the database.
 
 ## TypeScript Rules
+
 - Always use explicit types — no `any`.
 - Use `type` not `interface` for object shapes.
 - Use `ReturnType<typeof drizzle<typeof schema>>` as `Database` type in IPC files.
@@ -71,6 +78,7 @@ Changes here are automatically synchronized to:
 - Never use `!` non-null assertions — validate explicitly instead.
 
 ## React & UI Rules
+
 - Never use `<form>` elements — use `onClick`/`onChange` handlers.
 - Never use inline `style={{}}` — use Tailwind classes or `src/index.css` component classes.
 - Never use arbitrary hex colors or pixel values outside `tailwind.config.js`.
@@ -85,17 +93,21 @@ Changes here are automatically synchronized to:
 - New screens: register in `src/types/index.ts`, add to `Sidebar.tsx` NAV_ITEMS, route in `src/App.tsx`.
 
 ## Error Handling
+
 - Renderer always checks `result.error` before using `result.data`.
 - Use `sonner` toasts: `toast.success`, `toast.error`, `toast.warning`.
 - Never remove `ErrorBoundary` from `src/main.tsx`.
 
 ## AI Prompts
+
 - All AI instruction constants live in `electron/ipc/ai.ts` — never in the renderer.
 - All AI output uses English (UK) spelling: colour, centre, maximise.
 - AI routes always return plain text — no markdown unless explicitly required.
 
 ## Walkthrough Format
+
 After every significant change, add to `walkthrough.md`:
+
 ```
 ## YYYY-MM-DD (Short title)
 
@@ -105,6 +117,7 @@ After every significant change, add to `walkthrough.md`:
 ```
 
 ## Never Do This
+
 - `localStorage` for settings or images
 - Raw `JSON.parse` of settings without normalization (`normalizeStoredSettings`)
 - Write IPC logic directly in `electron/main.ts`
@@ -113,7 +126,6 @@ After every significant change, add to `walkthrough.md`:
 - Use `any` as a type
 - Modify existing migration files
 - Skip steps when wiring a new IPC channel
-
 
 ## 💡 AI Preferences
 
@@ -136,11 +148,53 @@ After every significant change, add to `walkthrough.md`:
 ## Memory
 
 - When asked to remember something, use all abailable momery options to remember it.
-- When asked to recall something,  use all abailable momery options to recall it.
+- When asked to recall something, use all abailable momery options to recall it.
 - When asked to forget something, use all abailable momery options to forget it.
 - Provide a summary of what was remembered, recalled, or forgotten.
 - Proactively use memory tools to maintain context across sessions.
 - Proactively store important information in memory to avoid repetition.
+
+## Cortex
+
+Cortex Memory Rules — MANDATORY
+
+At Conversation Start (ALWAYS)
+
+- ALWAYS call mcp_cortex_force_recall with the topic of the user's question
+- This returns ALL corrections, decisions, conventions, and bug fixes
+- Plus topic-specific search results
+
+DO NOT skip this step. It is mandatory.
+After EVERY Response (ALWAYS)
+
+- ALWAYS call mcp_cortex_auto_learn with the text of your response
+
+- Cortex will automatically extract and store any decisions, corrections, conventions, or bug fixes
+- This is how Cortex learns passively — zero manual effort required
+
+DO NOT skip this step. It is mandatory.
+
+- Example: mcp_cortex_auto_learn(text: "We decided to use PostgreSQL instead of MongoDB because...")
+
+When Decisions Are Made (Manual Override)
+
+- ALSO call mcp_cortex_store_memory for high-importance items:
+  - Example: mcp_cortex_store_memory(text: "We decided to use PostgreSQL instead of MongoDB because...", type: "DECISION")
+  - A critical architectural decision (type: DECISION)
+  - A mistake that must never be repeated (type: CORRECTION)
+  - A project-wide coding convention (type: CONVENTION)
+  - A tricky bug that was hard to find (type: BUG_FIX)
+
+Before Suggesting Code
+
+- Call mcp_cortex_verify_code to check:
+  - Are import packages real (exist in package.json)?
+  - Are imported functions actually exported?
+  - Are env variables defined in .env?
+
+Before Referencing Files
+
+- Call mcp_cortex_verify_files to check if file paths are real.
 
 ---
 

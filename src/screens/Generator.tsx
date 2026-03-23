@@ -472,12 +472,20 @@ export default function Generator() {
     setLoading(true)
 
     try {
+      const characterForContext = quickStartCharacterId
+        ? quickStartCharacterList.find((c) => c.id === quickStartCharacterId)
+        : null
+
       const result = await window.electronAPI.generator.magicRandom({
         presetName: selectedPresetContext || undefined,
         presetPrompt: selectedPresetPrompt || undefined,
         maxWords,
         greylistEnabled,
         greylistWords,
+        creativity: magicRandomCreativity,
+        character: characterForContext
+          ? { name: characterForContext.name, description: characterForContext.description }
+          : undefined,
       })
 
       if (!result) {
@@ -1024,6 +1032,53 @@ export default function Generator() {
               {/* RIGHT: Magic Random AI controls */}
               <div className="flex flex-col gap-5">
                 <div className="card p-5">
+                  {/* Character picker for Magic Random */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <label className="label">Character (Optional)</label>
+                      <p className="text-xs text-night-400 mt-0.5">Add a character to influence the generation</p>
+                    </div>
+                    <div className="relative flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setShowCharacterPicker((v) => !v)}
+                        className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-glow-purple/60 text-glow-purple' : 'border-night-600/50'}`}
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        {quickStartCharacterId
+                          ? (quickStartCharacterList.find((c) => c.id === quickStartCharacterId)?.name ?? 'Character')
+                          : 'Add Character'}
+                      </button>
+                      {showCharacterPicker && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
+                          <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-night-600/50 bg-night-900 p-1 shadow-xl">
+                            <button
+                              type="button"
+                              onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
+                              className="w-full text-left px-3 py-2 text-xs text-night-300 hover:bg-night-800 rounded-lg"
+                            >
+                              No character
+                            </button>
+                            {quickStartCharacterList.map((c) => (
+                              <button
+                                key={c.id}
+                                type="button"
+                                onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
+                                className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-glow-purple text-white' : 'text-night-200 hover:bg-night-800'}`}
+                              >
+                                {c.name}
+                              </button>
+                            ))}
+                            {quickStartCharacterList.length === 0 && (
+                              <p className="px-3 py-2 text-xs text-night-500">No characters found.</p>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
                   <div>
                     <label htmlFor="generator-preset" className="label">NightCafe Preset</label>
                     <select

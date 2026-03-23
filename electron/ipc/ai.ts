@@ -551,7 +551,7 @@ export function registerAiIpc({
     }
   })
 
-  ipcMain.handle('generator:magicRandom', async (_, input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[] }) => {
+  ipcMain.handle('generator:magicRandom', async (_, input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
     let requestModel = ''
@@ -582,10 +582,21 @@ export function registerAiIpc({
       const uniqueGreylistWords = Array.from(new Set(greylistWords)).slice(0, 30)
       const hasGreylist = greylistEnabled && uniqueGreylistWords.length > 0
 
+      const creativity = input?.creativity || 'balanced'
+      const character = input?.character;
+      
+      // Map creativity to temperature
+      const temperatureMap = { focused: 0.7, balanced: 1.0, wild: 1.3 } as const;
+      const temperature = temperatureMap[creativity];
+
       const promptParts = [
         'Create one random, vivid text-to-image prompt.',
         `Limit the final prompt to a maximum of ${maxWords} words.`,
         presetName ? `Use this NightCafe preset as mandatory style guidance: ${presetName}.` : '',
+        character ? `Include this character: ${character.name}. ${character.description}` : '',
+        creativity === 'focused' ? 'Be specific and grounded.' : 
+          creativity === 'wild' ? 'Be experimental and surreal.' : 
+          'Balance creativity with clarity.',
         'Pick any surprising subject.',
         hasGreylist
           ? `Avoid these words when writing the prompt (or keep their probability very low): ${uniqueGreylistWords.join(', ')}.`
@@ -597,7 +608,7 @@ export function registerAiIpc({
 
       requestPayload = {
         model: settings.model,
-        temperature: 1.2,
+        temperature,
         max_tokens: 220,
         messages: [
           {
