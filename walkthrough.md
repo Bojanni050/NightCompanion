@@ -1,5 +1,23 @@
 # Walkthrough
 
+## 2026-03-24 (Save to Library colours unified for consistency)
+
+- Findings: Na de vorige wijziging hadden `Save to Library` varianten elk een andere kleur, maar de gebruiker wilde onderlinge kleurconsistentie.
+- Conclusions: De drie save-varianten behouden hun aparte class-namen per context, maar gebruiken exact dezelfde kleurstijl voor consistente visuele herkenning.
+- Actions: In `src/index.css` `.btn-save-library-main`, `.btn-save-library-secondary` en `.btn-save-library-builder` gelijkgetrokken naar dezelfde blauw-teal gradient en shadowstijl; gevalideerd met `npm run build`.
+
+## 2026-03-24 (Save to Library variants with distinct colours)
+
+- Findings: De gebruiker wilde dat `Save to Library` en varianten niet allemaal dezelfde buttonkleur gebruiken.
+- Conclusions: Drie aparte varianten met duidelijke kleur-identiteit maken de save-acties sneller herkenbaar per context.
+- Actions: In `src/index.css` nieuwe classes toegevoegd: `.btn-save-library-main` (blauw-teal), `.btn-save-library-secondary` (pink-purple), `.btn-save-library-builder` (cyan-teal); in `src/screens/Generator.tsx` beide `Save to Library` knoppen omgezet naar respectievelijk `btn-save-library-main` en `btn-save-library-secondary`; in `src/screens/PromptBuilder.tsx` de `Save to Library` knop omgezet naar `btn-save-library-builder`; gevalideerd met `npm run build`.
+
+## 2026-03-24 (Generator layout restyling - compact buttons and separated panels)
+
+- Findings: De Generator layout moest meer lijken op de referentie-afbeelding met kleinere, compacte knoppen, duidelijke panelen los van elkaar, en knoppen eronder.
+- Conclusions: Nieuwe compacte button classes creëren (`btn-compact`, `btn-compact-primary`, `btn-compact-teal`, `btn-compact-ghost`) voor kleinere knoppen met iconen; panels apart zetten met duidelijke visuele scheiding; knoppen verplaatsen naar onder de panelen.
+- Actions: `src/index.css` uitgebreid met compacte button styles; `src/screens/Generator.tsx` herstructureerd: Generated Output Card bovenaan met compacte actieknoppen eronder (Copy Prompt, Copy Negative, Edit in Manual, Save to Library, Guided Mode); Suggested Model section apart; Improve Prompt section met teal styling en los paneel; Negative Prompt in eigen rode sectie; ongebruikte code opgeschoond; gevalideerd met `npm run build`.
+
 ## 2026-03-24 (Magic AI Expansion teal gradient)
 
 - Findings: Magic AI Expansion knop had dezelfde oranje gradient als andere AI knoppen, maar de gebruiker wilde een teal/cyan kleur (#1ee7d0) voor deze specifieke actie.

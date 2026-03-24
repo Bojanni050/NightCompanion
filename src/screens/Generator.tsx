@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
-import { User, Sparkles, Minus } from 'lucide-react'
+import { User, Sparkles, Minus, Copy, Edit3, Save, ArrowRight, Wand2 } from 'lucide-react'
 import PromptBuilder from './PromptBuilder'
 import PromptDiffView from '../components/PromptDiffView'
 import PromptPreview from '../components/PromptPreview'
@@ -27,15 +27,6 @@ type PresetOption = {
   presetName: string
   category: string
   presetPrompt?: string
-}
-
-type NightcafeModelCardMeta = {
-  hfModelId?: string | null
-  hfCardSummary?: string
-  hfDownloads?: number | null
-  hfLikes?: number | null
-  hfLastModified?: string | Date | null
-  hfSyncStatus?: string
 }
 
 type PromptViewTab = 'final' | 'diff'
@@ -104,10 +95,7 @@ export default function Generator() {
   const [recommendedModelMode, setRecommendedModelMode] = useState<'rule' | 'ai' | null>(null)
   const [advisorBestValue, setAdvisorBestValue] = useState('')
   const [advisorFastest, setAdvisorFastest] = useState('')
-  const [recommendedModelMeta, setRecommendedModelMeta] = useState<NightcafeModelCardMeta | null>(null)
   const [supportsNegativePrompt, setSupportsNegativePrompt] = useState<boolean | null>(null)
-  const [modelAdviceBusy, setModelAdviceBusy] = useState(false)
-  const [modelAdviceNote, setModelAdviceNote] = useState<string | null>(null)
   const [greylistEnabled, setGreylistEnabled] = useState(true)
   const [greylistWords, setGreylistWords] = useState<string[]>(DEFAULT_GREYLIST)
   const [greylistInput, setGreylistInput] = useState('')
@@ -120,7 +108,6 @@ export default function Generator() {
   const [showCharacterPicker, setShowCharacterPicker] = useState(false)
   const [budgetMode, setBudgetMode] = useState<BudgetMode>('balanced')
   const [expandingIdea, setExpandingIdea] = useState(false)
-  const [quickStartStatus, setQuickStartStatus] = useState<string | null>(null)
   const [advisingAi, setAdvisingAi] = useState(false)
 
   const selectedPresetPrompt = presetOptions.find((preset) => preset.presetName === selectedPreset)?.presetPrompt?.trim() || ''
@@ -148,7 +135,6 @@ export default function Generator() {
     const idea = quickStartIdea.trim()
     if (!idea) return
 
-    setQuickStartStatus(null)
     setExpandingIdea(true)
 
     try {
@@ -166,18 +152,7 @@ export default function Generator() {
           : undefined,
       })
 
-      if (!result) {
-        setQuickStartStatus('Error: Quick expand returned an empty response.')
-        return
-      }
-
-      if (result.error) {
-        setQuickStartStatus(result.error)
-        return
-      }
-
-      if (!result.data) {
-        setQuickStartStatus('Error: Quick expand returned no data.')
+      if (!result || result.error || !result.data) {
         return
       }
 
@@ -188,11 +163,10 @@ export default function Generator() {
       setNegativeImprovementDiff(null)
       setPromptViewTab('final')
       setNegativePromptViewTab('final')
-      setQuickStartStatus(null)
       setTab('generator')
-      void requestModelAdvice('rule', nextPrompt, 'Quickstart Prompt')
+      void requestModelAdvice('rule', nextPrompt)
     } catch (error) {
-      setQuickStartStatus(error instanceof Error ? error.message : 'Error: Failed to expand idea.')
+      console.error('Quick expand failed:', error)
     } finally {
       setExpandingIdea(false)
     }
@@ -217,14 +191,11 @@ export default function Generator() {
   const requestModelAdvice = async (
     mode: 'rule' | 'ai',
     promptValue: string,
-    sourceLabel: string,
   ) => {
     const prompt = promptValue.trim()
     if (!prompt) return
 
     setAdvisingAi(true)
-    setModelAdviceBusy(true)
-    setModelAdviceNote(null)
 
     try {
       const result = await window.electronAPI.generator.adviseModel({
@@ -233,18 +204,7 @@ export default function Generator() {
         budgetMode,
       })
 
-      if (!result) {
-        setModelAdviceNote(`${mode === 'rule' ? 'Rule-based' : 'AI'} modeladvies gaf geen response terug.`)
-        return
-      }
-
-      if (result.error) {
-        setModelAdviceNote(`${mode === 'rule' ? 'Rule-based' : 'AI'} modeladvies mislukt: ${result.error}`)
-        return
-      }
-
-      if (!result.data?.recommendation?.modelName) {
-        setModelAdviceNote(`${mode === 'rule' ? 'Rule-based' : 'AI'} modeladvies bevatte geen bruikbaar model.`)
+      if (!result || result.error || !result.data?.recommendation?.modelName) {
         return
       }
 
@@ -254,12 +214,10 @@ export default function Generator() {
       setAdvisorBestValue(result.data.bestValue?.modelName || '')
       setAdvisorFastest(result.data.fastest?.modelName || '')
       await fetchModelSupport(result.data.recommendation.modelName)
-      setModelAdviceNote(`${sourceLabel}: ${mode === 'rule' ? 'rule-based' : 'AI'} modeladvies bijgewerkt.`)
     } catch (error) {
-      setModelAdviceNote(error instanceof Error ? error.message : 'Modeladvies is mislukt.')
+      console.error('Model advice failed:', error)
     } finally {
       setAdvisingAi(false)
-      setModelAdviceBusy(false)
     }
   }
 
@@ -281,28 +239,6 @@ export default function Generator() {
     setGreylistWords((prev) => prev.filter((item) => item !== word))
   }
 
-  const handleClearAll = () => {
-    setSelectedPreset('')
-    setMaxWords(DEFAULT_MAX_WORDS)
-    setGeneratedPrompt('')
-    setNegativePrompt('')
-    setImprovementDiff(null)
-    setNegativeImprovementDiff(null)
-    setPromptViewTab('final')
-    setNegativePromptViewTab('final')
-    setStatus(null)
-    setSavedTitle('')
-    setRecommendedModel('')
-    setRecommendedModelReason('')
-    setRecommendedModelMode(null)
-    setAdvisorBestValue('')
-    setAdvisorFastest('')
-    setSupportsNegativePrompt(null)
-    setModelAdviceNote(null)
-    setQuickStartIdea('')
-    setQuickStartStatus(null)
-  }
-
   useEffect(() => {
     let ignore = false
 
@@ -319,45 +255,6 @@ export default function Generator() {
       ignore = true
     }
   }, [])
-
-  useEffect(() => {
-    let ignore = false
-
-    async function loadRecommendedModelMeta() {
-      const modelName = recommendedModel.trim()
-      if (!modelName) {
-        setRecommendedModelMeta(null)
-        return
-      }
-
-      const result = await window.electronAPI.nightcafeModels.list()
-      if (ignore || result.error || !result.data) {
-        setRecommendedModelMeta(null)
-        return
-      }
-
-      const match = result.data.find((item) => item.modelName === modelName)
-      if (!match) {
-        setRecommendedModelMeta(null)
-        return
-      }
-
-      setRecommendedModelMeta({
-        hfModelId: match.hfModelId,
-        hfCardSummary: match.hfCardSummary,
-        hfDownloads: match.hfDownloads,
-        hfLikes: match.hfLikes,
-        hfLastModified: match.hfLastModified,
-        hfSyncStatus: match.hfSyncStatus,
-      })
-    }
-
-    void loadRecommendedModelMeta()
-
-    return () => {
-      ignore = true
-    }
-  }, [recommendedModel])
 
   useEffect(() => {
     const stored = localStorage.getItem(GENERATOR_UI_STATE_KEY)
@@ -415,7 +312,6 @@ export default function Generator() {
       setMagicRandomCreativity('balanced')
       setQuickStartCharacterId(null)
       setBudgetMode('balanced')
-      setModelAdviceNote(null)
     }
   }, [])
 
@@ -537,7 +433,7 @@ export default function Generator() {
         if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
         return buildDefaultTitle(nextPrompt)
       })
-      void requestModelAdvice('rule', nextPrompt, 'Generated Prompt')
+      void requestModelAdvice('rule', nextPrompt)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to generate prompt.')
     } finally {
@@ -640,96 +536,8 @@ export default function Generator() {
     }
   }
 
-  const handleImproveNegative = async () => {
-    if (!negativePrompt.trim()) {
-      setStatus('Nothing to improve yet in negative prompt.')
-      return
-    }
-
-    setStatus(null)
-    setImprovingNegative(true)
-
-    try {
-      const result = await window.electronAPI.generator.improveNegativePrompt({
-        negativePrompt,
-      })
-
-      if (!result) {
-        setStatus('Error: Negative improver returned an empty response.')
-        return
-      }
-
-      if (result.error) {
-        setStatus(result.error)
-        return
-      }
-
-      if (!result.data?.negativePrompt) {
-        setStatus('Error: Negative improver returned no data.')
-        return
-      }
-
-      const previousNegativePrompt = negativePrompt
-      setNegativePrompt(result.data.negativePrompt)
-      setNegativeImprovementDiff({
-        originalPrompt: previousNegativePrompt,
-        improvedPrompt: result.data.negativePrompt,
-      })
-      setNegativePromptViewTab('diff')
-      setStatus('Negative prompt improved.')
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Error: Failed to improve negative prompt.')
-    } finally {
-      setImprovingNegative(false)
-    }
-  }
-
-  const handleGenerateNegative = async () => {
-    if (!generatedPrompt.trim()) {
-      setStatus('Generate or enter a positive prompt first.')
-      return
-    }
-
-    setStatus(null)
-    setGeneratingNegative(true)
-
-    try {
-      const result = await window.electronAPI.generator.generateNegativePrompt({
-        prompt: generatedPrompt,
-      })
-
-      if (!result) {
-        setStatus('Error: Negative generator returned an empty response.')
-        return
-      }
-
-      if (result.error) {
-        setStatus(result.error)
-        return
-      }
-
-      if (!result.data?.negativePrompt) {
-        setStatus('Error: Negative generator returned no data.')
-        return
-      }
-
-      setNegativePrompt(result.data.negativePrompt)
-      setNegativeImprovementDiff(null)
-      setNegativePromptViewTab('final')
-      setStatus('Negative prompt generated.')
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Error: Failed to generate negative prompt.')
-    } finally {
-      setGeneratingNegative(false)
-    }
-  }
-
   const handleSaveToLibrary = async () => {
     if (!generatedPrompt || !savedTitle.trim()) return
-    if (generatingNegative || improvingNegative) {
-      setStatus('Wait for negative prompt generation/improvement to finish before saving.')
-      return
-    }
 
     // Check for duplicates
     const existingPromptsResult = await window.electronAPI.prompts.list()
@@ -847,18 +655,6 @@ export default function Generator() {
 
   const showNegativePromptControls = supportsNegativePrompt !== false
 
-  const formatCompactNumber = (value: number | null | undefined) => {
-    if (!Number.isFinite(value as number)) return '-'
-    return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value as number)
-  }
-
-  const formatDate = (value: string | Date | null | undefined) => {
-    if (!value) return '-'
-    const parsed = typeof value === 'string' ? new Date(value) : value
-    if (Number.isNaN(parsed.getTime())) return '-'
-    return parsed.toLocaleDateString()
-  }
-
   return (
     <div className="no-drag-region h-full overflow-y-auto px-8 pt-8 pb-10">
       <PageContainer>
@@ -892,11 +688,12 @@ export default function Generator() {
 
         {tab === 'generator' ? (
           <>
-            {/* Greylist - moved above the quickstart/random grid */}
+            {/* Greylist */}
             <div className="mt-5">
               {greylistCard}
             </div>
 
+            {/* Input Cards - side by side */}
             <div className="mt-5 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
               {/* LEFT: Magic Quickstart card */}
               <div className="card p-5 h-full flex flex-col">
@@ -968,76 +765,6 @@ export default function Generator() {
                     placeholder={'Describe your image idea in simple terms... (e.g. "A neon cyberpunk cityscape in the rain")'}
                   />
                 </div>
-
-                <div className="mt-4">
-                  <label htmlFor="quickstart-preset" className="label">NightCafe Preset</label>
-                  <select
-                    id="quickstart-preset"
-                    aria-label="NightCafe Preset Quickstart"
-                    value={selectedPreset}
-                    onChange={(e) => setSelectedPreset(e.target.value)}
-                    className="input"
-                  >
-                    <option value="">Geen preset</option>
-                    {presetOptions.map((preset) => (
-                      <option key={`quickstart-${preset.presetName}`} value={preset.presetName}>
-                        {preset.presetName}{preset.category ? ` (${preset.category})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Creativity slider */}
-                <div className="mt-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-white">Creativity Level</label>
-                    <span className="rounded-md border border-slate-700/50 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400">
-                      {quickStartCreativity.charAt(0).toUpperCase() + quickStartCreativity.slice(1)}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={2}
-                    step={1}
-                    aria-label="Quickstart creativity level"
-                    value={(['focused', 'balanced', 'wild'] as CreativityLevel[]).indexOf(quickStartCreativity)}
-                    onChange={(e) => {
-                      const levels: CreativityLevel[] = ['focused', 'balanced', 'wild']
-                      setQuickStartCreativity(levels[Number(e.target.value)])
-                    }}
-                    className="w-full accent-teal-500"
-                  />
-                  <div className="mt-1 flex justify-between text-[11px] text-slate-500">
-                    <span>Focused</span>
-                    <span>Balanced</span>
-                    <span>Wild</span>
-                  </div>
-                </div>
-
-                {/* Max words slider for Quickstart */}
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="quickstart-max-words" className="label !mb-0">Max words</label>
-                    <span className="text-xs text-slate-400">{maxWords}</span>
-                  </div>
-                  <input
-                    id="quickstart-max-words"
-                    type="range"
-                    min={1}
-                    max={MAX_ALLOWED_WORDS}
-                    value={maxWords}
-                    onChange={(event) => setMaxWords(Number(event.target.value))}
-                    className="mt-2 w-full accent-teal-500"
-                  />
-                  <p className="mt-1 text-[11px] text-slate-500">AI keeps generated prompt at or below {maxWords} words.</p>
-                </div>
-
-                {quickStartStatus && (
-                  <p className={`mt-3 text-xs ${quickStartStatus.startsWith('Error') ? 'text-red-400' : 'text-teal-400'}`}>
-                    {quickStartStatus}
-                  </p>
-                )}
 
                 <div className="mt-auto pt-4 flex justify-end">
                   <button
@@ -1115,80 +842,7 @@ export default function Generator() {
                   />
                 </div>
 
-                <div className="mt-4">
-                  <label htmlFor="generator-preset" className="label">NightCafe Preset</label>
-                  <select
-                    id="generator-preset"
-                    aria-label="NightCafe Preset"
-                    value={selectedPreset}
-                    onChange={(e) => setSelectedPreset(e.target.value)}
-                    className="input"
-                  >
-                    <option value="">Geen preset</option>
-                    {presetOptions.map((preset) => (
-                      <option key={preset.presetName} value={preset.presetName}>
-                        {preset.presetName}{preset.category ? ` (${preset.category})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="mt-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-white">Creativity Level</label>
-                    <span className="rounded-md border border-slate-700/50 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400">
-                      {magicRandomCreativity.charAt(0).toUpperCase() + magicRandomCreativity.slice(1)}
-                    </span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={2}
-                    step={1}
-                    aria-label="Magic Random creativity level"
-                    value={(['focused', 'balanced', 'wild'] as CreativityLevel[]).indexOf(magicRandomCreativity)}
-                    onChange={(e) => {
-                      const levels: CreativityLevel[] = ['focused', 'balanced', 'wild']
-                      setMagicRandomCreativity(levels[Number(e.target.value)])
-                    }}
-                    className="w-full accent-glow-amber"
-                  />
-                  <div className="mt-1 flex justify-between text-[11px] text-slate-500">
-                    <span>Focused</span>
-                    <span>Balanced</span>
-                    <span>Wild</span>
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <label htmlFor="generator-max-words" className="label !mb-0">Max words</label>
-                    <span className="text-xs text-slate-400">{maxWords}</span>
-                  </div>
-                  <input
-                    id="generator-max-words"
-                    type="range"
-                    min={1}
-                    max={MAX_ALLOWED_WORDS}
-                    value={maxWords}
-                    onChange={(event) => setMaxWords(Number(event.target.value))}
-                    className="mt-2 w-full accent-glow-amber"
-                  />
-                  <p className="mt-1 text-[11px] text-slate-500">AI keeps generated prompt at or below {maxWords} words.</p>
-                </div>
-
                 <div className="mt-auto pt-4 flex flex-wrap justify-end gap-3">
-                  <button onClick={handleCopy} disabled={!generatedPrompt} className="btn-ghost border border-slate-700/50">
-                    Copy Prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearAll}
-                    disabled={loading}
-                    className="btn-ghost border border-slate-700/50"
-                  >
-                    Clear all
-                  </button>
                   <button
                     onClick={handleGenerate}
                     disabled={loading}
@@ -1200,207 +854,124 @@ export default function Generator() {
               </div>
             </div>
 
+            {/* Generated Output Card */}
             <div className="card mt-5 p-5">
-
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-white">Generated Prompt</h2>
                 <span className="text-[10px] text-slate-500">{generatedPrompt.length} characters</span>
               </div>
 
               <textarea
-                className="textarea mt-3 min-h-48"
+                className="textarea mt-3 min-h-32"
                 value={generatedPrompt}
                 onChange={(e) => setGeneratedPrompt(e.target.value)}
                 placeholder="Your generated prompt will appear here."
               />
 
-              <div className="mt-3 flex justify-end">
+              {/* Compact Action Buttons */}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  disabled={!generatedPrompt}
+                  className="btn-compact-ghost"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copy Prompt
+                </button>
+                <button
+                  type="button"
+                  disabled={!negativePrompt}
+                  className="btn-compact-ghost"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copy Negative
+                </button>
+                <button
+                  type="button"
+                  className="btn-compact-ghost"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> Edit in Manual
+                </button>
+                <button
+                  onClick={handleSaveToLibrary}
+                  disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
+                  className="btn-save-library-main"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save to Library
+                </button>
+                <button
+                  type="button"
+                  className="btn-compact-ghost ml-auto"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" /> Guided Mode
+                </button>
+              </div>
+
+              {/* Negative Prompt Section */}
+              {showNegativePromptControls && negativePrompt && (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wide">Negative Prompt</h3>
+                    <span className="text-[10px] text-slate-500">{negativePrompt.length} chars</span>
+                  </div>
+                  <p className="text-sm text-slate-300 leading-relaxed">{negativePrompt}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Suggested Model Section */}
+            <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
+                <button
+                  type="button"
+                  onClick={() => void requestModelAdvice('ai', generatedPrompt)}
+                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
+                  className="btn-compact-teal"
+                >
+                  <Wand2 className="w-3.5 h-3.5" /> {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-slate-500 mr-1">Budget:</span>
+                {(['cheap', 'balanced', 'premium'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setBudgetMode(mode)}
+                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}`}
+                  >
+                    {mode === 'cheap' ? 'Goedkoop' : mode === 'balanced' ? 'Gebalanceerd' : 'Premium'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-500">Beste kwaliteit</span>
+                <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
+              </div>
+              <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
+            </div>
+
+            {/* Improve Prompt Section - Teal styled */}
+            <div className="mt-4 card border-teal-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-500/10 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-teal-400" />
+                  <p className="text-sm font-semibold text-teal-300">Verbeter Prompt</p>
+                </div>
                 <button
                   type="button"
                   onClick={handleImprove}
                   disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                  className="btn-primary"
+                  className="btn-compact-teal"
                 >
                   {improving ? 'Improving...' : 'Improve Prompt'}
                 </button>
               </div>
 
-              {showNegativePromptControls ? (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Negative Prompt</h3>
-                    <span className="text-[10px] text-slate-500">{negativePrompt.length} characters</span>
-                  </div>
-                  <textarea
-                    className="textarea mt-2 min-h-24"
-                    value={negativePrompt}
-                    onChange={(e) => setNegativePrompt(e.target.value)}
-                    placeholder="Things to avoid (e.g. blurry, watermark, deformed hands)..."
-                  />
-                  <div className="mt-2 flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={handleGenerateNegative}
-                      disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-primary"
-                    >
-                      {generatingNegative ? 'Generating negative...' : 'Generate Negative Prompt'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleImproveNegative}
-                      disabled={!negativePrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-primary"
-                    >
-                      {improvingNegative ? 'Improving negative...' : 'Improve Negative Prompt'}
-                    </button>
-                  </div>
-                  <div className="mt-2 flex justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={handleCopy}
-                      disabled={!generatedPrompt}
-                      className="btn-ghost border border-slate-700/50"
-                    >
-                      Copy Prompt
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleClearAll}
-                      disabled={loading}
-                      className="btn-ghost border border-slate-700/50"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-
-                  {negativeImprovementDiff && (
-                    <div className="mt-3 rounded-xl border border-slate-700/50 bg-slate-900/30 p-3">
-                      <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
-                        <button
-                          type="button"
-                          onClick={() => setNegativePromptViewTab('diff')}
-                          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                        >
-                          Diff View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setNegativePromptViewTab('final')}
-                          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                        >
-                          Final Result
-                        </button>
-                      </div>
-
-                      {negativePromptViewTab === 'diff' ? (
-                        <PromptDiffView
-                          originalPrompt={negativeImprovementDiff.originalPrompt}
-                          improvedPrompt={negativeImprovementDiff.improvedPrompt}
-                        />
-                      ) : (
-                        <textarea
-                          className="textarea mt-3 min-h-24"
-                          value={negativeImprovementDiff.improvedPrompt}
-                          readOnly
-                          placeholder="Improved negative prompt result"
-                        />
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="mt-4 rounded-lg border border-slate-800/50 bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-400">
-                    Dit geadviseerde model ondersteunt geen negative prompt. Daarom zijn de negative prompt opties verborgen.
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
-                  <button
-                    type="button"
-                    onClick={() => void requestModelAdvice('ai', generatedPrompt, 'Generated Prompt')}
-                    disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
-                    className="btn-primary"
-                  >
-                    {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
-                  </button>
-                </div>
-
-                <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs text-slate-500 mr-1">Budget:</span>
-                  {(['cheap', 'balanced', 'premium'] as const).map((mode) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setBudgetMode(mode)}
-                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-primary' : 'btn-ghost border border-slate-700/50'}`}
-                    >
-                      {mode === 'cheap' ? 'Goedkoop' : mode === 'balanced' ? 'Gebalanceerd' : 'Premium'}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <span className="text-sm text-slate-500">Beste kwaliteit</span>
-                  <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
-                </div>
-                <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
-
-                {(advisorBestValue || advisorFastest) && (
-                  <div className="mt-3 space-y-1.5">
-                    {advisorBestValue && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">Beste prijs-kwaliteit</span>
-                        <span className="text-slate-300 font-medium">{advisorBestValue}</span>
-                      </div>
-                    )}
-                    {advisorFastest && (
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-slate-500">Snelste optie</span>
-                        <span className="text-slate-300 font-medium">{advisorFastest}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
-                  <p>{recommendedModelMode === 'ai' ? 'AI-based advice' : recommendedModelMode === 'rule' ? 'Rule-based advice' : 'No advice yet'}</p>
-                  <p>NightCafe</p>
-                </div>
-
-                {recommendedModelMeta && (
-                  <div className="mt-3 rounded-lg border border-slate-800/60 bg-slate-900/40 p-3">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
-                      <span>HF sync: <span className="text-white">{recommendedModelMeta.hfSyncStatus || 'unknown'}</span></span>
-                      <span>Downloads: <span className="text-white">{formatCompactNumber(recommendedModelMeta.hfDownloads)}</span></span>
-                      <span>Likes: <span className="text-white">{formatCompactNumber(recommendedModelMeta.hfLikes)}</span></span>
-                      <span>Updated: <span className="text-white">{formatDate(recommendedModelMeta.hfLastModified)}</span></span>
-                    </div>
-
-                    {recommendedModelMeta.hfModelId && (
-                      <p className="mt-1 text-[11px] text-slate-500">Hugging Face: {recommendedModelMeta.hfModelId}</p>
-                    )}
-
-                    {recommendedModelMeta.hfCardSummary && (
-                      <p className="mt-2 text-xs text-slate-400">{recommendedModelMeta.hfCardSummary}</p>
-                    )}
-                  </div>
-                )}
-
-                {modelAdviceBusy && (
-                  <p className="mt-2 text-[11px] text-slate-500">Modeladvies ophalen...</p>
-                )}
-                {modelAdviceNote && (
-                  <p className="mt-2 text-[11px] text-slate-400">{modelAdviceNote}</p>
-                )}
-              </div>
-
               {improvementDiff && (
-                <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-900/30 p-3">
+                <div className="mt-4">
                   <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
                     <button
                       type="button"
@@ -1425,7 +996,7 @@ export default function Generator() {
                     />
                   ) : (
                     <textarea
-                      className="textarea mt-3 min-h-40"
+                      className="textarea mt-3 min-h-32"
                       value={improvementDiff.improvedPrompt}
                       readOnly
                       placeholder="Improved prompt result"
@@ -1433,41 +1004,42 @@ export default function Generator() {
                   )}
                 </div>
               )}
-
-              <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-                <input
-                  type="text"
-                  value={savedTitle}
-                  onChange={(e) => setSavedTitle(e.target.value)}
-                  className="input"
-                  placeholder="Title to save in Prompt Library"
-                />
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={handleGenerateTitle}
-                    disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || generatingTitle}
-                    className="btn-primary"
-                  >
-                    {generatingTitle ? 'Generating title...' : 'Generate Title (AI)'}
-                  </button>
-                  <button
-                    onClick={handleSaveToLibrary}
-                    disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
-                    className="btn-ghost border border-slate-700/50"
-                  >
-                    Save to Library
-                  </button>
-                </div>
-              </div>
-
-              {status && (
-                <p className={`mt-3 text-xs ${status.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
-                  {status}
-                </p>
-              )}
-
             </div>
+
+            {/* Save Section */}
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+              <input
+                type="text"
+                value={savedTitle}
+                onChange={(e) => setSavedTitle(e.target.value)}
+                className="input"
+                placeholder="Title to save in Prompt Library"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleGenerateTitle}
+                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || generatingTitle}
+                  className="btn-compact-primary"
+                >
+                  {generatingTitle ? 'Generating title...' : 'Generate Title (AI)'}
+                </button>
+                <button
+                  onClick={handleSaveToLibrary}
+                  disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
+                  className="btn-save-library-secondary"
+                >
+                  <Save className="w-3.5 h-3.5" /> Save to Library
+                </button>
+              </div>
+            </div>
+
+            {/* Status */}
+            {status && (
+              <p className={`mt-3 text-xs ${status.startsWith('Error') ? 'text-red-400' : 'text-green-400'}`}>
+                {status}
+              </p>
+            )}
           </>
         ) : (
           <>

@@ -235,7 +235,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
             <button
               onClick={handleSaveToLibrary}
               disabled={!composedPrompt || !savedTitle.trim()}
-              className="w-full btn-ghost text-xs border border-slate-700/50"
+              className="w-full btn-save-library-builder text-xs"
             >
               Save to Library
             </button>
