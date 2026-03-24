@@ -9,9 +9,6 @@ type PromptPreviewProps = {
   modelAdviceEnabled?: boolean
   maxWords?: number
   greylistWords?: string[]
-  onSave?: () => void
-  saveLabel?: string
-  saveDisabled?: boolean
 }
 
 type Segment = {
@@ -85,9 +82,6 @@ export default function PromptPreview({
   modelAdviceEnabled,
   maxWords = DEFAULT_MAX_WORDS,
   greylistWords = [],
-  onSave,
-  saveLabel = 'Save',
-  saveDisabled = false,
 }: PromptPreviewProps) {
   const [copied, setCopied] = useState(false)
 
@@ -198,16 +192,6 @@ export default function PromptPreview({
         >
           {copied ? '✓ Copied' : '📋 Copy'}
         </button>
-        {onSave && (
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={saveDisabled}
-            className="btn-ghost border border-slate-700/50"
-          >
-            💾 {saveLabel}
-          </button>
-        )}
       </div>
     </div>
   )
