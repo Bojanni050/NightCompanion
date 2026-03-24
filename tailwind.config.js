@@ -28,6 +28,11 @@ export default {
           400: '#fbbf24',
           300: '#fcd34d',
         },
+        orange: {
+          600: '#ea580c',
+          500: '#f59e0b',
+          400: '#fbbf24',
+        },
         teal: {
           500: '#14b8a6',
           400: '#2dd4bf',
@@ -56,14 +61,14 @@ export default {
           cyan: '#0891b2',
           pink: '#db2777',
           soft: '#a78bfa',
-          amber: '#d97706',
+          amber: '#f59e0b',
         },
       },
       boxShadow: {
         glow: '0 0 20px rgba(124, 58, 237, 0.3)',
         'glow-sm': '0 0 10px rgba(124, 58, 237, 0.2)',
         'glow-blue': '0 0 20px rgba(37, 99, 235, 0.3)',
-        'glow-amber': '0 0 20px rgba(217, 119, 6, 0.25)',
+        'glow-amber': '0 0 20px rgba(245, 158, 11, 0.25)',
       },
       backgroundImage: {
         'gradient-night': 'linear-gradient(135deg, #050810 0%, #0a0e1a 50%, #0f1526 100%)',

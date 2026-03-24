@@ -1044,7 +1044,7 @@ export default function Generator() {
                     type="button"
                     onClick={handleQuickExpand}
                     disabled={!quickStartIdea.trim() || expandingIdea}
-                    className="flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="btn-primary"
                   >
                     <Sparkles className="w-4 h-4" /> {expandingIdea ? 'Expanding...' : 'Magic AI Expansion'}
                   </button>
@@ -1192,7 +1192,7 @@ export default function Generator() {
                   <button
                     onClick={handleGenerate}
                     disabled={loading}
-                    className="rounded-xl border border-glow-amber/40 bg-glow-amber/15 px-4 py-2 text-sm font-medium text-glow-amber shadow-glow-amber transition-colors hover:bg-glow-amber/25 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="btn-primary"
                   >
                     {loading ? 'Generating...' : 'Magic Random (AI)'}
                   </button>
@@ -1219,7 +1219,7 @@ export default function Generator() {
                   type="button"
                   onClick={handleImprove}
                   disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                  className="rounded-xl border border-glow-amber/40 bg-glow-amber/10 px-4 py-2 text-sm font-medium text-glow-amber shadow-glow-amber transition-colors hover:bg-glow-amber/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-primary"
                 >
                   {improving ? 'Improving...' : 'Improve Prompt'}
                 </button>
@@ -1242,7 +1242,7 @@ export default function Generator() {
                       type="button"
                       onClick={handleGenerateNegative}
                       disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-ghost border border-slate-700/50"
+                      className="btn-primary"
                     >
                       {generatingNegative ? 'Generating negative...' : 'Generate Negative Prompt'}
                     </button>
@@ -1250,7 +1250,7 @@ export default function Generator() {
                       type="button"
                       onClick={handleImproveNegative}
                       disabled={!negativePrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-ghost border border-slate-700/50"
+                      className="btn-primary"
                     >
                       {improvingNegative ? 'Improving negative...' : 'Improve Negative Prompt'}
                     </button>
@@ -1324,7 +1324,7 @@ export default function Generator() {
                     type="button"
                     onClick={() => void requestModelAdvice('ai', generatedPrompt, 'Generated Prompt')}
                     disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
-                    className="btn-ghost border border-slate-700/50 px-3 py-1.5 text-xs"
+                    className="btn-primary"
                   >
                     {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
                   </button>
@@ -1447,7 +1447,7 @@ export default function Generator() {
                     type="button"
                     onClick={handleGenerateTitle}
                     disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || generatingTitle}
-                    className="btn-ghost border border-slate-700/50"
+                    className="btn-primary"
                   >
                     {generatingTitle ? 'Generating title...' : 'Generate Title (AI)'}
                   </button>

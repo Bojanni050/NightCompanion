@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-24 (Unified orange gradient for all AI generation buttons)
+
+- Findings: AI-activatie knoppen hadden inconsistente styling - sommige teal, sommige amber ghost, sommige custom borders - terwijl de referentie een uniforme oranje CTA gradient toont.
+- Conclusions: Alle AI-generatie knoppen dezelfde `.btn-primary` gradient geven (`from-amber-500 to-orange-600`) creëert visuele consistentie en herkenbaarheid voor AI-acties.
+- Actions: In `src/screens/Generator.tsx` alle AI knoppen omgezet naar `btn-primary`: `Magic AI Expansion`, `Magic Random (AI)`, `Improve Prompt`, `Generate Negative Prompt`, `Improve Negative Prompt`, `Get AI Advice`, `Generate Title (AI)`; `btn-primary` class in `src/index.css` bijgewerkt met de gradient spec; kleur basis `#f59e0b` ingesteld in `tailwind.config.js`; gevalideerd met `npm run build`.
+
 ## 2026-03-24 (Color System Migration to Slate/Amber/Teal)
 
 - Findings: The project used a custom `night-*` color palette that was inconsistent with modern design systems and did not follow the standardized Slate/Amber/Teal convention from the reference application.
