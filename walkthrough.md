@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-24 (Remove Save changes button from PromptPreview)
+
+- Findings: User wanted the Save changes button removed from the edit prompt form next to the Copy button.
+- Conclusions: The duplicate save action in the preview panel was redundant since the form already has a primary Save changes button in the footer.
+- Actions: Removed the conditional Save changes button from `src/components/PromptPreview.tsx`; cleaned up unused `onSave`, `saveLabel`, and `saveDisabled` props from the component; validated with `npm run build`.
+
 ## 2026-03-24 (Gallery page — full feature implementation)
 
 - Findings: User requested a Gallery page to display AI-generated images and videos with collections, filtering, lightbox viewer, and slideshow mode.
