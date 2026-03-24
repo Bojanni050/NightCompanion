@@ -54,19 +54,19 @@
   }
 
   .btn-primary {
-    @apply btn bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-lg shadow-amber-500/20;
+    @apply btn bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-medium shadow-lg shadow-amber-500/20;
   }
 
   .btn-secondary {
-    @apply btn bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700;
+    @apply btn bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl;
   }
 
   .btn-ghost {
-    @apply btn bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700;
+    @apply btn bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 rounded-xl;
   }
 
   .btn-danger {
-    @apply btn bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20;
+    @apply btn bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl;
   }
 
   /* Input Fields */
