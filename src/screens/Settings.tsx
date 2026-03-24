@@ -165,7 +165,7 @@ export default function Settings() {
             <SettingsIcon className="w-6 h-6 text-white" />
             <h1 className="text-2xl font-bold text-white">Settings</h1>
           </div>
-          <p className="text-sm text-night-400">Application preferences and diagnostics</p>
+          <p className="text-sm text-slate-500">Application preferences and diagnostics</p>
         </div>
 
         <section className="card p-6">
@@ -174,7 +174,7 @@ export default function Settings() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-white">Native Windows title bar</p>
-              <p className="text-xs text-night-400">Gebruik de standaard Windows titelbalk in plaats van de custom frameless balk</p>
+              <p className="text-xs text-slate-500">Gebruik de standaard Windows titelbalk in plaats van de custom frameless balk</p>
             </div>
             <button
               type="button"
@@ -185,7 +185,7 @@ export default function Settings() {
                 if (!loading) void handleNativeWindowFrameToggle()
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                nativeWindowFrameEnabled ? 'bg-teal-500' : 'bg-night-600'
+                nativeWindowFrameEnabled ? 'bg-teal-500' : 'bg-slate-600'
               } ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <span
@@ -199,7 +199,7 @@ export default function Settings() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-white">AI API request logging</p>
-              <p className="text-xs text-night-400">Log AI request/response payloads to a local JSONL file for debugging</p>
+              <p className="text-xs text-slate-500">Log AI request/response payloads to a local JSONL file for debugging</p>
             </div>
             <button
               type="button"
@@ -210,7 +210,7 @@ export default function Settings() {
                 if (!loading) void handleToggle()
               }}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                aiApiRequestLoggingEnabled ? 'bg-teal-500' : 'bg-night-600'
+                aiApiRequestLoggingEnabled ? 'bg-teal-500' : 'bg-slate-600'
               } ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
             >
               <span
@@ -221,10 +221,10 @@ export default function Settings() {
             </button>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-night-700/50 space-y-3">
+          <div className="mt-6 pt-6 border-t border-slate-800/50 space-y-3">
             <div>
               <p className="text-sm font-semibold text-white">NightCompanion folder location</p>
-              <p className="text-xs text-night-400">Default: C:\Users\&lt;user&gt;\AppData\Local\NightCompanion</p>
+              <p className="text-xs text-slate-500">Default: C:\Users\&lt;user&gt;\AppData\Local\NightCompanion</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
@@ -232,12 +232,12 @@ export default function Settings() {
                 value={nightCompanionFolderPath}
                 onChange={(event) => setNightCompanionFolderPath(event.target.value)}
                 placeholder="Select folder path"
-                className="flex-1 rounded-xl border border-night-700 bg-night-900 px-3 py-2 text-sm text-night-100 placeholder-night-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
               <button
                 type="button"
                 onClick={() => void handleBrowseNightCompanionFolder()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 Browse
@@ -246,7 +246,7 @@ export default function Settings() {
                 type="button"
                 disabled={savingNightCompanionFolderPath || loading}
                 onClick={() => void handleSaveNightCompanionFolder()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Save
               </button>
@@ -254,24 +254,24 @@ export default function Settings() {
                 type="button"
                 disabled={savingNightCompanionFolderPath || loading}
                 onClick={() => void handleResetNightCompanionFolder()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Reset default
               </button>
             </div>
             {nightCompanionFolderMessage && (
-              <p className="text-xs text-night-300">{nightCompanionFolderMessage}</p>
+              <p className="text-xs text-slate-400">{nightCompanionFolderMessage}</p>
             )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-night-700/50 space-y-3">
+          <div className="mt-6 pt-6 border-t border-slate-800/50 space-y-3">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-white">NightCafe modelcards (Hugging Face)</p>
-                <p className="text-xs text-night-400">Refresh extra model metadata: summary, likes, downloads, and update date</p>
-                <p className="mt-1 text-xs text-night-300">Laatste sync: {formattedLastSyncedAt}</p>
+                <p className="text-xs text-slate-500">Refresh extra model metadata: summary, likes, downloads, and update date</p>
+                <p className="mt-1 text-xs text-slate-400">Laatste sync: {formattedLastSyncedAt}</p>
                 {hfSyncInfo && (
-                  <p className="mt-1 text-[11px] text-night-400">
+                  <p className="mt-1 text-[11px] text-slate-500">
                     Matched {hfSyncInfo.counts.matched} · Unmatched {hfSyncInfo.counts.unmatched} · Errors {hfSyncInfo.counts.error} · Pending {hfSyncInfo.counts.pending}
                   </p>
                 )}
@@ -282,14 +282,14 @@ export default function Settings() {
                   if (!isRefreshingHf) void handleRefreshNightCafeHuggingFace()
                 }}
                 disabled={isRefreshingHf}
-                className="inline-flex items-center gap-2 rounded-xl border border-night-600 bg-night-800 px-3 py-2 text-xs font-semibold text-night-100 hover:border-night-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingHf ? 'animate-spin' : ''}`} />
                 Refresh modelcards
               </button>
             </div>
             {hfSyncMessage && (
-              <p className="text-xs text-night-300">{hfSyncMessage}</p>
+              <p className="text-xs text-slate-400">{hfSyncMessage}</p>
             )}
           </div>
         </section>

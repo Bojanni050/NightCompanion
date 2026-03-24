@@ -65,7 +65,7 @@ type Props = {
 
 export default function Sidebar({ activeScreen, onNavigate }: Props) {
   return (
-    <aside className="w-60 flex-shrink-0 flex flex-col bg-gradient-sidebar border-r border-night-700/50 pt-10">
+    <aside className="w-60 flex-shrink-0 flex flex-col bg-gradient-sidebar border-r border-slate-900/50 pt-10">
       {/* Logo */}
       <div className="px-5 pb-8">
         <div className="flex items-center gap-2.5">
@@ -74,7 +74,7 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
           </div>
           <div>
             <div className="text-sm font-semibold text-white tracking-wide">NightCompanion</div>
-            <div className="text-[10px] text-night-400 tracking-wider uppercase">NightCafe Studio</div>
+            <div className="text-[10px] text-slate-500 tracking-wider uppercase">NightCafe Studio</div>
           </div>
         </div>
       </div>
@@ -90,15 +90,15 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
               className={`
                 w-full text-left px-3 py-3 rounded-xl transition-all duration-150 group
                 ${isActive
-                  ? 'bg-night-700/80 border border-glow-purple/30 shadow-glow-sm'
-                  : 'border border-transparent hover:bg-night-800/60 hover:border-night-600/30'
+                  ? 'bg-slate-700/80 border border-glow-purple/30 shadow-glow-sm'
+                  : 'border border-transparent hover:bg-slate-800/60 hover:border-slate-700/30'
                 }
               `}
             >
               <div className="flex items-center gap-3">
                 <span
                   className={`text-base transition-colors ${
-                    isActive ? 'text-glow-soft' : 'text-night-400 group-hover:text-night-200'
+                    isActive ? 'text-glow-soft' : 'text-slate-500 group-hover:text-slate-300'
                   }`}
                 >
                   {item.icon}
@@ -106,12 +106,12 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
                 <div>
                   <div
                     className={`text-sm font-medium leading-none mb-0.5 ${
-                      isActive ? 'text-white' : 'text-night-200 group-hover:text-white'
+                      isActive ? 'text-white' : 'text-slate-300 group-hover:text-white'
                     }`}
                   >
                     {item.label}
                   </div>
-                  <div className="text-[10px] text-night-500 leading-none">{item.description}</div>
+                  <div className="text-[10px] text-slate-400 leading-none">{item.description}</div>
                 </div>
               </div>
             </button>
@@ -120,8 +120,8 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
       </nav>
 
       {/* Footer */}
-      <div className="px-5 py-5 border-t border-night-700/50">
-        <div className="text-[10px] text-night-600 text-center tracking-wide">
+      <div className="px-5 py-5 border-t border-slate-900/50">
+        <div className="text-[10px] text-slate-600 text-center tracking-wide">
           NightCompanion v0.1
         </div>
       </div>

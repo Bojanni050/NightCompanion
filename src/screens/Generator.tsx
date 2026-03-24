@@ -783,9 +783,9 @@ export default function Generator() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-white">Greylist</h2>
-          <p className="text-xs text-night-400 mt-1">Words the AI should try to avoid or use with low probability.</p>
+          <p className="text-xs text-slate-500 mt-1">Words the AI should try to avoid or use with low probability.</p>
         </div>
-        <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${greylistEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-night-600 bg-night-800 text-night-300'}`}>
+        <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${greylistEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
           <input
             type="checkbox"
             checked={greylistEnabled}
@@ -818,14 +818,14 @@ export default function Generator() {
             ))}
           </datalist>
         </div>
-        <button type="button" onClick={addGreylistWord} className="btn-ghost border border-night-600/50">
+        <button type="button" onClick={addGreylistWord} className="btn-ghost border border-slate-700/50">
           Add
         </button>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
         {greylistWords.length === 0 ? (
-          <p className="text-xs text-night-400">No greylist words added.</p>
+          <p className="text-xs text-slate-500">No greylist words added.</p>
         ) : (
           greylistWords.map((word) => (
             <span key={word} className="tag-removable">
@@ -833,7 +833,7 @@ export default function Generator() {
               <button
                 type="button"
                 onClick={() => removeGreylistWord(word)}
-                className="rounded px-1 text-night-300 hover:bg-night-700 hover:text-white"
+                className="rounded px-1 text-slate-400 hover:bg-slate-700 hover:text-white"
                 aria-label={`Remove ${word}`}
               >
                 x
@@ -863,17 +863,17 @@ export default function Generator() {
     <div className="no-drag-region h-full overflow-y-auto px-8 pt-8 pb-10">
       <PageContainer>
         <h1 className="text-2xl font-semibold text-white tracking-tight">Generator</h1>
-        <p className="text-sm text-night-400 mt-1">Generate prompts with AI or build them modularly in one place.</p>
+        <p className="text-sm text-slate-500 mt-1">Generate prompts with AI or build them modularly in one place.</p>
 
-        <div className="mt-5 inline-flex rounded-xl border border-night-600/50 bg-night-900/40 p-1">
+        <div className="mt-5 inline-flex rounded-xl border border-slate-700/50 bg-slate-900/40 p-1">
           <button
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${tab === 'generator' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${tab === 'generator' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             onClick={() => setTab('generator')}
           >
             Quickstart
           </button>
           <button
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${tab === 'builder' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors ${tab === 'builder' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
             onClick={() => setTab('builder')}
           >
             Prompt Builder
@@ -907,7 +907,7 @@ export default function Generator() {
                     </div>
                     <div>
                       <h2 className="text-base font-semibold text-white">Magic Quickstart</h2>
-                      <p className="text-xs text-night-400 mt-0.5 min-h-8">Describe your idea and let AI do the heavy lifting</p>
+                      <p className="text-xs text-slate-500 mt-0.5 min-h-8">Describe your idea and let AI do the heavy lifting</p>
                     </div>
                   </div>
 
@@ -916,7 +916,7 @@ export default function Generator() {
                     <button
                       type="button"
                       onClick={() => setShowCharacterPicker((v) => !v)}
-                      className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-teal-500/60 text-teal-300' : 'border-night-600/50'}`}
+                      className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-teal-500/60 text-teal-300' : 'border-slate-700/50'}`}
                     >
                       <User className="w-3.5 h-3.5" />
                       {quickStartCharacterId
@@ -926,11 +926,11 @@ export default function Generator() {
                     {showCharacterPicker && (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
-                        <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-night-600/50 bg-night-900 p-1 shadow-xl">
+                        <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-slate-700/50 bg-slate-900 p-1 shadow-xl">
                           <button
                             type="button"
                             onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
-                            className="w-full text-left px-3 py-2 text-xs text-night-300 hover:bg-night-800 rounded-lg"
+                            className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 rounded-lg"
                           >
                             No character
                           </button>
@@ -939,13 +939,13 @@ export default function Generator() {
                               key={c.id}
                               type="button"
                               onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
-                              className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-teal-600 text-white' : 'text-night-200 hover:bg-night-800'}`}
+                              className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-teal-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}
                             >
                               {c.name}
                             </button>
                           ))}
                           {quickStartCharacterList.length === 0 && (
-                            <p className="px-3 py-2 text-xs text-night-500">No characters found.</p>
+                            <p className="px-3 py-2 text-xs text-slate-500">No characters found.</p>
                           )}
                         </div>
                       </>
@@ -954,7 +954,7 @@ export default function Generator() {
                 </div>
 
                 {/* Idea textarea */}
-                <div className="mt-4 relative rounded-xl border border-night-600/50 bg-night-900/60 overflow-hidden">
+                <div className="mt-4 relative rounded-xl border border-slate-700/50 bg-slate-900/60 overflow-hidden">
                   <textarea
                     value={quickStartIdea}
                     onChange={(e) => setQuickStartIdea(e.target.value)}
@@ -991,7 +991,7 @@ export default function Generator() {
                 <div className="mt-5">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-white">Creativity Level</label>
-                    <span className="rounded-md border border-night-600/50 bg-night-800 px-2 py-1 text-xs font-medium text-night-300">
+                    <span className="rounded-md border border-slate-700/50 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400">
                       {quickStartCreativity.charAt(0).toUpperCase() + quickStartCreativity.slice(1)}
                     </span>
                   </div>
@@ -1008,7 +1008,7 @@ export default function Generator() {
                     }}
                     className="w-full accent-teal-500"
                   />
-                  <div className="mt-1 flex justify-between text-[11px] text-night-400">
+                  <div className="mt-1 flex justify-between text-[11px] text-slate-500">
                     <span>Focused</span>
                     <span>Balanced</span>
                     <span>Wild</span>
@@ -1019,7 +1019,7 @@ export default function Generator() {
                 <div className="mt-4">
                   <div className="flex items-center justify-between gap-3">
                     <label htmlFor="quickstart-max-words" className="label !mb-0">Max words</label>
-                    <span className="text-xs text-night-300">{maxWords}</span>
+                    <span className="text-xs text-slate-400">{maxWords}</span>
                   </div>
                   <input
                     id="quickstart-max-words"
@@ -1030,7 +1030,7 @@ export default function Generator() {
                     onChange={(event) => setMaxWords(Number(event.target.value))}
                     className="mt-2 w-full accent-teal-500"
                   />
-                  <p className="mt-1 text-[11px] text-night-400">AI keeps generated prompt at or below {maxWords} words.</p>
+                  <p className="mt-1 text-[11px] text-slate-500">AI keeps generated prompt at or below {maxWords} words.</p>
                 </div>
 
                 {quickStartStatus && (
@@ -1060,7 +1060,7 @@ export default function Generator() {
                     </div>
                     <div>
                       <h2 className="text-base font-semibold text-white">Magic Random</h2>
-                      <p className="text-xs text-night-300 mt-0.5 min-h-8">Generate a surprise prompt with AI</p>
+                      <p className="text-xs text-slate-400 mt-0.5 min-h-8">Generate a surprise prompt with AI</p>
                     </div>
                   </div>
 
@@ -1068,7 +1068,7 @@ export default function Generator() {
                     <button
                       type="button"
                       onClick={() => setShowCharacterPicker((v) => !v)}
-                      className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-glow-amber/60 text-glow-amber' : 'border-night-600/50'}`}
+                      className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-glow-amber/60 text-glow-amber' : 'border-slate-700/50'}`}
                     >
                       <User className="w-3.5 h-3.5" />
                       {quickStartCharacterId
@@ -1078,11 +1078,11 @@ export default function Generator() {
                     {showCharacterPicker && (
                       <>
                         <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
-                        <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-night-600/50 bg-night-900 p-1 shadow-xl">
+                        <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-slate-700/50 bg-slate-900 p-1 shadow-xl">
                           <button
                             type="button"
                             onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
-                            className="w-full text-left px-3 py-2 text-xs text-night-300 hover:bg-night-800 rounded-lg"
+                            className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 rounded-lg"
                           >
                             No character
                           </button>
@@ -1091,13 +1091,13 @@ export default function Generator() {
                               key={c.id}
                               type="button"
                               onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
-                              className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-glow-amber text-white' : 'text-night-200 hover:bg-night-800'}`}
+                              className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-glow-amber text-white' : 'text-slate-300 hover:bg-slate-800'}`}
                             >
                               {c.name}
                             </button>
                           ))}
                           {quickStartCharacterList.length === 0 && (
-                            <p className="px-3 py-2 text-xs text-night-500">No characters found.</p>
+                            <p className="px-3 py-2 text-xs text-slate-500">No characters found.</p>
                           )}
                         </div>
                       </>
@@ -1105,12 +1105,12 @@ export default function Generator() {
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-xl border border-night-600/50 bg-night-900/60 overflow-hidden">
+                <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-900/60 overflow-hidden">
                   <textarea
                     value={generatedPrompt}
                     readOnly
                     aria-label="Generated prompt preview"
-                    className="w-full bg-transparent px-4 py-4 text-sm text-night-200 placeholder-night-500 resize-none min-h-36 focus:outline-none"
+                    className="w-full bg-transparent px-4 py-4 text-sm text-slate-300 placeholder-night-500 resize-none min-h-36 focus:outline-none"
                     placeholder="Generated prompt will appear here."
                   />
                 </div>
@@ -1136,7 +1136,7 @@ export default function Generator() {
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-sm font-medium text-white">Creativity Level</label>
-                    <span className="rounded-md border border-night-600/50 bg-night-800 px-2 py-1 text-xs font-medium text-night-300">
+                    <span className="rounded-md border border-slate-700/50 bg-slate-800 px-2 py-1 text-xs font-medium text-slate-400">
                       {magicRandomCreativity.charAt(0).toUpperCase() + magicRandomCreativity.slice(1)}
                     </span>
                   </div>
@@ -1153,7 +1153,7 @@ export default function Generator() {
                     }}
                     className="w-full accent-glow-amber"
                   />
-                  <div className="mt-1 flex justify-between text-[11px] text-night-400">
+                  <div className="mt-1 flex justify-between text-[11px] text-slate-500">
                     <span>Focused</span>
                     <span>Balanced</span>
                     <span>Wild</span>
@@ -1163,7 +1163,7 @@ export default function Generator() {
                 <div className="mt-4">
                   <div className="flex items-center justify-between gap-3">
                     <label htmlFor="generator-max-words" className="label !mb-0">Max words</label>
-                    <span className="text-xs text-night-300">{maxWords}</span>
+                    <span className="text-xs text-slate-400">{maxWords}</span>
                   </div>
                   <input
                     id="generator-max-words"
@@ -1174,18 +1174,18 @@ export default function Generator() {
                     onChange={(event) => setMaxWords(Number(event.target.value))}
                     className="mt-2 w-full accent-glow-amber"
                   />
-                  <p className="mt-1 text-[11px] text-night-400">AI keeps generated prompt at or below {maxWords} words.</p>
+                  <p className="mt-1 text-[11px] text-slate-500">AI keeps generated prompt at or below {maxWords} words.</p>
                 </div>
 
                 <div className="mt-auto pt-4 flex flex-wrap justify-end gap-3">
-                  <button onClick={handleCopy} disabled={!generatedPrompt} className="btn-ghost border border-night-600/50">
+                  <button onClick={handleCopy} disabled={!generatedPrompt} className="btn-ghost border border-slate-700/50">
                     Copy Prompt
                   </button>
                   <button
                     type="button"
                     onClick={handleClearAll}
                     disabled={loading}
-                    className="btn-ghost border border-night-600/50"
+                    className="btn-ghost border border-slate-700/50"
                   >
                     Clear all
                   </button>
@@ -1204,7 +1204,7 @@ export default function Generator() {
 
               <div className="flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-white">Generated Prompt</h2>
-                <span className="text-[10px] text-night-500">{generatedPrompt.length} characters</span>
+                <span className="text-[10px] text-slate-500">{generatedPrompt.length} characters</span>
               </div>
 
               <textarea
@@ -1228,8 +1228,8 @@ export default function Generator() {
               {showNegativePromptControls ? (
                 <div className="mt-4">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-semibold text-night-200 uppercase tracking-wide">Negative Prompt</h3>
-                    <span className="text-[10px] text-night-500">{negativePrompt.length} characters</span>
+                    <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wide">Negative Prompt</h3>
+                    <span className="text-[10px] text-slate-500">{negativePrompt.length} characters</span>
                   </div>
                   <textarea
                     className="textarea mt-2 min-h-24"
@@ -1242,7 +1242,7 @@ export default function Generator() {
                       type="button"
                       onClick={handleGenerateNegative}
                       disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-ghost border border-night-600/50"
+                      className="btn-ghost border border-slate-700/50"
                     >
                       {generatingNegative ? 'Generating negative...' : 'Generate Negative Prompt'}
                     </button>
@@ -1250,7 +1250,7 @@ export default function Generator() {
                       type="button"
                       onClick={handleImproveNegative}
                       disabled={!negativePrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                      className="btn-ghost border border-night-600/50"
+                      className="btn-ghost border border-slate-700/50"
                     >
                       {improvingNegative ? 'Improving negative...' : 'Improve Negative Prompt'}
                     </button>
@@ -1260,7 +1260,7 @@ export default function Generator() {
                       type="button"
                       onClick={handleCopy}
                       disabled={!generatedPrompt}
-                      className="btn-ghost border border-night-600/50"
+                      className="btn-ghost border border-slate-700/50"
                     >
                       Copy Prompt
                     </button>
@@ -1268,26 +1268,26 @@ export default function Generator() {
                       type="button"
                       onClick={handleClearAll}
                       disabled={loading}
-                      className="btn-ghost border border-night-600/50"
+                      className="btn-ghost border border-slate-700/50"
                     >
                       Clear all
                     </button>
                   </div>
 
                   {negativeImprovementDiff && (
-                    <div className="mt-3 rounded-xl border border-night-600/50 bg-night-900/30 p-3">
-                      <div className="inline-flex rounded-lg border border-night-600/50 bg-night-900/40 p-1">
+                    <div className="mt-3 rounded-xl border border-slate-700/50 bg-slate-900/30 p-3">
+                      <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
                         <button
                           type="button"
                           onClick={() => setNegativePromptViewTab('diff')}
-                          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+                          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                         >
                           Diff View
                         </button>
                         <button
                           type="button"
                           onClick={() => setNegativePromptViewTab('final')}
-                          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+                          className={`px-3 py-1.5 rounded-md text-xs transition-colors ${negativePromptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                         >
                           Final Result
                         </button>
@@ -1310,34 +1310,34 @@ export default function Generator() {
                   )}
                 </div>
               ) : (
-                <div className="mt-4 rounded-lg border border-night-700/50 bg-night-900/40 p-3">
-                  <p className="text-xs text-night-300">
+                <div className="mt-4 rounded-lg border border-slate-800/50 bg-slate-900/40 p-3">
+                  <p className="text-xs text-slate-400">
                     Dit geadviseerde model ondersteunt geen negative prompt. Daarom zijn de negative prompt opties verborgen.
                   </p>
                 </div>
               )}
 
-              <div className="mt-4 rounded-xl border border-night-700/60 bg-night-900/40 p-4">
+              <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
                   <button
                     type="button"
                     onClick={() => void requestModelAdvice('ai', generatedPrompt, 'Generated Prompt')}
                     disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
-                    className="btn-ghost border border-night-600/50 px-3 py-1.5 text-xs"
+                    className="btn-ghost border border-slate-700/50 px-3 py-1.5 text-xs"
                   >
                     {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
                   </button>
                 </div>
 
                 <div className="mt-3 flex items-center gap-2">
-                  <span className="text-xs text-night-400 mr-1">Budget:</span>
+                  <span className="text-xs text-slate-500 mr-1">Budget:</span>
                   {(['cheap', 'balanced', 'premium'] as const).map((mode) => (
                     <button
                       key={mode}
                       type="button"
                       onClick={() => setBudgetMode(mode)}
-                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-primary' : 'btn-ghost border border-night-600/50'}`}
+                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-primary' : 'btn-ghost border border-slate-700/50'}`}
                     >
                       {mode === 'cheap' ? 'Goedkoop' : mode === 'balanced' ? 'Gebalanceerd' : 'Premium'}
                     </button>
@@ -1345,36 +1345,36 @@ export default function Generator() {
                 </div>
 
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <span className="text-sm text-night-400">Beste kwaliteit</span>
-                  <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-night-500" />}</span>
+                  <span className="text-sm text-slate-500">Beste kwaliteit</span>
+                  <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
                 </div>
-                <p className="mt-1 text-sm text-night-300">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
+                <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
 
                 {(advisorBestValue || advisorFastest) && (
                   <div className="mt-3 space-y-1.5">
                     {advisorBestValue && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-night-400">Beste prijs-kwaliteit</span>
-                        <span className="text-night-200 font-medium">{advisorBestValue}</span>
+                        <span className="text-slate-500">Beste prijs-kwaliteit</span>
+                        <span className="text-slate-300 font-medium">{advisorBestValue}</span>
                       </div>
                     )}
                     {advisorFastest && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-night-400">Snelste optie</span>
-                        <span className="text-night-200 font-medium">{advisorFastest}</span>
+                        <span className="text-slate-500">Snelste optie</span>
+                        <span className="text-slate-300 font-medium">{advisorFastest}</span>
                       </div>
                     )}
                   </div>
                 )}
 
-                <div className="mt-3 flex items-center justify-between text-sm text-night-400">
+                <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
                   <p>{recommendedModelMode === 'ai' ? 'AI-based advice' : recommendedModelMode === 'rule' ? 'Rule-based advice' : 'No advice yet'}</p>
                   <p>NightCafe</p>
                 </div>
 
                 {recommendedModelMeta && (
-                  <div className="mt-3 rounded-lg border border-night-700/60 bg-night-900/40 p-3">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-night-300">
+                  <div className="mt-3 rounded-lg border border-slate-800/60 bg-slate-900/40 p-3">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-400">
                       <span>HF sync: <span className="text-white">{recommendedModelMeta.hfSyncStatus || 'unknown'}</span></span>
                       <span>Downloads: <span className="text-white">{formatCompactNumber(recommendedModelMeta.hfDownloads)}</span></span>
                       <span>Likes: <span className="text-white">{formatCompactNumber(recommendedModelMeta.hfLikes)}</span></span>
@@ -1382,37 +1382,37 @@ export default function Generator() {
                     </div>
 
                     {recommendedModelMeta.hfModelId && (
-                      <p className="mt-1 text-[11px] text-night-400">Hugging Face: {recommendedModelMeta.hfModelId}</p>
+                      <p className="mt-1 text-[11px] text-slate-500">Hugging Face: {recommendedModelMeta.hfModelId}</p>
                     )}
 
                     {recommendedModelMeta.hfCardSummary && (
-                      <p className="mt-2 text-xs text-night-300">{recommendedModelMeta.hfCardSummary}</p>
+                      <p className="mt-2 text-xs text-slate-400">{recommendedModelMeta.hfCardSummary}</p>
                     )}
                   </div>
                 )}
 
                 {modelAdviceBusy && (
-                  <p className="mt-2 text-[11px] text-night-400">Modeladvies ophalen...</p>
+                  <p className="mt-2 text-[11px] text-slate-500">Modeladvies ophalen...</p>
                 )}
                 {modelAdviceNote && (
-                  <p className="mt-2 text-[11px] text-night-300">{modelAdviceNote}</p>
+                  <p className="mt-2 text-[11px] text-slate-400">{modelAdviceNote}</p>
                 )}
               </div>
 
               {improvementDiff && (
-                <div className="mt-4 rounded-xl border border-night-600/50 bg-night-900/30 p-3">
-                  <div className="inline-flex rounded-lg border border-night-600/50 bg-night-900/40 p-1">
+                <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-900/30 p-3">
+                  <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
                     <button
                       type="button"
                       onClick={() => setPromptViewTab('diff')}
-                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                     >
                       Diff View
                     </button>
                     <button
                       type="button"
                       onClick={() => setPromptViewTab('final')}
-                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-night-300 hover:text-white hover:bg-night-800'}`}
+                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                     >
                       Final Result
                     </button>
@@ -1447,14 +1447,14 @@ export default function Generator() {
                     type="button"
                     onClick={handleGenerateTitle}
                     disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || generatingTitle}
-                    className="btn-ghost border border-night-600/50"
+                    className="btn-ghost border border-slate-700/50"
                   >
                     {generatingTitle ? 'Generating title...' : 'Generate Title (AI)'}
                   </button>
                   <button
                     onClick={handleSaveToLibrary}
                     disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
-                    className="btn-ghost border border-night-600/50"
+                    className="btn-ghost border border-slate-700/50"
                   >
                     Save to Library
                   </button>
@@ -1474,7 +1474,7 @@ export default function Generator() {
             <div className="mt-5">
               {greylistCard}
             </div>
-            <div className="mt-1 card border-night-700/50">
+            <div className="mt-1 card border-slate-800/50">
               <PromptBuilder embedded greylistEnabled={greylistEnabled} greylistWords={greylistWords} maxWords={maxWords} />
             </div>
           </>

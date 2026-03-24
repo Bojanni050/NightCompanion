@@ -10,6 +10,34 @@ export default {
         sans: ['Inter', 'DM Sans', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // New Slate-based design system
+        slate: {
+          950: '#020617',
+          900: '#0f172a',
+          800: '#1e293b',
+          700: '#334155',
+          600: '#475569',
+          500: '#64748b',
+          400: '#94a3b8',
+          300: '#cbd5e1',
+          200: '#e2e8f0',
+          100: '#f1f5f9',
+        },
+        amber: {
+          500: '#f59e0b',
+          400: '#fbbf24',
+          300: '#fcd34d',
+        },
+        teal: {
+          500: '#14b8a6',
+          400: '#2dd4bf',
+          300: '#5eead4',
+        },
+        red: {
+          500: '#ef4444',
+          400: '#f87171',
+        },
+        // Legacy colors (for backward compatibility during migration)
         night: {
           950: '#050810',
           900: '#0a0e1a',

@@ -26,14 +26,14 @@ function RatingStars({ rating }: { rating: number | null }) {
       {[1, 2, 3, 4, 5].map((value) => {
         const fill = getStarFill(safeRating, value)
         return (
-          <span key={value} className={fill === 'empty' ? 'text-night-600' : 'text-glow-amber'}>
+          <span key={value} className={fill === 'empty' ? 'text-slate-600' : 'text-glow-amber'}>
             {fill === 'full' && <Star size={14} fill="currentColor" />}
             {fill === 'half' && <StarHalf size={14} fill="currentColor" />}
             {fill === 'empty' && <Star size={14} />}
           </span>
         )
       })}
-      <span className="text-[10px] text-night-500 ml-1">{safeRating ? safeRating.toFixed(1) : '0.0'}</span>
+      <span className="text-[10px] text-slate-500 ml-1">{safeRating ? safeRating.toFixed(1) : '0.0'}</span>
     </div>
   )
 }
@@ -80,12 +80,12 @@ export default function GenerationLog() {
         <PageContainer className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-white tracking-tight">Generation Log</h1>
-            <p className="text-sm text-night-400 mt-0.5">{entries.length} generation{entries.length !== 1 ? 's' : ''} logged</p>
+            <p className="text-sm text-slate-500 mt-0.5">{entries.length} generation{entries.length !== 1 ? 's' : ''} logged</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex rounded-lg overflow-hidden border border-night-600/50">
+            <div className="flex rounded-lg overflow-hidden border border-slate-700/50">
               {(['grid', 'list'] as const).map((m) => (
-                <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 text-xs transition-colors ${viewMode === m ? 'bg-night-700 text-white' : 'text-night-400 hover:text-white hover:bg-night-800'}`}>{m === 'grid' ? '⊞' : '☰'}</button>
+                <button key={m} onClick={() => setViewMode(m)} className={`px-3 py-1.5 text-xs transition-colors ${viewMode === m ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>{m === 'grid' ? '⊞' : '☰'}</button>
               ))}
             </div>
             <button onClick={() => setForm({ mode: 'create' })} className="btn-primary"><span className="text-lg leading-none">+</span>Log Generation</button>
@@ -99,31 +99,31 @@ export default function GenerationLog() {
             <GenerationLogSkeleton />
           ) : entries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-night-800 border border-night-600/50 flex items-center justify-center mb-4"><span className="text-3xl text-night-500">⊞</span></div>
-              <h3 className="text-lg font-medium text-night-200 mb-1">No generations logged yet</h3>
-              <p className="text-sm text-night-500 mb-5 max-w-sm">Track your NightCafe creations, rate them, and link them to your prompts.</p>
+              <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700/50 flex items-center justify-center mb-4"><span className="text-3xl text-slate-600">⊞</span></div>
+              <h3 className="text-lg font-medium text-slate-200 mb-1">No generations logged yet</h3>
+              <p className="text-sm text-slate-500 mb-5 max-w-sm">Track your NightCafe creations, rate them, and link them to your prompts.</p>
               <button onClick={() => setForm({ mode: 'create' })} className="btn-primary"><span className="text-lg leading-none">+</span>Log first generation</button>
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
               {entries.map((e) => (
-                <div key={e.id} className="card overflow-hidden group hover:border-night-500/70 transition-all duration-150">
+                <div key={e.id} className="card overflow-hidden group hover:border-slate-500/70 transition-all duration-150">
                   {e.thumbnailUrl ? (
-                    <div className="aspect-square bg-night-800 overflow-hidden">
+                    <div className="aspect-square bg-slate-800 overflow-hidden">
                       <img src={e.thumbnailUrl} alt="" className="w-full h-full object-cover" onError={(el) => { (el.target as HTMLImageElement).style.display = 'none' }} />
                     </div>
                   ) : (
-                    <div className="aspect-square bg-night-800 flex items-center justify-center"><span className="text-4xl text-night-600">⊞</span></div>
+                    <div className="aspect-square bg-slate-800 flex items-center justify-center"><span className="text-4xl text-slate-600">⊞</span></div>
                   )}
                   <div className="p-3">
                     <div className="flex items-center justify-between mb-1">
                       <RatingStars rating={e.rating} />
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => setForm({ mode: 'edit', entry: e })} className="p-1 rounded text-night-400 hover:text-white hover:bg-night-700 text-xs">✎</button>
-                        <button onClick={() => handleDelete(e.id)} className="p-1 rounded text-night-500 hover:text-red-400 hover:bg-night-700 text-xs">✕</button>
+                        <button onClick={() => setForm({ mode: 'edit', entry: e })} className="p-1 rounded text-slate-500 hover:text-white hover:bg-slate-900 text-xs">✎</button>
+                        <button onClick={() => handleDelete(e.id)} className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-slate-900 text-xs">✕</button>
                       </div>
                     </div>
-                    <p className="text-[10px] text-night-400 truncate">{e.promptSnapshot.slice(0, 60)}{e.promptSnapshot.length > 60 ? '…' : ''}</p>
+                    <p className="text-[10px] text-slate-500 truncate">{e.promptSnapshot.slice(0, 60)}{e.promptSnapshot.length > 60 ? '…' : ''}</p>
                     {e.nightcafeUrl && <a href={e.nightcafeUrl} target="_blank" rel="noreferrer" className="text-[10px] text-glow-blue hover:underline mt-1 block truncate">View on NightCafe ↗</a>}
                   </div>
                 </div>
@@ -132,19 +132,19 @@ export default function GenerationLog() {
           ) : (
             <div className="space-y-2">
               {entries.map((e) => (
-                <div key={e.id} className="card px-4 py-3 flex items-center gap-4 group hover:border-night-500/70 transition-all duration-150">
-                  {e.thumbnailUrl ? <img src={e.thumbnailUrl} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={(el) => { (el.target as HTMLImageElement).style.display = 'none' }} /> : <div className="w-12 h-12 rounded-lg bg-night-800 flex items-center justify-center flex-shrink-0"><span className="text-night-600 text-lg">⊞</span></div>}
+                <div key={e.id} className="card px-4 py-3 flex items-center gap-4 group hover:border-slate-500/70 transition-all duration-150">
+                  {e.thumbnailUrl ? <img src={e.thumbnailUrl} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" onError={(el) => { (el.target as HTMLImageElement).style.display = 'none' }} /> : <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center flex-shrink-0"><span className="text-slate-600 text-lg">⊞</span></div>}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-night-300 truncate">{e.promptSnapshot || '(no prompt)'}</p>
-                    {e.notes && <p className="text-[10px] text-night-500 truncate mt-0.5">{e.notes}</p>}
+                    <p className="text-xs text-slate-300 truncate">{e.promptSnapshot || '(no prompt)'}</p>
+                    {e.notes && <p className="text-[10px] text-slate-500 truncate mt-0.5">{e.notes}</p>}
                   </div>
                   <div className="flex-shrink-0">
                     <RatingStars rating={e.rating} />
                   </div>
-                  <span className="text-[10px] text-night-600 flex-shrink-0">{new Date(e.createdAt).toLocaleDateString()}</span>
+                  <span className="text-[10px] text-slate-600 flex-shrink-0">{new Date(e.createdAt).toLocaleDateString()}</span>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setForm({ mode: 'edit', entry: e })} className="p-1.5 rounded text-night-400 hover:text-white hover:bg-night-700 text-xs">✎</button>
-                    <button onClick={() => handleDelete(e.id)} className="p-1.5 rounded text-night-500 hover:text-red-400 hover:bg-night-700 text-xs">✕</button>
+                    <button onClick={() => setForm({ mode: 'edit', entry: e })} className="p-1.5 rounded text-slate-500 hover:text-white hover:bg-slate-900 text-xs">✎</button>
+                    <button onClick={() => handleDelete(e.id)} className="p-1.5 rounded text-slate-500 hover:text-red-400 hover:bg-slate-900 text-xs">✕</button>
                   </div>
                 </div>
               ))}
@@ -172,11 +172,11 @@ function GenerationForm({ initial, onSubmit, onClose }: { initial?: GenerationEn
   const [notes, setNotes] = useState(initial?.notes ?? '')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-night-950/80 backdrop-blur-sm animate-fade-in" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-xl card border-night-600 shadow-2xl animate-slide-up">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-night-700/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="w-full max-w-xl card border-slate-700 shadow-2xl animate-slide-up">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/50">
           <h2 className="text-base font-semibold text-white">{initial ? 'Edit Log Entry' : 'Log Generation'}</h2>
-          <button onClick={onClose} className="text-night-500 hover:text-white p-1.5 rounded-lg hover:bg-night-700 text-sm">✕</button>
+          <button onClick={onClose} className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-900 text-sm">✕</button>
         </div>
         <form onSubmit={(e) => { e.preventDefault(); onSubmit({ nightcafeUrl, thumbnailUrl, promptSnapshot, rating: rating || null, notes, promptId: null }) }} className="px-6 py-5 space-y-4">
           <div><label className="label">NightCafe URL</label><input type="url" value={nightcafeUrl} onChange={e => setNightcafeUrl(e.target.value)} className="input" placeholder="https://nightcafe.studio/create/…" autoFocus /></div>
@@ -186,7 +186,7 @@ function GenerationForm({ initial, onSubmit, onClose }: { initial?: GenerationEn
             <label className="label">Rating</label>
             <div className="flex gap-2">
               {[1, 2, 3, 4, 5].map((n) => (
-                <div key={n} className={`relative w-9 h-9 rounded-lg border transition-colors ${rating >= n - 0.5 ? 'text-glow-amber border-glow-amber/40 bg-glow-amber/10' : 'text-night-600 border-night-600/50 hover:text-night-400'}`}>
+                <div key={n} className={`relative w-9 h-9 rounded-lg border transition-colors ${rating >= n - 0.5 ? 'text-glow-amber border-glow-amber/40 bg-glow-amber/10' : 'text-slate-600 border-slate-700/50 hover:text-slate-500'}`}>
                   <button
                     type="button"
                     onClick={() => setRating((prev) => (isSameRating(prev, n - 0.5) ? 0 : n - 0.5))}
@@ -208,7 +208,7 @@ function GenerationForm({ initial, onSubmit, onClose }: { initial?: GenerationEn
                   </div>
                 </div>
               ))}
-              <span className="text-xs text-night-400 min-w-[3rem] ml-1">{rating ? rating.toFixed(1) : '0.0'}/5</span>
+              <span className="text-xs text-slate-500 min-w-[3rem] ml-1">{rating ? rating.toFixed(1) : '0.0'}/5</span>
             </div>
           </div>
           <div><label className="label">Notes</label><textarea value={notes} onChange={e => setNotes(e.target.value)} className="textarea" rows={2} placeholder="What worked, what didn't…" /></div>

@@ -1,5 +1,11 @@
 # Walkthrough
 
+## 2026-03-24 (Color System Migration to Slate/Amber/Teal)
+
+- Findings: The project used a custom `night-*` color palette that was inconsistent with modern design systems and did not follow the standardized Slate/Amber/Teal convention from the reference application.
+- Conclusions: Migrating to the Slate-based design system provides better consistency, accessibility, and maintainability while keeping the dark aesthetic. Primary accent changed to amber-500, secondary to teal-500, with standardized element conventions.
+- Actions: Updated `tailwind.config.js` with new Slate color palette (950-100), Amber (500-300), Teal (500-300), and Red (500-400); rewrote `src/index.css` with new CSS conventions for buttons (btn-primary amber CTA, btn-secondary ghost, btn-danger), cards (.card with slate-900/bg-slate-800 border), inputs (.input with amber focus), badges (.badge-info/warning/error/success/neutral), and light mode CSS variables; replaced all `night-*` utility classes across components with Slate equivalents (`bg-night-900` → `bg-slate-900`, `text-night-400` → `text-slate-500`, `border-night-600` → `border-slate-700`, etc.) in `Generator.tsx`, `Library.tsx`, `Settings.tsx`, `StyleProfiles.tsx`, `PromptBuilder.tsx`, `GenerationLog.tsx`, `PromptForm.tsx`, `PromptPreview.tsx`, and `Sidebar.tsx`; validated with `npm run build`.
+
 ## 2026-03-24 (Generator colour tuning toward amber reference look)
 
 - Findings: De huidige Generator gebruikte vooral koele paars/blauwe accenten, terwijl de referentie visueel meer nadruk legt op een warme amber-accentzone rond de random-kaart en CTA.

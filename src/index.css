@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-night-950 text-night-100 font-sans;
+    @apply bg-slate-950 text-slate-300 font-sans;
     overflow: hidden;
     -webkit-user-select: none;
     user-select: none;
@@ -27,13 +27,15 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-night-600 rounded-full;
+    background: rgba(71, 85, 105, 0.8);
+    border-radius: 4px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-night-500;
+    background: rgba(148, 163, 184, 0.8);
   }
 }
 
@@ -46,26 +48,30 @@
     -webkit-app-region: no-drag;
   }
 
+  /* Button Styles */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-night-900 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium text-sm transition-all duration-150 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply btn bg-glow-purple hover:bg-purple-700 text-white focus:ring-glow-purple shadow-glow-sm hover:shadow-glow;
+    @apply btn bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold shadow-lg shadow-amber-500/20;
+  }
+
+  .btn-secondary {
+    @apply btn bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700;
   }
 
   .btn-ghost {
-    @apply btn text-night-200 hover:bg-night-700 hover:text-white focus:ring-night-500;
+    @apply btn bg-slate-800/50 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700;
   }
 
   .btn-danger {
-    @apply btn bg-red-900/50 hover:bg-red-800 text-red-200 border border-red-800/50 focus:ring-red-700;
+    @apply btn bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20;
   }
 
+  /* Input Fields */
   .input {
-    @apply w-full px-3 py-2 rounded-lg bg-night-800 border border-night-600 text-night-100 placeholder-night-400
-           focus:outline-none focus:ring-2 focus:ring-glow-purple/50 focus:border-glow-purple/70
-           transition-colors text-sm;
+    @apply w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm outline-none transition-colors focus:border-amber-500/60 placeholder:text-slate-500;
   }
 
   .textarea {
@@ -73,20 +79,93 @@
   }
 
   .label {
-    @apply block text-xs font-medium text-night-300 mb-1.5 uppercase tracking-wide;
+    @apply block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider;
   }
 
+  /* Cards */
   .card {
-    @apply bg-gradient-card border border-night-600/50 rounded-xl;
+    @apply bg-slate-900 border border-slate-800 rounded-2xl;
   }
 
+  .card-hover {
+    @apply card hover:border-slate-700 transition-all;
+  }
+
+  /* Tags / Badges */
   .tag {
-    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-night-700 text-night-200 border border-night-600/50;
+    @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-800 text-slate-400 border border-slate-700;
   }
 
   .tag-removable {
     @apply tag gap-1 pr-1;
   }
+
+  .badge-info {
+    @apply inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-teal-500/10 border border-teal-500/30 text-teal-300;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-amber-500/10 border border-amber-500/30 text-amber-400;
+  }
+
+  .badge-error {
+    @apply inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-red-500/10 border border-red-500/20 text-red-400;
+  }
+
+  .badge-success {
+    @apply inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-teal-500/20 border border-teal-500/40 text-teal-300;
+  }
+
+  .badge-neutral {
+    @apply inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-slate-800 border border-slate-700 text-slate-400;
+  }
+
+  /* Dropdown */
+  .dropdown-panel {
+    @apply bg-slate-900 border border-slate-800 rounded-xl shadow-xl;
+  }
+
+  .dropdown-item {
+    @apply hover:bg-slate-800 text-slate-300 hover:text-white transition-colors;
+  }
+
+  /* Tabs */
+  .tab-container {
+    @apply bg-slate-950/50 border border-slate-800 rounded-xl p-1;
+  }
+
+  .tab-active {
+    @apply bg-slate-800 text-white font-semibold rounded-lg;
+  }
+
+  .tab-inactive {
+    @apply text-slate-400 hover:text-white hover:bg-slate-800/50 rounded-lg transition-colors;
+  }
+
+  /* Progress */
+  .progress-track {
+    @apply bg-slate-800 rounded-full;
+  }
+
+  .progress-fill {
+    @apply bg-amber-500 rounded-full;
+  }
+
+  /* Scrollbar utilities */
+  .dropdown-scroll::-webkit-scrollbar { width: 6px; }
+  .dropdown-scroll::-webkit-scrollbar-track {
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 4px;
+  }
+  .dropdown-scroll::-webkit-scrollbar-thumb {
+    background: rgba(71, 85, 105, 0.8);
+    border-radius: 4px;
+  }
+  .dropdown-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.8);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
   .line-clamp-2 {
     display: -webkit-box;
@@ -96,3 +175,29 @@
     overflow: hidden;
   }
 }
+
+/* Light mode support */
+html.light {
+  --light-bg-base: #f1f5f9;
+  --light-bg-surface: #ffffff;
+  --light-bg-raised: #f8fafc;
+  --light-bg-inset: #e2e8f0;
+  --light-border: #cbd5e1;
+  --light-text-base: #0f172a;
+  --light-text-muted: #475569;
+  --light-text-dim: #64748b;
+}
+
+html.light body,
+html.light .bg-slate-950 { background-color: var(--light-bg-base) !important; }
+html.light .bg-slate-900 { background-color: var(--light-bg-surface) !important; }
+html.light .bg-slate-800 { background-color: var(--light-bg-inset) !important; }
+html.light .bg-slate-700 { background-color: #e2e8f0 !important; }
+
+html.light .border-slate-800,
+html.light .border-slate-700 { border-color: var(--light-border) !important; }
+
+html.light .text-white { color: var(--light-text-base) !important; }
+html.light .text-slate-300,
+html.light .text-slate-400 { color: var(--light-text-muted) !important; }
+html.light .text-slate-500 { color: var(--light-text-dim) !important; }

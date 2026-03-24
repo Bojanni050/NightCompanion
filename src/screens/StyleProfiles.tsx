@@ -50,7 +50,7 @@ export default function StyleProfiles() {
         <PageContainer className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-white tracking-tight">Style Profiles</h1>
-            <p className="text-sm text-night-400 mt-0.5">Reusable style presets for NightCafe</p>
+            <p className="text-sm text-slate-500 mt-0.5">Reusable style presets for NightCafe</p>
           </div>
           <button onClick={() => setForm({ mode: 'create' })} className="btn-primary">
             <span className="text-lg leading-none">+</span>
@@ -67,39 +67,39 @@ export default function StyleProfiles() {
             <StyleProfilesSkeleton />
           ) : profiles.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-night-800 border border-night-600/50 flex items-center justify-center mb-4">
-                <span className="text-3xl text-night-500">◈</span>
+              <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700/50 flex items-center justify-center mb-4">
+                <span className="text-3xl text-slate-500">◈</span>
               </div>
-              <h3 className="text-lg font-medium text-night-200 mb-1">No style profiles yet</h3>
-              <p className="text-sm text-night-500 mb-5 max-w-sm">Save your favourite style combinations as reusable presets.</p>
+              <h3 className="text-lg font-medium text-slate-300 mb-1">No style profiles yet</h3>
+              <p className="text-sm text-slate-500 mb-5 max-w-sm">Save your favourite style combinations as reusable presets.</p>
               <button onClick={() => setForm({ mode: 'create' })} className="btn-primary"><span className="text-lg leading-none">+</span>Create first profile</button>
             </div>
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               {profiles.map((p) => (
-                <div key={p.id} className="card p-5 group hover:border-night-500/70 transition-all duration-150">
+                <div key={p.id} className="card p-5 group hover:border-slate-600/70 transition-all duration-150">
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
                       <h3 className="text-sm font-semibold text-white">{p.name}</h3>
                       {p.preferredModel && (
-                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-night-700 text-glow-soft border border-glow-purple/20 font-medium">{p.preferredModel}</span>
+                        <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-700 text-glow-soft border border-glow-purple/20 font-medium">{p.preferredModel}</span>
                       )}
                     </div>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={() => setForm({ mode: 'edit', profile: p })} className="p-1.5 rounded-lg text-night-400 hover:text-white hover:bg-night-700 transition-colors text-xs">✎</button>
-                      <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-night-500 hover:text-red-400 hover:bg-night-700 transition-colors text-xs">✕</button>
+                      <button onClick={() => setForm({ mode: 'edit', profile: p })} className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-slate-800 transition-colors text-xs">✎</button>
+                      <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-slate-800 transition-colors text-xs">✕</button>
                     </div>
                   </div>
 
                   {p.basePromptSnippet && (
-                    <p className="text-xs text-night-300 font-mono bg-night-900/50 rounded-lg px-3 py-2 border border-night-700/50 mb-2">
+                    <p className="text-xs text-slate-400 font-mono bg-slate-900/50 rounded-lg px-3 py-2 border border-slate-800/50 mb-2">
                       {p.basePromptSnippet.slice(0, 120)}{p.basePromptSnippet.length > 120 ? '…' : ''}
                     </p>
                   )}
 
                   {p.commonNegativePrompts && (
-                    <p className="text-[10px] text-night-500">
-                      <span className="text-night-600 mr-1">−</span>
+                    <p className="text-[10px] text-slate-500">
+                      <span className="text-slate-600 mr-1">−</span>
                       {p.commonNegativePrompts.slice(0, 80)}{p.commonNegativePrompts.length > 80 ? '…' : ''}
                     </p>
                   )}
@@ -129,11 +129,11 @@ function StyleProfileForm({ initial, onSubmit, onClose }: { initial?: StyleProfi
   const [notes, setNotes] = useState(initial?.notes ?? '')
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-night-950/80 backdrop-blur-sm animate-fade-in" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="w-full max-w-xl card border-night-600 shadow-2xl animate-slide-up">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-night-700/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="w-full max-w-xl card border-slate-700 shadow-2xl animate-slide-up">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/50">
           <h2 className="text-base font-semibold text-white">{initial ? 'Edit Profile' : 'New Style Profile'}</h2>
-          <button onClick={onClose} className="text-night-500 hover:text-white p-1.5 rounded-lg hover:bg-night-700 text-sm">✕</button>
+          <button onClick={onClose} className="text-slate-500 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 text-sm">✕</button>
         </div>
         <form onSubmit={(e) => { e.preventDefault(); onSubmit({ name, basePromptSnippet, preferredModel, commonNegativePrompts, notes }) }} className="px-6 py-5 space-y-4">
           <div><label className="label">Name *</label><input type="text" value={name} onChange={e => setName(e.target.value)} className="input" required placeholder="e.g. Painterly Dark Fantasy" autoFocus /></div>

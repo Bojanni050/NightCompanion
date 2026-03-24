@@ -248,21 +248,21 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-night-950/80 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
-        className="w-full max-w-6xl max-h-[90vh] flex flex-col card border-night-600 shadow-2xl animate-slide-up"
+        className="w-full max-w-6xl max-h-[90vh] flex flex-col card border-slate-700 shadow-2xl animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-night-700/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/50">
           <h2 className="text-base font-semibold text-white">
             {isEdit ? 'Edit Prompt' : 'New Prompt'}
           </h2>
           <button
             onClick={onClose}
-            className="text-night-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-night-700 text-sm"
+            className="text-slate-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-slate-800 text-sm"
             aria-label="Close"
           >
             ✕
@@ -290,27 +290,27 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label !mb-0">Prompt Image</label>
-                <span className="text-[10px] text-night-500">optional</span>
+                <span className="text-[10px] text-slate-500">optional</span>
               </div>
 
               {imageUrl ? (
-                <div className="rounded-2xl border border-night-700 bg-night-900/40 overflow-hidden">
-                  <div className="aspect-[16/9] bg-night-950/60">
+                <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+                  <div className="aspect-[16/9] bg-slate-950/60">
                     <img
                       src={imageUrl}
                       alt="Prompt preview"
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-night-700/60">
-                    <p className="text-[11px] text-night-400 truncate">
+                  <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-slate-800/60">
+                    <p className="text-[11px] text-slate-500 truncate">
                       {imageFileName || 'Stored prompt image'}
                     </p>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => imageInputRef.current?.click()}
-                        className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
+                        className="btn-ghost border border-slate-700/50 px-2.5 py-1 text-[11px]"
                         disabled={readingImage}
                       >
                         Replace
@@ -329,13 +329,13 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 <button
                   type="button"
                   onClick={() => imageInputRef.current?.click()}
-                  className="w-full rounded-2xl border border-dashed border-night-600 bg-night-900/30 px-4 py-5 text-left transition-colors hover:border-amber-500/40 hover:bg-night-900/50"
+                  className="w-full rounded-2xl border border-dashed border-slate-700 bg-slate-900/30 px-4 py-5 text-left transition-colors hover:border-amber-500/40 hover:bg-slate-900/50"
                   disabled={readingImage}
                 >
-                  <p className="text-sm font-medium text-night-200">
+                  <p className="text-sm font-medium text-slate-300">
                     {readingImage ? 'Reading image…' : 'Upload prompt image'}
                   </p>
-                  <p className="mt-1 text-xs text-night-500">
+                  <p className="mt-1 text-xs text-slate-500">
                     Saved locally under your user profile in NightCompanion/images.
                   </p>
                 </button>
@@ -355,7 +355,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label !mb-0">Prompt *</label>
-                <span className="text-[10px] text-night-500">{promptText.length} chars</span>
+                <span className="text-[10px] text-slate-500">{promptText.length} chars</span>
               </div>
               <textarea
                 value={promptText}
@@ -371,7 +371,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label !mb-0">Negative Prompt</label>
-                <span className="text-[10px] text-night-500">optional</span>
+                <span className="text-[10px] text-slate-500">optional</span>
               </div>
               <textarea
                 value={negativePrompt}
@@ -416,10 +416,10 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 value={suggestedModel}
                 readOnly
                 aria-label="Suggested model"
-                className="input bg-night-900/60 text-night-300"
+                className="input bg-slate-900/60 text-slate-400"
                 placeholder="No suggested model saved"
               />
-              <p className="text-[10px] text-night-600 mt-1">Saved from Generator model advice and not editable here.</p>
+              <p className="text-[10px] text-slate-600 mt-1">Saved from Generator model advice and not editable here.</p>
             </div>
 
             <div>
@@ -445,14 +445,14 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 <button
                   type="button"
                   onClick={() => setIsTemplate((prev) => !prev)}
-                  className={`px-3 py-2 rounded-lg border text-xs transition-colors ${isTemplate ? 'bg-teal-500/15 border-teal-500/40 text-teal-300' : 'bg-night-800 border-night-700 text-night-300 hover:text-white'}`}
+                  className={`px-3 py-2 rounded-lg border text-xs transition-colors ${isTemplate ? 'bg-teal-500/15 border-teal-500/40 text-teal-300' : 'bg-slate-800 border-slate-800 text-slate-400 hover:text-white'}`}
                 >
                   Template
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsFavorite((prev) => !prev)}
-                  className={`px-3 py-2 rounded-lg border text-xs transition-colors ${isFavorite ? 'bg-rose-500/15 border-rose-500/40 text-rose-300' : 'bg-night-800 border-night-700 text-night-300 hover:text-white'}`}
+                  className={`px-3 py-2 rounded-lg border text-xs transition-colors ${isFavorite ? 'bg-rose-500/15 border-rose-500/40 text-rose-300' : 'bg-slate-800 border-slate-800 text-slate-400 hover:text-white'}`}
                 >
                   Favorite
                 </button>
@@ -465,7 +465,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 {[1, 2, 3, 4, 5].map((value) => (
                   <div
                     key={value}
-                    className={`relative w-9 h-9 rounded-lg border transition-colors ${rating >= value - 0.5 ? 'text-glow-amber border-glow-amber/40 bg-glow-amber/10' : 'text-night-600 border-night-600/50 hover:text-night-400'}`}
+                    className={`relative w-9 h-9 rounded-lg border transition-colors ${rating >= value - 0.5 ? 'text-glow-amber border-glow-amber/40 bg-glow-amber/10' : 'text-slate-600 border-slate-700/50 hover:text-slate-500'}`}
                   >
                     <button
                       type="button"
@@ -488,7 +488,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                     </div>
                   </div>
                 ))}
-                <span className="text-xs text-night-400 min-w-[3rem] ml-1">{rating ? rating.toFixed(1) : '0.0'}/5</span>
+                <span className="text-xs text-slate-500 min-w-[3rem] ml-1">{rating ? rating.toFixed(1) : '0.0'}/5</span>
               </div>
             </div>
 
@@ -497,12 +497,12 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="label !mb-0">Tags</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-night-500">{tags.length}/{MAX_TAG_COUNT}</span>
+                  <span className="text-[10px] text-slate-500">{tags.length}/{MAX_TAG_COUNT}</span>
                   <button
                     type="button"
                     onClick={handleGenerateTags}
                     disabled={generatingTags || !promptText.trim() || tags.length >= MAX_TAG_COUNT}
-                    className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
+                    className="btn-ghost border border-slate-700/50 px-2.5 py-1 text-[11px]"
                   >
                     {generatingTags ? 'Generating...' : 'Add Tags with AI'}
                   </button>
@@ -515,7 +515,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                     <button
                       type="button"
                       onClick={() => removeTag(tag)}
-                      className="text-night-500 hover:text-white transition-colors leading-none"
+                      className="text-slate-500 hover:text-white transition-colors leading-none"
                     >
                       ×
                     </button>
@@ -529,11 +529,11 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                   onKeyDown={handleTagKeyDown}
                   onBlur={addTag}
                   disabled={tags.length >= MAX_TAG_COUNT}
-                  className="bg-transparent border-none outline-none text-sm text-night-200 placeholder-night-500 min-w-[120px] flex-1"
+                  className="bg-transparent border-none outline-none text-sm text-slate-300 placeholder-slate-500 min-w-[120px] flex-1"
                   placeholder={tags.length >= MAX_TAG_COUNT ? 'Maximum of 15 tags reached' : tags.length === 0 ? 'Add tags, press Enter…' : ''}
                 />
               </div>
-              <p className="text-[10px] text-night-600 mt-1">Press Enter or comma to add a tag. Maximum 15 tags.</p>
+              <p className="text-[10px] text-slate-600 mt-1">Press Enter or comma to add a tag. Maximum 15 tags.</p>
             </div>
 
             {/* Notes */}
@@ -552,29 +552,29 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="label !mb-0">History</label>
-                  <span className="text-[10px] text-night-500">{versions.length} version{versions.length !== 1 ? 's' : ''}</span>
+                  <span className="text-[10px] text-slate-500">{versions.length} version{versions.length !== 1 ? 's' : ''}</span>
                 </div>
 
                 {loadingVersions ? (
-                  <div className="rounded-lg border border-night-700 bg-night-900/40 px-3 py-2 text-xs text-night-400">
+                  <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs text-slate-500">
                     Loading history…
                   </div>
                 ) : versions.length === 0 ? (
-                  <div className="rounded-lg border border-night-700 bg-night-900/40 px-3 py-2 text-xs text-night-500">
+                  <div className="rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2 text-xs text-slate-500">
                     No previous versions yet.
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-night-700 bg-night-900/40 divide-y divide-night-700/60">
+                  <div className="rounded-lg border border-slate-800 bg-slate-900/40 divide-y divide-slate-700/60">
                     {versions.slice(0, 8).map((version) => (
                       <div key={version.id} className="flex items-center justify-between gap-3 px-3 py-2">
                         <div className="min-w-0">
-                          <p className="text-xs text-night-200 truncate">v{version.versionNumber} · {version.title || 'Untitled'}</p>
-                          <p className="text-[10px] text-night-500">{new Date(version.createdAt).toLocaleString()}</p>
+                          <p className="text-xs text-slate-300 truncate">v{version.versionNumber} · {version.title || 'Untitled'}</p>
+                          <p className="text-[10px] text-slate-500">{new Date(version.createdAt).toLocaleString()}</p>
                         </div>
                         <button
                           type="button"
                           onClick={() => restoreFromVersion(version)}
-                          className="btn-ghost border border-night-600/50 px-2.5 py-1 text-[11px]"
+                          className="btn-ghost border border-slate-700/50 px-2.5 py-1 text-[11px]"
                         >
                           Restore
                         </button>
@@ -593,7 +593,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             )}
             </div>
 
-            <div className="border-t border-night-700/50 lg:border-t-0 lg:border-l overflow-y-auto p-4 md:p-5">
+            <div className="border-t border-slate-800/50 lg:border-t-0 lg:border-l overflow-y-auto p-4 md:p-5">
               <div className="lg:sticky lg:top-0">
                 <PromptPreview
                   promptText={promptText}
@@ -611,7 +611,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-night-700/50 flex items-center justify-end gap-3 bg-night-900/30">
+          <div className="px-6 py-4 border-t border-slate-800/50 flex items-center justify-end gap-3 bg-slate-900/30">
             <button type="button" onClick={onClose} className="btn-ghost">
               Cancel
             </button>

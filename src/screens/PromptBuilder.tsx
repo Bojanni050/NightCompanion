@@ -76,7 +76,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
   // Detect greylist words in the built prompt
   const detectedGreylistWords = useMemo(() =>
     greylistEnabled && greylistWords.length > 0
-      ? greylistWords.filter(word => 
+      ? greylistWords.filter(word =>
           composedPrompt.toLowerCase().includes(word.toLowerCase())
         )
       : [],
@@ -94,8 +94,8 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
     }
 
     const duplicate = existingPromptsResult.data.find(
-      prompt => 
-        prompt.promptText.trim() === composedPrompt.trim() && 
+      prompt =>
+        prompt.promptText.trim() === composedPrompt.trim() &&
         prompt.title.trim() === savedTitle.trim()
     )
 
@@ -139,11 +139,11 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
         <div className={`flex items-center justify-between px-8 pb-5 ${embedded ? 'pt-5' : 'pt-8'}`}>
           <div>
             <h1 className="text-2xl font-semibold text-white tracking-tight">Prompt Builder</h1>
-            <p className="text-sm text-night-400 mt-0.5">Compose prompts from modular parts</p>
+            <p className="text-sm text-slate-500 mt-0.5">Compose prompts from modular parts</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-night-400">Join with</span>
+              <span className="text-xs text-slate-500">Join with</span>
               <select
                 value={separator}
                 onChange={(e) => setSeparator(e.target.value as typeof separator)}
@@ -157,7 +157,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-night-400">Style profile</span>
+              <span className="text-xs text-slate-500">Style profile</span>
               <select
                 value={selectedStyleProfileId}
                 onChange={(e) => setSelectedStyleProfileId(e.target.value ? Number(e.target.value) : '')}
@@ -193,16 +193,17 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
       </div>
 
       {/* Right: output panel */}
-      <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-night-700/50 flex flex-col bg-night-900/30">
-        <div className="px-5 pt-8 pb-4 border-b border-night-700/50">
+      <div className="w-full lg:w-80 flex-shrink-0 border-t lg:border-t-0 lg:border-l border-slate-800/50 flex flex-col bg-slate-900/30">
+        <div className="px-5 pt-8 pb-4 border-b border-slate-800/50">
           <h2 className="text-sm font-semibold text-white mb-0.5">Built Prompt</h2>
-          <p className="text-[10px] text-night-500">{composedPrompt.length} characters</p>
+          <p className="text-[10px] text-slate-300">{composedPrompt.length} characters</p>
         </div>
 
         {/* Greylist warning */}
         {detectedGreylistWords.length > 0 && (
           <div className="px-5 py-2 bg-glow-amber/10 border-b border-glow-amber/40">
-            <p className="text-[10px] text-glow-amber">
+            <p className="text-[10px] text-slate-500">
+              Greylist words detected: {detectedGreylistWords.join(', ')}
               ⚠️ Greylist words detected: {detectedGreylistWords.join(', ')}
             </p>
           </div>
@@ -222,7 +223,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
         </div>
 
         {/* Actions */}
-        <div className="px-5 py-4 border-t border-night-700/50 space-y-3">
+        <div className="px-5 py-4 border-t border-slate-800/50 space-y-3">
           <div className="space-y-2">
             <input
               type="text"
@@ -234,7 +235,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
             <button
               onClick={handleSaveToLibrary}
               disabled={!composedPrompt || !savedTitle.trim()}
-              className="w-full btn-ghost text-xs border border-night-600/50"
+              className="w-full btn-ghost text-xs border border-slate-700/50"
             >
               Save to Library
             </button>

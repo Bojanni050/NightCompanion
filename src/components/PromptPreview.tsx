@@ -127,15 +127,15 @@ export default function PromptPreview({
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-white">Prompt Preview</h3>
-          <p className="text-xs text-night-400 mt-1">Live combined output as sent to NightCafe.</p>
+          <p className="text-xs text-slate-500 mt-1">Live combined output as sent to NightCafe.</p>
         </div>
       </div>
 
-      <div className="mt-4 rounded-xl border border-night-700/60 bg-night-900/50 p-3">
+      <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/50 p-3">
         {promptSegments.length === 0 ? (
-          <p className="text-xs text-night-500">Type a prompt to see the combined preview.</p>
+          <p className="text-xs text-slate-500">Type a prompt to see the combined preview.</p>
         ) : (
-          <p className="text-xs text-night-100 leading-relaxed whitespace-pre-wrap">
+          <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
             {promptSegments.map((segment, segmentIndex) => (
               <span key={`${segment.text}-${segmentIndex}`}>
                 {segmentIndex > 0 ? ', ' : ''}
@@ -152,12 +152,12 @@ export default function PromptPreview({
         )}
       </div>
 
-      <div className="mt-3 rounded-xl border border-night-700/60 bg-night-900/30 p-3">
-        <p className="text-[11px] uppercase tracking-wide text-night-400">Negative</p>
+      <div className="mt-3 rounded-xl border border-slate-800/60 bg-slate-900/30 p-3">
+        <p className="text-[11px] uppercase tracking-wide text-slate-500">Negative</p>
         {negativeSegments.length === 0 ? (
-          <p className="mt-1 text-xs text-night-500">—</p>
+          <p className="mt-1 text-xs text-slate-500">—</p>
         ) : (
-          <p className="mt-1 text-xs text-night-200 whitespace-pre-wrap leading-relaxed">
+          <p className="mt-1 text-xs text-slate-400 whitespace-pre-wrap leading-relaxed">
             {negativeSegments.map((segment, segmentIndex) => (
               <span key={`${segment.text}-${segmentIndex}`}>
                 {segmentIndex > 0 ? ', ' : ''}
@@ -172,20 +172,20 @@ export default function PromptPreview({
         )}
       </div>
 
-      <div className="mt-3 text-[11px] text-night-400 space-y-1">
-        <p>Model: <span className="text-night-200">{model || '—'}</span></p>
+      <div className="mt-3 text-[11px] text-slate-500 space-y-1">
+        <p>Model: <span className="text-slate-400">{model || '—'}</span></p>
         {typeof modelAdviceEnabled === 'boolean' && (
           <p>
             Modeladvies:{' '}
-            <span className={modelAdviceEnabled ? 'text-green-300' : 'text-night-300'}>
+            <span className={modelAdviceEnabled ? 'text-green-300' : 'text-slate-300'}>
               {modelAdviceEnabled ? 'Aan' : 'Uit'}
             </span>
           </p>
         )}
         <p>
           Woordtelling: <span className={wordToneClass}>{wordCount}/{maxWords}</span>
-          <span className="text-night-500"> · </span>
-          Tekens: <span className="text-night-200">{characterCount}</span>
+          <span className="text-slate-500"> · </span>
+          Tekens: <span className="text-slate-400">{characterCount}</span>
         </p>
       </div>
 
@@ -194,7 +194,7 @@ export default function PromptPreview({
           type="button"
           onClick={handleCopy}
           disabled={!combinedPrompt}
-          className={`btn-ghost border border-night-600/50 ${copied ? 'text-green-300 border-green-600/50 bg-green-900/20' : ''}`}
+          className={`btn-ghost border border-slate-700/50 ${copied ? 'text-green-300 border-green-600/50 bg-green-900/20' : ''}`}
         >
           {copied ? '✓ Copied' : '📋 Copy'}
         </button>
@@ -203,7 +203,7 @@ export default function PromptPreview({
             type="button"
             onClick={onSave}
             disabled={saveDisabled}
-            className="btn-ghost border border-night-600/50"
+            className="btn-ghost border border-slate-700/50"
           >
             💾 {saveLabel}
           </button>
