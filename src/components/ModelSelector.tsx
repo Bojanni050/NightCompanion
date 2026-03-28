@@ -335,10 +335,10 @@ export default function ModelSelector({
           aria-modal="true"
         >
           <div
-            className="w-full max-w-2xl rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl"
+            className="w-full max-w-2xl max-h-[95vh] rounded-3xl border border-slate-700 bg-slate-900 shadow-2xl flex flex-col"
             onMouseDown={(event) => event.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-6 py-5">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-800 px-6 py-5 shrink-0">
               <div className="min-w-0">
                 <div className="text-base font-semibold text-white truncate">{getModelTitle(detailsModel)}</div>
                 {detailsModel.provider && (
@@ -356,7 +356,7 @@ export default function ModelSelector({
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-5">
+            <div className="px-6 py-5 space-y-5 overflow-y-auto">
               <div className="flex flex-wrap gap-2">
                 {getCapabilityChips(detailsModel.capabilities ?? []).map((capability) => (
                   <span
