@@ -1699,8 +1699,8 @@ export function registerAiIpc({
           throw new Error(`OpenRouter request failed (${response.status}): ${errText.slice(0, 300)}`)
         }
 
-        const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
-        const prompt = payload.choices?.[0]?.message?.content?.trim()
+        const payload = (await response.json()) as unknown
+        const prompt = extractChatCompletionContent(payload)
         if (!prompt) throw new Error('No prompt content returned from OpenRouter.')
 
         resultPrompt = prompt
@@ -1717,7 +1717,7 @@ export function registerAiIpc({
         requestPayload = {
           model: modelId,
           temperature,
-          max_tokens: 350,
+          max_tokens: 2048,
           messages: [
             { role: 'system', content: BASE_PERSONA },
             { role: 'user', content: userPrompt },
@@ -1742,8 +1742,8 @@ export function registerAiIpc({
           throw new Error(`OpenRouter request failed (${response.status}): ${errText.slice(0, 300)}`)
         }
 
-        const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
-        const prompt = payload.choices?.[0]?.message?.content?.trim()
+        const payload = (await response.json()) as unknown
+        const prompt = extractChatCompletionContent(payload)
         if (!prompt) throw new Error('No prompt content returned from OpenRouter.')
 
         resultPrompt = prompt
@@ -1763,7 +1763,7 @@ export function registerAiIpc({
       requestPayload = {
         model: modelId,
         temperature,
-        max_tokens: 350,
+        max_tokens: 2048,
         messages: [
           { role: 'system', content: BASE_PERSONA },
           { role: 'user', content: userPrompt },
@@ -1783,8 +1783,8 @@ export function registerAiIpc({
         throw new Error(`Local AI request failed (${response.status}): ${errText.slice(0, 300)}`)
       }
 
-      const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> }
-      const prompt = payload.choices?.[0]?.message?.content?.trim()
+      const payload = (await response.json()) as unknown
+      const prompt = extractChatCompletionContent(payload)
       if (!prompt) throw new Error('No prompt content returned from local provider.')
 
       resultPrompt = prompt
