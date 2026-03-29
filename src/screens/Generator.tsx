@@ -198,11 +198,19 @@ export default function Generator() {
     setAdvisingAi(true)
 
     try {
-      const result = await window.electronAPI.generator.adviseModel({
+      const input = {
         prompt,
         mode,
         budgetMode,
-      })
+      }
+
+      console.groupCollapsed('[Get AI Advice] request')
+      console.log('input:', input)
+
+      const result = await window.electronAPI.generator.adviseModel(input)
+
+      console.log('result:', result)
+      console.groupEnd()
 
       if (!result || result.error || !result.data?.recommendation?.modelName) {
         return
@@ -215,7 +223,12 @@ export default function Generator() {
       setAdvisorFastest(result.data.fastest?.modelName || '')
       await fetchModelSupport(result.data.recommendation.modelName)
     } catch (error) {
+      console.groupCollapsed('[Get AI Advice] error')
+      console.log('mode:', mode)
+      console.log('budgetMode:', budgetMode)
+      console.log('prompt:', prompt)
       console.error('Model advice failed:', error)
+      console.groupEnd()
     } finally {
       setAdvisingAi(false)
     }

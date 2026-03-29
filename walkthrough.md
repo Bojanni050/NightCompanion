@@ -18,6 +18,12 @@
 - Conclusions: A lightweight modal keeps the list compact while still allowing full inspection of model details on demand.
 - Actions: Updated `src/components/ModelSelector.tsx` to add a `Read more` action that opens a modal showing full model details (capabilities, prices, ID, and full description) and uses a lightbox-style blurred backdrop; increased z-index values so the dropdown and modal always render above the rest of the UI; constrained the modal to `max-h-[95vh]` and made the body scrollable; fixed a generator-page runtime error by avoiding `useCallback`; validated with `npm run build`.
 
+## 2026-03-29 (Generator — log Get AI Advice prompt/response)
+
+- Findings: When testing model advice it was hard to see what prompt payload was sent and what the AI returned.
+- Conclusions: Scoped console logs around the request make debugging easy without adding global noise.
+- Actions: Updated `src/screens/Generator.tsx` to log the `adviseModel` input payload and the IPC result/error using `console.groupCollapsed`; validated with `npm run build`.
+
 ## 2026-03-28 (AI config — show last updated for models list)
 
 - Findings: The AI configuration provider setup allowed refreshing the models list, but it was not visible when the list was last fetched.
