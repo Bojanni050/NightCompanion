@@ -93,7 +93,7 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 space-y-1 pb-4">
         {NAV_ITEMS.map((item) => {
           const isActive = item.id === activeScreen
           return (
