@@ -1,21 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { StyleProfile } from '../types'
 import PromptPreview from '../components/PromptPreview'
+import { toast } from 'sonner'
 
 type Part = {
   id: string
   label: string
   placeholder: string
   value: string
+  maxWords?: number
 }
 
 const DEFAULT_PARTS: Part[] = [
-  { id: 'subject', label: 'Subject', placeholder: 'e.g. a lone wolf standing on a cliff', value: '' },
-  { id: 'style', label: 'Art Style', placeholder: 'e.g. oil painting, impressionist, digital art', value: '' },
-  { id: 'lighting', label: 'Lighting', placeholder: 'e.g. golden hour, dramatic rim lighting, moonlight', value: '' },
-  { id: 'mood', label: 'Mood / Atmosphere', placeholder: 'e.g. ethereal, melancholic, dreamlike', value: '' },
-  { id: 'artist', label: 'Artist References', placeholder: 'e.g. in the style of Alphonse Mucha, Greg Rutkowski', value: '' },
-  { id: 'technical', label: 'Technical Details', placeholder: 'e.g. 8k, highly detailed, cinematic, trending on ArtStation', value: '' },
+  { id: 'subject', label: 'Subject', placeholder: 'e.g. a lone wolf standing on a cliff', value: '', maxWords: 10 },
+  { id: 'style', label: 'Art Style', placeholder: 'e.g. oil painting, impressionist, digital art', value: '', maxWords: 10 },
+  { id: 'lighting', label: 'Lighting', placeholder: 'e.g. golden hour, dramatic rim lighting, moonlight', value: '', maxWords: 10 },
+  { id: 'mood', label: 'Mood / Atmosphere', placeholder: 'e.g. ethereal, melancholic, dreamlike', value: '', maxWords: 5 },
+  { id: 'artist', label: 'Artist References', placeholder: 'e.g. in the style of Alphonse Mucha, Greg Rutkowski', value: '', maxWords: 2 },
+  { id: 'technical', label: 'Technical Details', placeholder: 'e.g. 8k, highly detailed, cinematic, trending on ArtStation', value: '', maxWords: 5 },
 ]
 
 type PromptBuilderProps = {
@@ -32,9 +34,54 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [styleProfiles, setStyleProfiles] = useState<StyleProfile[]>([])
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<number | ''>('')
+  const [generatingPartId, setGeneratingPartId] = useState<string | null>(null)
 
   const updatePart = (id: string, value: string) => {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, value } : p)))
+  }
+
+  const generateForPart = async (partId: string) => {
+    const part = parts.find((p) => p.id === partId)
+    if (!part) return
+
+    setGeneratingPartId(partId)
+
+    // Field-specific prompts
+    const fieldPrompts = {
+      subject: 'Generate a creative subject for an AI art prompt. Be specific and evocative.',
+      style: 'Generate an art style description for an AI art prompt. Mention medium, movement, or aesthetic.',
+      lighting: 'Generate a lighting description for an AI art prompt. Include time of day, quality, and direction.',
+      mood: 'Generate a mood or atmosphere for an AI art prompt. Use concise, evocative words.',
+      artist: 'Generate artist references for an AI art prompt. Use "in the style of" format with artist names.',
+      technical: 'Generate technical details for an AI art prompt. Include resolution, detail level, and rendering terms.',
+    }
+
+    const ideaPrompt = fieldPrompts[part.id as keyof typeof fieldPrompts] ?? `Generate a ${part.label.toLowerCase()} for an AI art prompt.`
+
+    try {
+      const result = await window.electronAPI.generator.quickExpand({
+        idea: ideaPrompt,
+        creativity: 'balanced',
+      })
+
+      if (result.error || !result.data?.prompt) {
+        throw new Error(result.error || 'No content generated.')
+      }
+
+      let generated = result.data.prompt.trim()
+
+      // Enforce word limit
+      if (part.maxWords) {
+        const words = generated.split(/\s+/).slice(0, part.maxWords)
+        generated = words.join(' ')
+      }
+
+      updatePart(partId, generated)
+    } catch (error) {
+      toast.error(`Failed to generate ${part.label.toLowerCase()}: ${String(error)}`)
+    } finally {
+      setGeneratingPartId(null)
+    }
   }
 
   const builtPrompt = parts
@@ -180,13 +227,24 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
           {parts.map((part) => (
             <div key={part.id}>
               <label className="label">{part.label}</label>
-              <textarea
-                value={part.value}
-                onChange={(e) => updatePart(part.id, e.target.value)}
-                className="textarea"
-                rows={2}
-                placeholder={part.placeholder}
-              />
+              <div className="flex gap-2">
+                <textarea
+                  value={part.value}
+                  onChange={(e) => updatePart(part.id, e.target.value)}
+                  className="textarea flex-1"
+                  rows={2}
+                  placeholder={part.placeholder}
+                />
+                <button
+                  type="button"
+                  disabled={generatingPartId === part.id}
+                  onClick={() => void generateForPart(part.id)}
+                  className="btn-compact-primary"
+                  title={`Generate ${part.label.toLowerCase()}`}
+                >
+                  {generatingPartId === part.id ? '…' : '✨'}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -216,9 +274,6 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
             styleNegative={selectedStyleProfile?.commonNegativePrompts ?? ''}
             maxWords={maxWords}
             greylistWords={greylistEnabled ? greylistWords : []}
-            onSave={handleSaveToLibrary}
-            saveLabel="Save"
-            saveDisabled={!composedPrompt || !savedTitle.trim()}
           />
         </div>
 
