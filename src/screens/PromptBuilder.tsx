@@ -46,14 +46,14 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
 
     setGeneratingPartId(partId)
 
-    // Field-specific prompts
+    // Field-specific prompts - generate SHORT, SIMPLE content only
     const fieldPrompts = {
-      subject: 'Generate only a subject for an AI art prompt. Examples: "a solitary young woman", "a majestic phoenix rising", "an abandoned lighthouse on a cliff". Do not include any other prompt elements.',
-      style: 'Generate only an art style for an AI art prompt. Examples: "vivid digital concept art", "oil painting, impressionist", "hyper-realistic digital art". Do not include subject or other elements.',
-      lighting: 'Generate only lighting for an AI art prompt. Examples: "golden hour, dramatic rim lighting", "moonlight, soft glow", "dramatic side lighting, harsh shadows". Do not include subject or style.',
-      mood: 'Generate only a mood or atmosphere for an AI art prompt. Examples: "ethereal, melancholic", "dreamlike, serene", "mysterious, haunting". Use 2-3 evocative words only.',
-      artist: 'Generate only artist references for an AI art prompt. Examples: "in the style of Alphonse Mucha", "in the style of Greg Rutkowski", "in the style of Zdzisław Beksiński". Use only the "in the style of" format.',
-      technical: 'Generate only technical details for an AI art prompt. Examples: "8k, highly detailed, cinematic", "trending on ArtStation, octane render", "sharp focus, intricate details". Use only resolution and rendering terms.',
+      subject: 'Generate a short, simple subject (1-3 words). Examples: "a tree", "a yellow frog", "a mountain lake", "an old castle". No adjectives, no descriptions, just the core subject.',
+      style: 'Generate a short art style (1-3 words). Examples: "oil painting", "digital art", "watercolor", "3D render". Just the style name, nothing else.',
+      lighting: 'Generate short lighting terms (1-3 words). Examples: "golden hour", "moonlight", "dramatic lighting", "soft glow". Just the lighting description.',
+      mood: 'Generate a short mood (1-2 words). Examples: "dreamy", "mysterious", "serene", "dark". Just the mood word.',
+      artist: 'Generate a short artist reference. Examples: "in the style of Van Gogh", "in the style of Mucha". Just one artist reference.',
+      technical: 'Generate short technical terms (2-4 words). Examples: "8k resolution", "highly detailed", "cinematic lighting", "octane render". Just technical specs.',
     }
 
     const ideaPrompt = fieldPrompts[part.id as keyof typeof fieldPrompts] ?? `Generate a ${part.label.toLowerCase()} for an AI art prompt.`
