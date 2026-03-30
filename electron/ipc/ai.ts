@@ -2113,7 +2113,7 @@ export function registerAiIpc({
         style: 'Generate an art style (1-3 words). Examples: "oil painting", "digital art", "watercolor". Only the style name.',
         lighting: 'Generate lighting description (1-3 words). Examples: "golden hour", "moonlight", "dramatic lighting". Only lighting.',
         mood: 'Generate a mood (1-2 words). Examples: "dreamy", "mysterious", "serene". Only the mood word.',
-        artist: 'Generate artist reference. Examples: "in the style of Van Gogh", "in the style of Mucha". One artist only.',
+        artist: 'Generate an artist name or art movement (1-3 words). Examples: "Van Gogh", "Alphonse Mucha", "Art Nouveau", "Impressionism". Just the name, no "in the style of".',
         technical: 'Generate technical specs (2-4 words). Examples: "8k resolution", "highly detailed", "octane render". Only specs.',
       }
 
