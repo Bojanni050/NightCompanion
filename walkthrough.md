@@ -1,10 +1,16 @@
 # Walkthrough
 
-## 2026-03-30 (PromptBuilder — Gebruik als basis voor de generator knop)
+## 2026-03-30 (PromptBuilder — Generated Prompt field + copy + improve)
 
-- Findings: User wanted a way to use the composed prompt from Prompt Builder as a starting point (basis) for the Generator's Magic Quickstart feature, with a single button click.
-- Conclusions: Using localStorage as a communication channel between PromptBuilder and Generator is the simplest approach since PromptBuilder is embedded within Generator as a tab. The button saves the composed prompt to localStorage and switches to the Generator tab.
-- Actions: Added `onNavigate` prop to `PromptBuilder` component; added `🚀 Gebruik als basis` button in the header controls that saves `composedPrompt` to `localStorage.setItem('generatorInitialPrompt', ...)` and calls `onNavigate('generator')`; updated `Generator.tsx` to check for `generatorInitialPrompt` in localStorage on mount, set it as `quickStartIdea`, switch to the 'generator' tab, and clean up the localStorage key; validated with `npm run build`.
+- Findings: After generating a full prompt, it should not overwrite the prompt parts. Instead it should appear in a dedicated "Generated Prompt" field with a Copy button underneath, plus an Improve Prompt button that behaves like the Generator quickstart improve action.
+- Conclusions: Keep PromptBuilder field values intact and store the generated full prompt separately in component state. Reuse the existing `generator.improvePrompt` IPC call for improvements.
+- Actions: Removed the previous "Gebruik als basis" button and its localStorage/navigation glue; updated `src/screens/PromptBuilder.tsx` to store generated prompt in a new `generatedPrompt` state, render a "Generated Prompt" textarea, add Copy and Improve Prompt buttons, and clear it on "Clear all"; updated `src/screens/Generator.tsx` to stop passing navigation props / reading localStorage; validated with `npm run build`.
+
+## 2026-03-31 (Generator > Prompt Builder — Generate Title button)
+
+- Findings: User wanted a "Generate Title" button next to the Prompt Builder title field on the Generator page, positioned left of "Save to Library".
+- Conclusions: Reuse the existing `generator.generateTitle` IPC call and base it on the current composed prompt.
+- Actions: Updated `src/screens/PromptBuilder.tsx` to add a `Generate Title (AI)` button next to the title input (left of Save), with loading state and toast feedback; validated with `npm run build`.
 
 ## 2026-03-30 (PromptBuilder — Magic Fill button to fill all empty fields)
 

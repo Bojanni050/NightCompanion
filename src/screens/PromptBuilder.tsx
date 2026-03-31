@@ -25,10 +25,9 @@ type PromptBuilderProps = {
   greylistEnabled?: boolean
   greylistWords?: string[]
   maxWords?: number
-  onNavigate?: (screen: 'generator') => void
 }
 
-export default function PromptBuilder({ embedded = false, greylistEnabled = true, greylistWords = [], maxWords = 70, onNavigate }: PromptBuilderProps) {
+export default function PromptBuilder({ embedded = false, greylistEnabled = true, greylistWords = [], maxWords = 70 }: PromptBuilderProps) {
   const [parts, setParts] = useState<Part[]>(DEFAULT_PARTS)
   const [separator, setSeparator] = useState<', ' | '. ' | ' | '>( ', ')
   const [savedTitle, setSavedTitle] = useState('')
@@ -38,9 +37,36 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
   const [generatingPartId, setGeneratingPartId] = useState<string | null>(null)
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   const [isFillingAll, setIsFillingAll] = useState(false)
+  const [generatedPrompt, setGeneratedPrompt] = useState('')
+  const [isImprovingGeneratedPrompt, setIsImprovingGeneratedPrompt] = useState(false)
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
 
   const updatePart = (id: string, value: string) => {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, value } : p)))
+  }
+
+  const handleGenerateTitle = async () => {
+    const prompt = composedPrompt.trim()
+    if (!prompt) {
+      toast.warning('Build a prompt first.')
+      return
+    }
+
+    setIsGeneratingTitle(true)
+
+    try {
+      const result = await window.electronAPI.generator.generateTitle({ prompt })
+      if (result.error || !result.data?.title) {
+        throw new Error(result.error || 'No title generated.')
+      }
+
+      setSavedTitle(result.data.title)
+      toast.success('Title generated!')
+    } catch (error) {
+      toast.error(`Failed to generate title: ${String(error)}`)
+    } finally {
+      setIsGeneratingTitle(false)
+    }
   }
 
   const generateForPart = async (partId: string) => {
@@ -94,15 +120,45 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
         throw new Error(result.error || 'No prompt generated.')
       }
 
-      // Update all parts with the generated values by parsing the result
-      // The AI returns a complete prompt, so we'll put it in the subject field
-      // and clear the others, or we could try to parse it - for now, put in subject
-      updatePart('subject', result.data.prompt)
+      setGeneratedPrompt(result.data.prompt)
       toast.success('Prompt generated!')
     } catch (error) {
       toast.error(`Failed to generate prompt: ${String(error)}`)
     } finally {
       setIsGeneratingPrompt(false)
+    }
+  }
+
+  const handleCopyGeneratedPrompt = async () => {
+    const value = generatedPrompt.trim()
+    if (!value) return
+
+    try {
+      await navigator.clipboard.writeText(value)
+      toast.success('Copied!')
+    } catch (error) {
+      toast.error(`Failed to copy: ${String(error)}`)
+    }
+  }
+
+  const handleImproveGeneratedPrompt = async () => {
+    const value = generatedPrompt.trim()
+    if (!value) return
+
+    setIsImprovingGeneratedPrompt(true)
+
+    try {
+      const result = await window.electronAPI.generator.improvePrompt({ prompt: value })
+      if (result.error || !result.data?.prompt) {
+        throw new Error(result.error || 'No improved prompt returned.')
+      }
+
+      setGeneratedPrompt(result.data.prompt)
+      toast.success('Prompt improved!')
+    } catch (error) {
+      toast.error(`Failed to improve prompt: ${String(error)}`)
+    } finally {
+      setIsImprovingGeneratedPrompt(false)
     }
   }
 
@@ -237,13 +293,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
   const handleClear = () => {
     setParts(DEFAULT_PARTS)
     setSavedTitle('')
-  }
-
-  const handleUseAsBasis = () => {
-    // Save composed prompt to localStorage for Generator to pick up
-    localStorage.setItem('generatorInitialPrompt', composedPrompt)
-    // Navigate to generator
-    onNavigate?.('generator')
+    setGeneratedPrompt('')
   }
 
   return (
@@ -287,15 +337,6 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
               </select>
             </div>
             <button onClick={handleClear} className="btn-ghost text-xs">Clear all</button>
-            <button
-              type="button"
-              disabled={!composedPrompt || isFillingAll}
-              onClick={() => void handleUseAsBasis()}
-              className="btn-primary text-xs"
-              title="Gebruik dit prompt als basis in de Generator"
-            >
-              🚀 Gebruik als basis
-            </button>
             <button
               type="button"
               disabled={isFillingAll}
@@ -346,6 +387,35 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
             <p className="text-xs text-slate-500 mt-2 text-center">
               Creates a complete NightCafe prompt. Empty fields will be filled by AI.
             </p>
+
+            <div className="mt-4">
+              <label className="label">Generated Prompt</label>
+              <textarea
+                value={generatedPrompt}
+                onChange={(e) => setGeneratedPrompt(e.target.value)}
+                className="textarea w-full"
+                rows={4}
+                placeholder="Generate a prompt to see it here…"
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  disabled={!generatedPrompt.trim()}
+                  onClick={() => void handleCopyGeneratedPrompt()}
+                  className="btn-ghost text-xs"
+                >
+                  Copy
+                </button>
+                <button
+                  type="button"
+                  disabled={!generatedPrompt.trim() || isImprovingGeneratedPrompt}
+                  onClick={() => void handleImproveGeneratedPrompt()}
+                  className="btn-primary text-xs"
+                >
+                  {isImprovingGeneratedPrompt ? 'Improving…' : 'Improve Prompt'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -387,13 +457,23 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
               className="input text-xs"
               placeholder="Title to save as…"
             />
-            <button
-              onClick={handleSaveToLibrary}
-              disabled={!composedPrompt || !savedTitle.trim()}
-              className="w-full btn-save-library-builder text-xs"
-            >
-              Save to Library
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => void handleGenerateTitle()}
+                disabled={!composedPrompt.trim() || isGeneratingTitle}
+                className="btn-ghost text-xs"
+              >
+                {isGeneratingTitle ? 'Generating…' : 'Generate Title (AI)'}
+              </button>
+              <button
+                onClick={handleSaveToLibrary}
+                disabled={!composedPrompt || !savedTitle.trim()}
+                className="flex-1 btn-save-library-builder text-xs"
+              >
+                Save to Library
+              </button>
+            </div>
           </div>
 
           {saveMsg && (

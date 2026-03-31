@@ -86,8 +86,8 @@ export default function Generator() {
   const [status, setStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [improving, setImproving] = useState(false)
-  const [generatingNegative, setGeneratingNegative] = useState(false)
-  const [improvingNegative, setImprovingNegative] = useState(false)
+  const [generatingNegative] = useState(false)
+  const [improvingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
   const [savedTitle, setSavedTitle] = useState('')
   const [recommendedModel, setRecommendedModel] = useState('')
@@ -327,13 +327,6 @@ export default function Generator() {
       setBudgetMode('balanced')
     }
 
-    // Check for initial prompt from PromptBuilder
-    const initialPrompt = localStorage.getItem('generatorInitialPrompt')
-    if (initialPrompt) {
-      setQuickStartIdea(initialPrompt)
-      setTab('generator')
-      localStorage.removeItem('generatorInitialPrompt')
-    }
   }, [])
 
   useEffect(() => {
@@ -1068,7 +1061,7 @@ export default function Generator() {
               {greylistCard}
             </div>
             <div className="mt-1 card border-slate-800/50">
-              <PromptBuilder embedded greylistEnabled={greylistEnabled} greylistWords={greylistWords} maxWords={maxWords} onNavigate={() => setTab('generator')} />
+              <PromptBuilder embedded greylistEnabled={greylistEnabled} greylistWords={greylistWords} maxWords={maxWords} />
             </div>
           </>
         )}
