@@ -60,6 +60,24 @@
 - Conclusions: Increase the fixed sidebar width while keeping the layout behaviour (`flex-shrink-0`) unchanged.
 - Actions: Updated `src/components/Sidebar.tsx` to set the sidebar width to `w-[270px]`; validated with `npm run build`.
 
+## 2026-03-31 (UI — Token/Cost widget fit in sidebar)
+
+- Findings: The expanded Token/Cost widget overflowed / didn’t fit cleanly inside the sidebar width.
+- Conclusions: Use a more compact period selector layout and make the footer actions full-width in a two-column grid.
+- Actions: Updated `src/components/TokenCostWidget.tsx` to switch the period selector to a compact 2-column grid and make the bottom buttons a 2-column grid; validated with `npm run build`.
+
+## 2026-03-31 (UI — Token/Cost widget summary rows align)
+
+- Findings: The top summary rows (Session/Daily) didn’t align neatly, with the cost values not lining up.
+- Conclusions: Use a fixed grid structure with a dedicated cost column and a dedicated chevron column.
+- Actions: Updated `src/components/TokenCostWidget.tsx` to render the summary rows in `grid-cols-[1fr_auto_auto]` and reserve the chevron column for both rows; validated with `npm run build`.
+
+## 2026-03-31 (UI — Token/Cost widget cost tile below)
+
+- Findings: The expanded widget stat tiles were cramped when showing Calls/Tokens/Cost in one row.
+- Conclusions: Place Cost underneath and span it across the full width for better readability.
+- Actions: Updated `src/components/TokenCostWidget.tsx` to render stat tiles as a 2-column grid with Cost `col-span-2`; validated with `npm run build`.
+
 ## 2026-03-30 (PromptBuilder — Magic Fill button to fill all empty fields)
 
 - Findings: User wanted a single button to fill all empty fields at once with AI-generated content, instead of clicking each field's generate button individually.

@@ -151,7 +151,7 @@ export default function TokenCostWidget({ onNavigate }: Props) {
       type="button"
       onClick={() => setPeriod(key)}
       className={[
-        'px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors',
+        'px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors text-left',
         period === key ? 'bg-glow-amber/30 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-900',
       ].join(' ')}
     >
@@ -166,53 +166,55 @@ export default function TokenCostWidget({ onNavigate }: Props) {
         onClick={() => setExpanded((v) => !v)}
         className="w-full text-left"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold text-slate-200">
-                {loading ? '—' : `${formatCalls(summary.session.calls)} calls · ${formatTokens(summary.session.totalTokens)} tok`}
-              </p>
-              <p className="text-xs font-semibold text-glow-amber">
-                {loading ? '—' : `${sessionCost.label}${formatCost(sessionCost.value)}`}
-              </p>
-            </div>
+        <div className="grid grid-cols-[1fr_auto_auto] items-start gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-200 truncate">
+              {loading ? '—' : `${formatCalls(summary.session.calls)} calls · ${formatTokens(summary.session.totalTokens)} tok`}
+            </p>
             <p className="text-[10px] text-slate-500 uppercase tracking-wide mt-0.5">Session usage</p>
           </div>
+
+          <p className="text-xs font-semibold text-glow-amber mt-0.5">
+            {loading ? '—' : `${sessionCost.label}${formatCost(sessionCost.value)}`}
+          </p>
 
           <div className="mt-0.5 text-slate-500">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
 
-        <div className="mt-3 flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs font-semibold text-slate-200">
-                {loading ? '—' : `${formatCalls(summary.today.calls)} calls · ${formatTokens(summary.today.totalTokens)} tok`}
-              </p>
-              <p className="text-xs font-semibold text-glow-amber">
-                {loading ? '—' : `${todayCost.label}${formatCost(todayCost.value)}`}
-              </p>
-            </div>
+        <div className="mt-3 grid grid-cols-[1fr_auto_auto] items-start gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-slate-200 truncate">
+              {loading ? '—' : `${formatCalls(summary.today.calls)} calls · ${formatTokens(summary.today.totalTokens)} tok`}
+            </p>
             <p className="text-[10px] text-slate-500 uppercase tracking-wide mt-0.5">Daily usage</p>
           </div>
+
+          <p className="text-xs font-semibold text-glow-amber mt-0.5">
+            {loading ? '—' : `${todayCost.label}${formatCost(todayCost.value)}`}
+          </p>
+
+          <div className="mt-0.5 w-4 h-4" />
         </div>
       </button>
 
       {expanded && (
         <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-950/40 p-3">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-1 bg-slate-950/50 border border-slate-800 rounded-xl p-0.5">
-              {periodButton('today', 'Today')}
-              {periodButton('7d', '7 days')}
-              {periodButton('month', 'Month')}
-              {periodButton('all', 'All time')}
-              {periodButton('custom', 'Custom')}
+            <div className="min-w-0 flex-1">
+              <div className="grid grid-cols-2 gap-1 bg-slate-950/50 border border-slate-800 rounded-xl p-1">
+                {periodButton('today', 'Today')}
+                {periodButton('7d', '7 days')}
+                {periodButton('month', 'Month')}
+                {periodButton('all', 'All time')}
+                {periodButton('custom', 'Custom')}
+              </div>
             </div>
 
             <button
               type="button"
-              className="btn-compact-ghost"
+              className="btn-compact-ghost shrink-0"
               onClick={(e) => {
                 e.stopPropagation()
                 void fetchAll()
@@ -241,7 +243,7 @@ export default function TokenCostWidget({ onNavigate }: Props) {
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
               <p className="text-[10px] text-slate-500 uppercase tracking-wide">Calls</p>
               <p className="text-sm font-semibold text-white">
@@ -254,7 +256,7 @@ export default function TokenCostWidget({ onNavigate }: Props) {
                 {detailLoading ? '—' : formatTokens(detailTotals.totalTokens)}
               </p>
             </div>
-            <div className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2 col-span-2">
               <p className="text-[10px] text-slate-500 uppercase tracking-wide">Cost</p>
               <p className="text-sm font-semibold text-white">
                 {detailLoading ? '—' : `${detailCost.label}${formatCost(detailCost.value)}`}
@@ -262,10 +264,10 @@ export default function TokenCostWidget({ onNavigate }: Props) {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center justify-between">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             <button
               type="button"
-              className="btn-compact-ghost"
+              className="btn-compact-ghost w-full justify-center"
               onClick={() => {
                 onNavigate('usage')
               }}
@@ -275,7 +277,7 @@ export default function TokenCostWidget({ onNavigate }: Props) {
 
             <button
               type="button"
-              className="btn-compact-ghost"
+              className="btn-compact-ghost w-full justify-center"
               onClick={() => setExpanded(false)}
             >
               Close
