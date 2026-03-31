@@ -4,6 +4,7 @@ import { PageContainer } from '../components/PageContainer'
 
 type DailyRow = {
   day: string
+  calls: number
   promptTokens: number
   completionTokens: number
   totalTokens: number
@@ -60,13 +61,14 @@ export default function Usage() {
   const totals = useMemo(() => {
     return rows.reduce(
       (acc, row) => {
+        acc.calls += row.calls
         acc.promptTokens += row.promptTokens
         acc.completionTokens += row.completionTokens
         acc.totalTokens += row.totalTokens
         acc.costUsd += row.costUsd
         return acc
       },
-      { promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 }
+      { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 }
     )
   }, [rows])
 

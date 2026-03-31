@@ -7,6 +7,7 @@ import { aiUsageEvents } from '../../src/lib/schema'
 type Database = ReturnType<typeof drizzle<typeof schema>>
 
 type UsageTotals = {
+  calls: number
   promptTokens: number
   completionTokens: number
   totalTokens: number
@@ -31,6 +32,7 @@ type UsageDailyTotals = UsageTotals & {
 }
 
 const sessionTotals: UsageTotals = {
+  calls: 0,
   promptTokens: 0,
   completionTokens: 0,
   totalTokens: 0,
@@ -38,6 +40,7 @@ const sessionTotals: UsageTotals = {
 }
 
 export function bumpSessionTotals(delta: UsageTotals) {
+  sessionTotals.calls += delta.calls
   sessionTotals.promptTokens += delta.promptTokens
   sessionTotals.completionTokens += delta.completionTokens
   sessionTotals.totalTokens += delta.totalTokens
@@ -45,6 +48,7 @@ export function bumpSessionTotals(delta: UsageTotals) {
 }
 
 export function resetSessionTotals() {
+  sessionTotals.calls = 0
   sessionTotals.promptTokens = 0
   sessionTotals.completionTokens = 0
   sessionTotals.totalTokens = 0
@@ -57,6 +61,7 @@ function toNumber(value: unknown): number {
 }
 
 function buildTotals(input: { promptTokens?: unknown; completionTokens?: unknown; totalTokens?: unknown; costUsd?: unknown }): UsageTotals {
+  const calls = toNumber((input as { calls?: unknown }).calls)
   const promptTokens = toNumber(input.promptTokens)
   const completionTokens = toNumber(input.completionTokens)
   const totalTokens = Number.isFinite(toNumber(input.totalTokens)) && toNumber(input.totalTokens) > 0
@@ -65,6 +70,7 @@ function buildTotals(input: { promptTokens?: unknown; completionTokens?: unknown
   const costUsd = toNumber(input.costUsd)
 
   return {
+    calls,
     promptTokens,
     completionTokens,
     totalTokens,
@@ -84,6 +90,7 @@ export function registerUsageIpc({ db }: { db: Database }) {
 
       const todayRows = await db
         .select({
+          calls: sql<number>`coalesce(count(*), 0)`,
           promptTokens: sql<number>`coalesce(sum(${aiUsageEvents.promptTokens}), 0)`,
           completionTokens: sql<number>`coalesce(sum(${aiUsageEvents.completionTokens}), 0)`,
           totalTokens: sql<number>`coalesce(sum(${aiUsageEvents.totalTokens}), 0)`,
@@ -99,6 +106,7 @@ export function registerUsageIpc({ db }: { db: Database }) {
           providerId: aiUsageEvents.providerId,
           modelId: aiUsageEvents.modelId,
           endpoint: aiUsageEvents.endpoint,
+          calls: sql<number>`1`,
           promptTokens: aiUsageEvents.promptTokens,
           completionTokens: aiUsageEvents.completionTokens,
           totalTokens: aiUsageEvents.totalTokens,
@@ -143,6 +151,7 @@ export function registerUsageIpc({ db }: { db: Database }) {
       const rows = await db
         .select({
           day: sql<string>`date_trunc('day', ${aiUsageEvents.createdAt})`,
+          calls: sql<number>`coalesce(count(*), 0)`,
           promptTokens: sql<number>`coalesce(sum(${aiUsageEvents.promptTokens}), 0)`,
           completionTokens: sql<number>`coalesce(sum(${aiUsageEvents.completionTokens}), 0)`,
           totalTokens: sql<number>`coalesce(sum(${aiUsageEvents.totalTokens}), 0)`,

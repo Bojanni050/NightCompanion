@@ -48,6 +48,12 @@
 - Conclusions: Normalising the returned text in IPC ensures the renderer never displays provider-specific escaping artefacts.
 - Actions: Updated `electron/ipc/ai.ts` to normalise AI output text via `normalizeAiText()` and applied it to generator prompt outputs (including `generator:quickExpand` and `generator:generatePromptFromFields`); validated with `npm run build`.
 
+## 2026-03-31 (UI — Token/Cost widget matches reference)
+
+- Findings: The sidebar Token/Cost widget layout needed to match the reference design with Session/Daily rows, an expandable details panel, and Calls/Tokens/Cost summary.
+- Conclusions: Use `usage:getSummary` for session + today, and `usage:listDaily` for range totals; include `calls` in usage totals so the widget can display call counts consistently.
+- Actions: Updated `electron/ipc/usage.ts` + `electron/ipc/ai.ts` to track `calls` in session/today/range totals; updated typings in `electron/preload.ts`, `src/types/electron.d.ts`, and `src/screens/Usage.tsx`; rebuilt `src/components/TokenCostWidget.tsx` to show Session Usage + Daily Usage rows with an expandable panel containing period tabs and Calls/Tokens/Cost tiles with Close; validated with `npm run build`.
+
 ## 2026-03-30 (PromptBuilder — Magic Fill button to fill all empty fields)
 
 - Findings: User wanted a single button to fill all empty fields at once with AI-generated content, instead of clicking each field's generate button individually.

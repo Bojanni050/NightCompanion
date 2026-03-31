@@ -165,6 +165,7 @@ export type CharacterRecord = {
 }
 
 export type UsageTotals = {
+  calls: number
   promptTokens: number
   completionTokens: number
   totalTokens: number

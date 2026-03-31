@@ -210,6 +210,7 @@ async function recordUsageEvent(input: {
     : 0
 
   bumpSessionTotals({
+    calls: 1,
     promptTokens: usage.promptTokens,
     completionTokens: usage.completionTokens,
     totalTokens: usage.totalTokens,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown, ChevronUp, RefreshCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Screen } from '../types'
 
@@ -6,12 +7,13 @@ type Props = {
   onNavigate: (screen: Screen) => void
 }
 
-type TabKey = 'session' | 'last' | 'today'
+type PeriodKey = 'today' | '7d' | 'month' | 'all' | 'custom'
 
 type UsageSummaryState = {
-  session: { promptTokens: number; completionTokens: number; totalTokens: number; costUsd: number }
-  today: { promptTokens: number; completionTokens: number; totalTokens: number; costUsd: number }
+  session: { calls: number; promptTokens: number; completionTokens: number; totalTokens: number; costUsd: number }
+  today: { calls: number; promptTokens: number; completionTokens: number; totalTokens: number; costUsd: number }
   lastAction: null | {
+    calls: number
     promptTokens: number
     completionTokens: number
     totalTokens: number
@@ -25,8 +27,8 @@ type UsageSummaryState = {
 
 function buildEmptySummary(): UsageSummaryState {
   return {
-    session: { promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 },
-    today: { promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 },
+    session: { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 },
+    today: { calls: 0, promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 },
     lastAction: null,
   }
 }
@@ -42,8 +44,12 @@ function formatTokens(value: number): string {
 }
 
 export default function TokenCostWidget({ onNavigate }: Props) {
-  const [tab, setTab] = useState<TabKey>('session')
   const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(false)
+  const [period, setPeriod] = useState<PeriodKey>('today')
+  const [customDays, setCustomDays] = useState(30)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailTotals, setDetailTotals] = useState<{ calls: number; totalTokens: number; costUsd: number }>({ calls: 0, totalTokens: 0, costUsd: 0 })
   const [summary, setSummary] = useState<UsageSummaryState>(() => buildEmptySummary())
   const [currency, setCurrency] = useState<'usd' | 'eur'>('usd')
   const [eurRate, setEurRate] = useState<number>(1)
@@ -85,43 +91,68 @@ export default function TokenCostWidget({ onNavigate }: Props) {
     }
   }, [])
 
-  const active = useMemo(() => {
-    if (tab === 'today') return summary.today
-    if (tab === 'session') return summary.session
+  const periodDays = useMemo(() => {
+    if (period === 'today') return 1
+    if (period === '7d') return 7
+    if (period === 'month') return 30
+    if (period === 'all') return 365
+    return Math.max(1, Math.min(365, Math.floor(customDays)))
+  }, [customDays, period])
 
-    if (!summary.lastAction) {
-      return { promptTokens: 0, completionTokens: 0, totalTokens: 0, costUsd: 0 }
+  const fetchDetailTotals = async (days: number) => {
+    setDetailLoading(true)
+    try {
+      const result = await window.electronAPI.usage.listDaily({ days })
+      if (result.error || !result.data) {
+        throw new Error(result.error || 'Failed to load usage details.')
+      }
+
+      const totals = result.data.reduce(
+        (acc, row) => {
+          acc.calls += row.calls
+          acc.totalTokens += row.totalTokens
+          acc.costUsd += row.costUsd
+          return acc
+        },
+        { calls: 0, totalTokens: 0, costUsd: 0 }
+      )
+
+      setDetailTotals(totals)
+    } catch (error) {
+      toast.error(String(error))
+    } finally {
+      setDetailLoading(false)
     }
+  }
 
-    return {
-      promptTokens: summary.lastAction.promptTokens,
-      completionTokens: summary.lastAction.completionTokens,
-      totalTokens: summary.lastAction.totalTokens,
-      costUsd: summary.lastAction.costUsd,
-    }
-  }, [summary, tab])
+  useEffect(() => {
+    if (!expanded) return
+    void fetchDetailTotals(periodDays)
+  }, [expanded, periodDays])
 
-  const { costLabel, costValue } = useMemo(() => {
-    const costUsd = active.costUsd || 0
-    if (currency === 'eur') {
-      const eur = costUsd * (eurRate || 1)
-      return { costLabel: 'EUR', costValue: eur }
-    }
+  const formatCalls = (value: number): string => {
+    if (!Number.isFinite(value)) return '0'
+    return Math.round(value).toLocaleString()
+  }
 
-    return { costLabel: 'USD', costValue: costUsd }
-  }, [active.costUsd, currency, eurRate])
+  const costFor = (costUsdRaw: number) => {
+    const costUsd = costUsdRaw || 0
+    if (currency === 'eur') return { label: '€', value: costUsd * (eurRate || 1) }
+    return { label: '$', value: costUsd }
+  }
 
-  const lastMeta = summary.lastAction
-    ? `${summary.lastAction.providerId} · ${summary.lastAction.modelId}`
-    : '—'
+  const sessionCost = costFor(summary.session.costUsd)
+  const todayCost = costFor(summary.today.costUsd)
+  const detailCost = costFor(detailTotals.costUsd)
 
-  const tabButton = (key: TabKey, label: string) => (
+  const periodButton = (key: PeriodKey, label: string) => (
     <button
+      key={key}
       type="button"
-      onClick={() => setTab(key)}
+      onClick={() => setPeriod(key)}
       className={[
-        'px-2 py-1 rounded-lg text-[11px] font-semibold transition-colors',
-        tab === key ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-900',
+        'px-3 py-1 rounded-lg text-[11px] font-semibold transition-colors',
+        period === key ? 'bg-glow-amber/30 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-900',
       ].join(' ')}
     >
       {label}
@@ -130,58 +161,128 @@ export default function TokenCostWidget({ onNavigate }: Props) {
 
   return (
     <div className="card p-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-xs font-semibold text-white">Usage</div>
-        <div className="flex items-center gap-1 bg-slate-950/50 border border-slate-800 rounded-xl p-0.5">
-          {tabButton('session', 'Session')}
-          {tabButton('last', 'Last')}
-          {tabButton('today', 'Today')}
-        </div>
-      </div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full text-left"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-slate-200">
+                {loading ? '—' : `${formatCalls(summary.session.calls)} calls · ${formatTokens(summary.session.totalTokens)} tok`}
+              </p>
+              <p className="text-xs font-semibold text-glow-amber">
+                {loading ? '—' : `${sessionCost.label}${formatCost(sessionCost.value)}`}
+              </p>
+            </div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wide mt-0.5">Session usage</p>
+          </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div className="bg-slate-950/40 border border-slate-800 rounded-xl px-2.5 py-2">
-          <div className="text-[10px] text-slate-500">Tokens</div>
-          <div className="text-sm font-semibold text-white leading-none">
-            {loading ? '—' : formatTokens(active.totalTokens)}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1">
-            In {loading ? '—' : formatTokens(active.promptTokens)} · Out {loading ? '—' : formatTokens(active.completionTokens)}
-          </div>
-        </div>
-
-        <div className="bg-slate-950/40 border border-slate-800 rounded-xl px-2.5 py-2">
-          <div className="text-[10px] text-slate-500">Cost ({costLabel})</div>
-          <div className="text-sm font-semibold text-white leading-none">
-            {loading ? '—' : formatCost(costValue)}
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1">
-            {tab === 'last' ? lastMeta : currency === 'eur' ? `Rate ${formatCost(eurRate)}` : 'OpenRouter only'}
+          <div className="mt-0.5 text-slate-500">
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </div>
-      </div>
 
-      <div className="flex items-center justify-between mt-3">
-        <button
-          type="button"
-          className="btn-compact-ghost"
-          onClick={() => {
-            onNavigate('usage')
-          }}
-        >
-          View history
-        </button>
+        <div className="mt-3 flex items-start justify-between gap-3">
+          <div className="flex-1">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs font-semibold text-slate-200">
+                {loading ? '—' : `${formatCalls(summary.today.calls)} calls · ${formatTokens(summary.today.totalTokens)} tok`}
+              </p>
+              <p className="text-xs font-semibold text-glow-amber">
+                {loading ? '—' : `${todayCost.label}${formatCost(todayCost.value)}`}
+              </p>
+            </div>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wide mt-0.5">Daily usage</p>
+          </div>
+        </div>
+      </button>
 
-        <button
-          type="button"
-          className="btn-compact-ghost"
-          onClick={() => {
-            void fetchAll()
-          }}
-        >
-          Refresh
-        </button>
-      </div>
+      {expanded && (
+        <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-950/40 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1 bg-slate-950/50 border border-slate-800 rounded-xl p-0.5">
+              {periodButton('today', 'Today')}
+              {periodButton('7d', '7 days')}
+              {periodButton('month', 'Month')}
+              {periodButton('all', 'All time')}
+              {periodButton('custom', 'Custom')}
+            </div>
+
+            <button
+              type="button"
+              className="btn-compact-ghost"
+              onClick={(e) => {
+                e.stopPropagation()
+                void fetchAll()
+                void fetchDetailTotals(periodDays)
+              }}
+              title="Refresh"
+            >
+              <RefreshCcw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {period === 'custom' && (
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <p className="text-[11px] text-slate-500">Days</p>
+              <input
+                type="number"
+                className="input !py-1.5 !text-xs !w-20"
+                value={String(customDays)}
+                min={1}
+                max={365}
+                onChange={(e) => {
+                  const next = Math.max(1, Math.min(365, Number(e.target.value) || 30))
+                  setCustomDays(next)
+                }}
+              />
+            </div>
+          )}
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wide">Calls</p>
+              <p className="text-sm font-semibold text-white">
+                {detailLoading ? '—' : formatCalls(detailTotals.calls)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wide">Tokens</p>
+              <p className="text-sm font-semibold text-white">
+                {detailLoading ? '—' : formatTokens(detailTotals.totalTokens)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 px-3 py-2">
+              <p className="text-[10px] text-slate-500 uppercase tracking-wide">Cost</p>
+              <p className="text-sm font-semibold text-white">
+                {detailLoading ? '—' : `${detailCost.label}${formatCost(detailCost.value)}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <button
+              type="button"
+              className="btn-compact-ghost"
+              onClick={() => {
+                onNavigate('usage')
+              }}
+            >
+              View history
+            </button>
+
+            <button
+              type="button"
+              className="btn-compact-ghost"
+              onClick={() => setExpanded(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

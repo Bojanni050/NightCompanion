@@ -115,6 +115,7 @@ type CharacterRecord = {
 }
 
 type UsageTotals = {
+  calls: number
   promptTokens: number
   completionTokens: number
   totalTokens: number
