@@ -460,6 +460,18 @@ export default function Generator() {
     setStatus('Prompt copied to clipboard.')
   }
 
+  const handleCopyImprovedPrompt = async () => {
+    const value = (improvementDiff?.improvedPrompt ?? generatedPrompt).trim()
+    if (!value) return
+
+    try {
+      await navigator.clipboard.writeText(value)
+      setStatus('Prompt copied to clipboard.')
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Error: Failed to copy prompt.')
+    }
+  }
+
   const handleImprove = async () => {
     if (!generatedPrompt.trim()) {
       setStatus('Nothing to improve yet. Generate (or paste) a prompt first.')
@@ -1081,14 +1093,24 @@ export default function Generator() {
                   <Sparkles className="w-4 h-4 text-teal-400" />
                   <p className="text-sm font-semibold text-teal-300">Verbeter Prompt</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleImprove}
-                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                  className="btn-compact-teal"
-                >
-                  {improving ? 'Improving...' : 'Improve Prompt'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyImprovedPrompt()}
+                    disabled={!(improvementDiff?.improvedPrompt ?? generatedPrompt).trim() || loading || improving || generatingNegative || improvingNegative}
+                    className="btn-compact-ghost"
+                  >
+                    <Copy className="w-3.5 h-3.5" /> Copy Prompt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImprove}
+                    disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
+                    className="btn-compact-teal"
+                  >
+                    {improving ? 'Improving...' : 'Improve Prompt'}
+                  </button>
+                </div>
               </div>
 
               {improvementDiff && (

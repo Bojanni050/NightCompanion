@@ -580,7 +580,7 @@ export function AIConfig() {
 
   return (
     <div className="no-drag-region h-full overflow-y-auto px-8 pt-8 pb-10">
-      <div className="w-full min-[1000px]:w-[1000px] min-[1000px]:mx-auto">
+      <div className="w-full min-[1200px]:w-[1200px] min-[1200px]:mx-auto">
         {view === 'dashboard' ? (
           <Dashboard
             activeGen={activeGen}

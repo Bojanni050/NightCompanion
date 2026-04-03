@@ -48,6 +48,18 @@
 - Conclusions: Wrap both controls in a responsive 2-column grid so they align side-by-side when space allows.
 - Actions: Updated `src/screens/Generator.tsx` to group Preset + Creativity in a `md:grid-cols-2` layout in both Magic Quickstart and Magic Random cards; validated with `npm run build`.
 
+## 2026-04-03 (UI — Non-fullscreen pages 1200px wide)
+
+- Findings: Centred (non full-screen) pages were constrained to ~1000px width.
+- Conclusions: Increase the shared container width to 1200px while keeping smaller viewports at `w-full`.
+- Actions: Updated `src/components/PageContainer.tsx` and the centred wrapper in `src/screens/AIConfig.tsx` from `1000px` to `1200px`; validated with `npm run build`.
+
+## 2026-04-03 (Generator — Copy Prompt in Improve section)
+
+- Findings: You wanted a Copy Prompt button directly in the Improve Prompt card so you can quickly copy the improved result.
+- Conclusions: Copy the improved prompt when available, otherwise fall back to the current generated prompt.
+- Actions: Updated `src/screens/Generator.tsx` to add a `handleCopyImprovedPrompt` helper and render a `Copy Prompt` button next to `Improve Prompt` in the Improve section; validated with `npm run build`.
+
 ## 2026-03-31 (AI — sanitise prompt output escape tokens)
 
 - Findings: Some AI outputs contained stray escape sequences like `\\(`, `\\)`, and `\\/`, which appeared as visible junk characters in generated prompts.
