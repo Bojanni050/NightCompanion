@@ -42,6 +42,12 @@
 - Conclusions: Removing the section reduces UI clutter and keeps focus on the generation workflow.
 - Actions: Updated `src/screens/Generator.tsx` to remove the `PromptPreview` section (and its import); validated with `npm run build`.
 
+## 2026-04-03 (Generator — Preset + Creativity on one row)
+
+- Findings: You wanted the Preset dropdown and Creativity controls to sit on a single row for a more compact layout.
+- Conclusions: Wrap both controls in a responsive 2-column grid so they align side-by-side when space allows.
+- Actions: Updated `src/screens/Generator.tsx` to group Preset + Creativity in a `md:grid-cols-2` layout in both Magic Quickstart and Magic Random cards; validated with `npm run build`.
+
 ## 2026-03-31 (AI — sanitise prompt output escape tokens)
 
 - Findings: Some AI outputs contained stray escape sequences like `\\(`, `\\)`, and `\\/`, which appeared as visible junk characters in generated prompts.

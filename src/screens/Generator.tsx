@@ -786,19 +786,44 @@ export default function Generator() {
                     />
                   </div>
 
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(['focused', 'balanced', 'wild'] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => setQuickStartCreativity(mode)}
-                          className={quickStartCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
-                        >
-                          {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
-                        </button>
-                      ))}
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
+                      <select
+                        className="input mt-2"
+                        value={selectedPreset}
+                        onChange={(e) => setSelectedPreset(e.target.value)}
+                        aria-label="NightCafe preset"
+                      >
+                        <option value="">None</option>
+                        {Array.from(new Set(presetOptions.map((p) => p.category))).map((category) => (
+                          <optgroup key={category} label={category}>
+                            {presetOptions
+                              .filter((p) => p.category === category)
+                              .map((preset) => (
+                                <option key={preset.presetName} value={preset.presetName}>
+                                  {preset.presetName}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(['focused', 'balanced', 'wild'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setQuickStartCreativity(mode)}
+                            className={quickStartCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
+                          >
+                            {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -896,19 +921,44 @@ export default function Generator() {
                     />
                   </div>
 
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {(['focused', 'balanced', 'wild'] as const).map((mode) => (
-                        <button
-                          key={mode}
-                          type="button"
-                          onClick={() => setMagicRandomCreativity(mode)}
-                          className={magicRandomCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
-                        >
-                          {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
-                        </button>
-                      ))}
+                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
+                      <select
+                        className="input mt-2"
+                        value={selectedPreset}
+                        onChange={(e) => setSelectedPreset(e.target.value)}
+                        aria-label="NightCafe preset"
+                      >
+                        <option value="">None</option>
+                        {Array.from(new Set(presetOptions.map((p) => p.category))).map((category) => (
+                          <optgroup key={category} label={category}>
+                            {presetOptions
+                              .filter((p) => p.category === category)
+                              .map((preset) => (
+                                <option key={preset.presetName} value={preset.presetName}>
+                                  {preset.presetName}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(['focused', 'balanced', 'wild'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setMagicRandomCreativity(mode)}
+                            className={magicRandomCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
+                          >
+                            {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
