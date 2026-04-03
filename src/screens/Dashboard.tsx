@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { GenerationEntry, Prompt, Screen } from '../types'
+import type { Prompt, Screen } from '../types'
 import { subscribeDashboardCacheInvalidation } from '../lib/cacheEvents'
 import DashboardSkeleton from '../components/skeletons/DashboardSkeleton'
 
@@ -15,7 +15,6 @@ interface DashboardStats {
   promptCount: number
   styleProfileCount: number
   characterCount: number
-  generationCount: number
 }
 
 interface DashboardProps {
@@ -26,7 +25,6 @@ interface DashboardCache {
   cachedAt: number
   stats: DashboardStats
   recentPrompts: Prompt[]
-  recentGenerations: GenerationEntry[]
   topCharacters: CharacterDashboardItem[]
 }
 
@@ -39,16 +37,13 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
     promptCount: 0,
     styleProfileCount: 0,
     characterCount: 0,
-    generationCount: 0,
   })
   const [recentPrompts, setRecentPrompts] = useState<Prompt[]>([])
-  const [recentGenerations, setRecentGenerations] = useState<GenerationEntry[]>([])
   const [topCharacters, setTopCharacters] = useState<CharacterDashboardItem[]>([])
 
   function applyDashboardData(data: Omit<DashboardCache, 'cachedAt'>) {
     setStats(data.stats)
     setRecentPrompts(data.recentPrompts)
-    setRecentGenerations(data.recentGenerations)
     setTopCharacters(data.topCharacters)
   }
 
@@ -62,7 +57,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         applyDashboardData({
           stats: cache.stats,
           recentPrompts: cache.recentPrompts,
-          recentGenerations: cache.recentGenerations,
           topCharacters: cache.topCharacters,
         })
         setLoading(false)
@@ -71,10 +65,9 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
       setLoading(true)
 
-      const [promptsResult, styleProfilesResult, generationResult, charactersResult] = await Promise.all([
+      const [promptsResult, styleProfilesResult, charactersResult] = await Promise.all([
         window.electronAPI.prompts.list(),
         window.electronAPI.styleProfiles.list(),
-        window.electronAPI.generationLog.list(),
         window.electronAPI.characters.list(),
       ])
 
@@ -82,7 +75,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
       const prompts = promptsResult.error ? [] : promptsResult.data || []
       const styleProfiles = styleProfilesResult.error ? [] : styleProfilesResult.data || []
-      const generations = generationResult.error ? [] : generationResult.data || []
       const characters = charactersResult.error ? [] : charactersResult.data || []
 
       const data = {
@@ -90,10 +82,8 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           promptCount: prompts.length,
           styleProfileCount: styleProfiles.length,
           characterCount: characters.length,
-          generationCount: generations.length,
         },
         recentPrompts: prompts.slice(0, 5),
-        recentGenerations: generations.slice(0, 6),
         topCharacters: characters.slice(0, 3),
       }
 
@@ -143,13 +133,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         icon: '◉',
         gradient: 'from-blue-500 to-cyan-600',
         target: 'characters' as Screen,
-      },
-      {
-        label: 'Generation Log',
-        value: stats.generationCount,
-        icon: '⊞',
-        gradient: 'from-rose-500 to-pink-600',
-        target: 'generation-log' as Screen,
       },
     ],
     [stats]
@@ -256,40 +239,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
               </div>
             </div>
 
-            <div className="card p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-white">Recente Generation Log</h2>
-                <button onClick={() => onNavigate('generation-log')} className="text-sm text-glow-blue hover:underline">
-                  Bekijk alles
-                </button>
-              </div>
-
-              {recentGenerations.length === 0 ? (
-                <div className="py-10 text-center text-night-500">Nog geen generations gelogd.</div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                  {recentGenerations.map((entry) => (
-                    <button
-                      key={entry.id}
-                      onClick={() => onNavigate('generation-log')}
-                      className="aspect-square rounded-xl overflow-hidden bg-night-800 group relative block"
-                      title={entry.promptSnapshot || 'Generation'}
-                    >
-                      {entry.thumbnailUrl ? (
-                        <img
-                          src={entry.thumbnailUrl}
-                          alt="Generation thumbnail"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-night-600 text-lg">⊞</div>
-                      )}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </>
         )}
       </div>

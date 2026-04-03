@@ -5,7 +5,6 @@ import AIConfig from './screens/AIConfig'
 import Library from './screens/Library'
 import Characters from './screens/Characters'
 import StyleProfiles from './screens/StyleProfiles'
-import GenerationLog from './screens/GenerationLog'
 import Generator from './screens/Generator'
 import Gallery from './screens/Gallery'
 import Settings from './screens/Settings'
@@ -68,7 +67,6 @@ export default function App() {
           {screen === 'library' && <Library />}
           {screen === 'characters' && <Characters />}
           {screen === 'style-profiles' && <StyleProfiles />}
-          {screen === 'generation-log' && <GenerationLog />}
           {screen === 'generator' && <Generator />}
           {screen === 'gallery' && <Gallery />}
           {screen === 'usage' && <Usage />}

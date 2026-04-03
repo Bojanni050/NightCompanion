@@ -40,12 +40,6 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Reusable style presets',
   },
   {
-    id: 'generation-log',
-    label: 'Generation Log',
-    icon: '⊞',
-    description: 'Track your creations',
-  },
-  {
     id: 'gallery',
     label: 'Gallery',
     icon: '▣',
