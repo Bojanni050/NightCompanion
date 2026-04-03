@@ -60,6 +60,12 @@
 - Conclusions: Copy the improved prompt when available, otherwise fall back to the current generated prompt.
 - Actions: Updated `src/screens/Generator.tsx` to add a `handleCopyImprovedPrompt` helper and render a `Copy Prompt` button next to `Improve Prompt` in the Improve section; validated with `npm run build`.
 
+## 2026-04-03 (Generator — persist Prompt Builder state)
+
+- Findings: Generator state was mostly persistent, but Prompt Builder tab fields reset after navigating away and back.
+- Conclusions: Persist Prompt Builder UI state (field values + generated output/diff tab) to localStorage and hydrate on mount.
+- Actions: Updated `src/screens/PromptBuilder.tsx` to save/restore parts values, separator, style profile selection, generated prompt, and diff tab state via `promptBuilderUiState` in localStorage; validated with `npm run build`.
+
 ## 2026-03-31 (AI — sanitise prompt output escape tokens)
 
 - Findings: Some AI outputs contained stray escape sequences like `\\(`, `\\)`, and `\\/`, which appeared as visible junk characters in generated prompts.

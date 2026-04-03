@@ -12,6 +12,8 @@ type Part = {
   maxWords?: number
 }
 
+const PROMPT_BUILDER_UI_STATE_KEY = 'promptBuilderUiState'
+
 const DEFAULT_PARTS: Part[] = [
   { id: 'subject', label: 'Subject', placeholder: 'e.g. a lone wolf standing on a cliff', value: '', maxWords: 10 },
   { id: 'style', label: 'Art Style', placeholder: 'e.g. oil painting, impressionist, digital art', value: '', maxWords: 10 },
@@ -29,6 +31,16 @@ type PromptBuilderProps = {
   creativity?: 'focused' | 'balanced' | 'wild'
 }
 
+type PromptBuilderPersistedState = {
+  parts?: Array<{ id: string; value: string }>
+  separator?: ', ' | '. ' | ' | '
+  savedTitle?: string
+  selectedStyleProfileId?: number | ''
+  generatedPrompt?: string
+  generatedPromptViewTab?: 'final' | 'diff'
+  generatedImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+}
+
 export default function PromptBuilder({ embedded = false, greylistEnabled = true, greylistWords = [], maxWords = 70, creativity = 'balanced' }: PromptBuilderProps) {
   const [parts, setParts] = useState<Part[]>(DEFAULT_PARTS)
   const [separator, setSeparator] = useState<', ' | '. ' | ' | '>( ', ')
@@ -44,6 +56,60 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
   const [generatedPromptViewTab, setGeneratedPromptViewTab] = useState<'final' | 'diff'>('final')
   const [generatedImprovementDiff, setGeneratedImprovementDiff] = useState<{ originalPrompt: string; improvedPrompt: string } | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem(PROMPT_BUILDER_UI_STATE_KEY)
+    if (!stored) return
+
+    try {
+      const parsed = JSON.parse(stored) as PromptBuilderPersistedState
+
+      if (Array.isArray(parsed.parts)) {
+        setParts((prev) => {
+          const valueById = new Map(parsed.parts?.map((p) => [p.id, p.value] as const))
+          return prev.map((p) => ({ ...p, value: valueById.get(p.id) ?? p.value }))
+        })
+      }
+
+      if (parsed.separator === ', ' || parsed.separator === '. ' || parsed.separator === ' | ') {
+        setSeparator(parsed.separator)
+      }
+
+      setSavedTitle(parsed.savedTitle ?? '')
+      setSelectedStyleProfileId(parsed.selectedStyleProfileId ?? '')
+      setGeneratedPrompt(parsed.generatedPrompt ?? '')
+      setGeneratedImprovementDiff(parsed.generatedImprovementDiff ?? null)
+
+      const nextTab = parsed.generatedPromptViewTab === 'diff' && parsed.generatedImprovementDiff ? 'diff' : 'final'
+      setGeneratedPromptViewTab(nextTab)
+    } catch {
+      setParts(DEFAULT_PARTS)
+      setSeparator(', ')
+      setSavedTitle('')
+      setSelectedStyleProfileId('')
+      setGeneratedPrompt('')
+      setGeneratedImprovementDiff(null)
+      setGeneratedPromptViewTab('final')
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      const nextState: PromptBuilderPersistedState = {
+        parts: parts.map((p) => ({ id: p.id, value: p.value })),
+        separator,
+        savedTitle,
+        selectedStyleProfileId,
+        generatedPrompt,
+        generatedPromptViewTab,
+        generatedImprovementDiff,
+      }
+
+      localStorage.setItem(PROMPT_BUILDER_UI_STATE_KEY, JSON.stringify(nextState))
+    } catch (e) {
+      console.error('Failed to save prompt builder state to localStorage:', e)
+    }
+  }, [parts, separator, savedTitle, selectedStyleProfileId, generatedPrompt, generatedPromptViewTab, generatedImprovementDiff])
 
   const updatePart = (id: string, value: string) => {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, value } : p)))
