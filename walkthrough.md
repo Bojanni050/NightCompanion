@@ -66,6 +66,30 @@
 - Conclusions: Persist Prompt Builder UI state (field values + generated output/diff tab) to localStorage and hydrate on mount.
 - Actions: Updated `src/screens/PromptBuilder.tsx` to save/restore parts values, separator, style profile selection, generated prompt, and diff tab state via `promptBuilderUiState` in localStorage; validated with `npm run build`.
 
+## 2026-04-03 (UI — remove Generation Log page)
+
+- Findings: The Generation Log page and its IPC functionality are no longer needed.
+- Conclusions: Remove navigation + routing and detach the IPC/bridge surface so the feature cannot be accessed.
+- Actions: Removed the `generation-log` screen from `src/App.tsx`, removed the sidebar nav item in `src/components/Sidebar.tsx`, removed Generation Log usage from `src/screens/Dashboard.tsx`, and removed `generationLog` IPC registration + preload/renderer bridge types in `electron/services/ipcRegistry.ts`, `electron/preload.ts`, and `src/types/electron.d.ts`; validated with `npm run build`.
+
+## 2026-04-03 (Usage — category breakdown + most-used models)
+
+- Findings: You wanted usage tracking split across four AI categories (generation, improvement, vision, research & reasoning) and to see which models are used most.
+- Conclusions: Reuse existing `ai_usage_events` (endpoint/providerId/modelId/tokens/cost) and aggregate by derived category (from `endpoint`) and model; expose via a single IPC query.
+- Actions: Added `usage:getBreakdown` in `electron/ipc/usage.ts` (category totals + top models), exposed it via `electron/preload.ts` and `src/types/electron.d.ts`, and updated `src/screens/Usage.tsx` to render category totals and a “Most Used Models” list; validated with `npm run build`.
+
+## 2026-04-03 (Gallery — show Prompt Library images + sync ratings)
+
+- Findings: You wanted Prompt Library uploaded images to appear in the Gallery, using the same lightbox overlay, and to keep star ratings in sync.
+- Conclusions: Treat prompts-with-images as gallery items in the renderer state and route rating updates to the prompt record so there is a single source of truth.
+- Actions: Updated `src/hooks/useGalleryState.ts` to merge Prompt Library image prompts into the gallery item list (with `metadata.source = 'prompt'`) and added `prompts:updateRating` IPC in `electron/ipc/prompts.ts`, exposed via `electron/preload.ts` + `src/types/electron.d.ts`, so rating changes from the Gallery lightbox update the underlying prompt rating; validated with `npm run build`.
+
+## 2026-04-03 (Gallery — Add Image upload + connected prompt)
+
+- Findings: The Gallery Add Image flow needed to be upload-first (no URL/media/thumbnail fields) and support linking an image to a saved Prompt Library prompt.
+- Conclusions: Save uploaded images into a managed `file://` path via IPC and store the prompt link in `gallery_items.metadata`.
+- Actions: Added `gallery:saveImage` IPC in `electron/ipc/gallery.ts` and exposed it via `electron/preload.ts` + `src/types/electron.d.ts`; updated `src/screens/Gallery.tsx` to replace Image URL with an upload field, remove Media Type/Video/Thumbnail fields, and add a Connected Prompt dropdown populated from Prompt Library prompts (stored as `metadata.connectedPromptId`); validated with `npm run build`.
+
 ## 2026-03-31 (AI — sanitise prompt output escape tokens)
 
 - Findings: Some AI outputs contained stray escape sequences like `\\(`, `\\)`, and `\\/`, which appeared as visible junk characters in generated prompts.
@@ -1009,3 +1033,4 @@
 - Added PromptPreview to the **Magic Quickstart** card in src/screens/Generator.tsx so the Quickstart flow now shows a live preview
 - Preview uses generatedPrompt || quickStartIdea as prompt source, includes current
   egativePrompt, maxWords, and greylist highlighting when enabled
+

@@ -1,4 +1,4 @@
-﻿import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry, Greylist, GalleryItem, Collection } from '../lib/schema'
+﻿import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, Greylist, GalleryItem, Collection } from '../lib/schema'
 
 type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
 type PromptFilters = { search?: string; tags?: string[]; model?: string }
@@ -138,6 +138,19 @@ type UsageSummary = {
 type UsageDailyTotals = UsageTotals & {
   day: string
 }
+
+type UsageCategory = 'generation' | 'improvement' | 'vision' | 'research_reasoning'
+
+type UsageBreakdownModelRow = UsageTotals & {
+  providerId: string
+  modelId: string
+  displayName: string
+}
+
+type UsageBreakdown = {
+  categories: Record<UsageCategory, UsageTotals>
+  topModels: UsageBreakdownModelRow[]
+}
 type IpcUnexpectedErrorPayload = {
   channel: string
   message: string
@@ -152,6 +165,7 @@ declare global {
         get(id: number): Promise<IpcResult<Prompt | undefined>>
         create(data: PromptMutationInput): Promise<IpcResult<Prompt>>
         listVersions(promptId: number): Promise<IpcResult<PromptVersion[]>>
+        updateRating(id: number, rating: number | null): Promise<IpcResult<Prompt>>
         update(id: number, data: Partial<PromptMutationInput>): Promise<IpcResult<Prompt>>
         delete(id: number): Promise<IpcResult<void>>
       }
@@ -160,12 +174,6 @@ declare global {
         get(id: number): Promise<IpcResult<StyleProfile | undefined>>
         create(data: NewStyleProfile): Promise<IpcResult<StyleProfile>>
         update(id: number, data: Partial<NewStyleProfile>): Promise<IpcResult<StyleProfile>>
-        delete(id: number): Promise<IpcResult<void>>
-      }
-      generationLog: {
-        list(): Promise<IpcResult<GenerationEntry[]>>
-        create(data: NewGenerationEntry): Promise<IpcResult<GenerationEntry>>
-        update(id: number, data: Partial<NewGenerationEntry>): Promise<IpcResult<GenerationEntry>>
         delete(id: number): Promise<IpcResult<void>>
       }
       settings: {
@@ -200,6 +208,7 @@ declare global {
       }
       usage: {
         getSummary(): Promise<IpcResult<UsageSummary>>
+        getBreakdown(input?: { days?: number; topModelsLimit?: number }): Promise<IpcResult<UsageBreakdown>>
         listDaily(input?: { days?: number }): Promise<IpcResult<UsageDailyTotals[]>>
         reset(input?: { clearHistory?: boolean }): Promise<IpcResult<void>>
       }
@@ -227,6 +236,7 @@ declare global {
       }
       gallery: {
         list(filters?: GalleryFilters): Promise<IpcResult<{ items: GalleryItem[]; totalCount: number }>>
+        saveImage(input: { dataUrl: string; fileName?: string }): Promise<IpcResult<{ fileUrl: string }>>
         createItem(input: Partial<GalleryItem>): Promise<IpcResult<GalleryItem>>
         updateItem(id: string, input: Partial<GalleryItem>): Promise<IpcResult<GalleryItem>>
         deleteItem(id: string): Promise<IpcResult<{ ok: boolean }>>

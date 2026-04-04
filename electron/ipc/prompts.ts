@@ -130,6 +130,24 @@ export function registerPromptsIpc({ db }: { db: Database }) {
     }
   })
 
+  ipcMain.handle('prompts:updateRating', async (_event, id: number, rating: number | null) => {
+    try {
+      const safeRating = typeof rating === 'number' && Number.isFinite(rating)
+        ? Math.max(0, Math.min(5, rating))
+        : null
+
+      const [updated] = await db
+        .update(prompts)
+        .set({ rating: safeRating, updatedAt: new Date() })
+        .where(eq(prompts.id, id))
+        .returning()
+
+      return { data: updated }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
   ipcMain.handle('prompts:get', async (_, id: number) => {
     try {
       const [data] = await db.select().from(prompts).where(eq(prompts.id, id))

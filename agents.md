@@ -1,6 +1,6 @@
 # ⚠️ Archivo generado automáticamente
 # Fuente: Ai_Rules.md
-# Fecha: 2026-03-23 21:53:36
+# Fecha: 2026-04-04 04:04:20
 # No editar directamente - los cambios se sobrescribirán
 # 
 # Para actualizar estas reglas, edita Ai_Rules.md y ejecuta:
@@ -116,7 +116,7 @@ Changes here are automatically synchronized to:
 
 ## Walkthrough Format
 
-After every significant change, add to `walkthrough.md`:
+After every significant change, add at the end so dates are from oldest to newest to `walkthrough.md` :
 
 ```
 ## YYYY-MM-DD (Short title)

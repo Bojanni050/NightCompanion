@@ -8,6 +8,12 @@ type StarRatingProps = {
 }
 
 export default function StarRating({ rating, onChange, size = 16, readonly = false }: StarRatingProps) {
+  const sizeClass = size >= 20
+    ? 'w-5 h-5'
+    : size <= 12
+      ? 'w-3 h-3'
+      : 'w-4 h-4'
+
   return (
     <div className="flex gap-0.5">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -24,12 +30,11 @@ export default function StarRating({ rating, onChange, size = 16, readonly = fal
           className={`${readonly ? 'cursor-default' : 'cursor-pointer'} transition-colors`}
         >
           <Star
-            style={{ width: size, height: size }}
-            className={
+            className={`${sizeClass} ${
               star <= rating
                 ? 'text-amber-400 fill-amber-400'
                 : 'text-night-600'
-            }
+            }`}
           />
         </button>
       ))}

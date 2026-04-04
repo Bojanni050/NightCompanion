@@ -3,6 +3,11 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { eq, desc, ilike, gte, sql, and, or } from 'drizzle-orm'
 import * as schema from '../../src/lib/schema'
 import { collections, galleryItems } from '../../src/lib/schema'
+import { randomUUID } from 'crypto'
+import path from 'path'
+import { mkdir, writeFile } from 'fs/promises'
+import { pathToFileURL } from 'url'
+import { resolveNightCompanionSubdir } from '../services/storagePaths'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
 
@@ -11,6 +16,47 @@ type GalleryFilters = {
   collectionId?: string | null
   minRating?: number
   page?: number
+}
+
+function getGalleryImageDir() {
+  return resolveNightCompanionSubdir('gallery')
+}
+
+function getImageExtension(mimeType: string) {
+  const map: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/bmp': 'bmp',
+  }
+
+  return map[mimeType] || 'png'
+}
+
+async function saveGalleryImageDataUrl(dataUrl: string, originalName?: string) {
+  const match = dataUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/)
+  if (!match) {
+    throw new Error('Invalid image payload. Expected a base64 data URL.')
+  }
+
+  const mimeType = match[1]
+  const base64Data = match[2]
+  const imageBuffer = Buffer.from(base64Data, 'base64')
+  const extension = getImageExtension(mimeType)
+  const safeBaseName = (originalName || 'gallery-image')
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[^a-zA-Z0-9-_]/g, '_')
+    .slice(0, 50)
+  const fileName = `${Date.now()}-${safeBaseName || randomUUID()}.${extension}`
+
+  const imageDir = getGalleryImageDir()
+  await mkdir(imageDir, { recursive: true })
+
+  const filePath = path.join(imageDir, fileName)
+  await writeFile(filePath, imageBuffer)
+
+  return pathToFileURL(filePath).href
 }
 
 type GalleryItemUpdate = {
@@ -35,6 +81,18 @@ const PAGE_SIZE = 24
 
 export function registerGalleryIpc({ db }: { db: Database }) {
   // ─── Gallery Items ──────────────────────────────────────────────────────────
+
+  ipcMain.handle('gallery:saveImage', async (_event, input: { dataUrl: string; fileName?: string }) => {
+    try {
+      const dataUrl = String(input?.dataUrl || '').trim()
+      if (!dataUrl) return { error: 'Missing image payload.' }
+
+      const fileUrl = await saveGalleryImageDataUrl(dataUrl, input?.fileName)
+      return { data: { fileUrl } }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
 
   ipcMain.handle('gallery:list', async (_event, filters?: GalleryFilters) => {
     try {

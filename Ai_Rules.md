@@ -106,9 +106,9 @@ Changes here are automatically synchronized to:
 
 ## Walkthrough Format
 
-After every significant change, add to `walkthrough.md`:
+After every significant change, add at the end so dates are from oldest to newest to `walkthrough.md` :
 
-```
+```markdown
 ## YYYY-MM-DD (Short title)
 
 - Findings: [What was the problem or trigger?]

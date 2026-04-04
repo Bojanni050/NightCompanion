@@ -20,7 +20,7 @@ import MediaRenderer from '../components/MediaRenderer'
 import StarRating from '../components/StarRating'
 import GridDensitySelector from '../components/GridDensitySelector'
 import GalleryLightbox from '../components/GalleryLightbox'
-import type { GalleryItem } from '../lib/schema'
+import type { GalleryItem, Prompt } from '../lib/schema'
 
 type DisplaySettings = {
   title: boolean
@@ -40,10 +40,27 @@ function loadDisplaySettings(): DisplaySettings {
 
 export default function Gallery() {
   const state = useGalleryState()
+  const [promptOptions, setPromptOptions] = useState<Prompt[]>([])
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(loadDisplaySettings)
   const [showDisplayOptions, setShowDisplayOptions] = useState(false)
   const [slideshowMode, setSlideshowMode] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadPrompts() {
+      const result = await window.electronAPI.prompts.list()
+      if (ignore || result.error || !result.data) return
+      setPromptOptions(result.data)
+    }
+
+    void loadPrompts()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('galleryDisplaySettings', JSON.stringify(displaySettings))
@@ -72,17 +89,41 @@ export default function Gallery() {
   const handleSaveItem = async () => {
     state.setSaving(true)
     try {
+      let imageUrl = state.formImageUrl || null
+      if (state.formImageDataUrl) {
+        const saved = await window.electronAPI.gallery.saveImage({
+          dataUrl: state.formImageDataUrl,
+          fileName: state.formImageFileName || undefined,
+        })
+        if (saved.error || !saved.data?.fileUrl) {
+          toast.error(saved.error || 'Failed to save image')
+          return
+        }
+        imageUrl = saved.data.fileUrl
+      }
+
+      if (!imageUrl) {
+        toast.warning('Upload an image first.')
+        return
+      }
+
+      const metadata: Record<string, unknown> = {}
+      if (typeof state.formConnectedPromptId === 'number') {
+        metadata.connectedPromptId = state.formConnectedPromptId
+      }
+
       const payload = {
         title: state.formTitle || null,
-        imageUrl: state.formImageUrl || null,
-        videoUrl: state.formVideoUrl || null,
-        thumbnailUrl: state.formThumbnailUrl || null,
-        mediaType: state.formMediaType,
+        imageUrl,
+        videoUrl: null,
+        thumbnailUrl: null,
+        mediaType: 'image',
         promptUsed: state.formPromptUsed || null,
         model: state.formModel || null,
         rating: state.formRating,
         notes: state.formNotes || null,
         collectionId: state.formCollectionId,
+        metadata,
       }
 
       if (state.editingItem) {
@@ -108,6 +149,19 @@ export default function Gallery() {
     } finally {
       state.setSaving(false)
     }
+  }
+
+  const handleSelectUploadImage = async (file: File) => {
+    const reader = new FileReader()
+    const result = await new Promise<string>((resolve, reject) => {
+      reader.onerror = () => reject(new Error('Failed to read image file.'))
+      reader.onload = () => resolve(String(reader.result || ''))
+      reader.readAsDataURL(file)
+    })
+
+    state.setFormImageDataUrl(result)
+    state.setFormImageFileName(file.name)
+    state.setFormImageUrl('')
   }
 
   const handleSaveCollection = async () => {
@@ -326,9 +380,6 @@ export default function Gallery() {
                     <div
                       className="aspect-square bg-night-800 relative overflow-hidden cursor-pointer"
                       onClick={() => openLightbox(item)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') openLightbox(item) }}
                     >
                       <MediaRenderer
                         item={item}
@@ -397,6 +448,7 @@ export default function Gallery() {
               disabled={state.currentPage === 0}
               onClick={() => state.setCurrentPage(state.currentPage - 1)}
               className="btn btn-ghost p-2 disabled:opacity-40"
+              aria-label="Previous page"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -408,6 +460,7 @@ export default function Gallery() {
               disabled={state.currentPage >= totalPages - 1}
               onClick={() => state.setCurrentPage(state.currentPage + 1)}
               className="btn btn-ghost p-2 disabled:opacity-40"
+              aria-label="Next page"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -426,46 +479,95 @@ export default function Gallery() {
             <div className="space-y-3">
               <div>
                 <label className="label">Title</label>
-                <input className="input w-full" value={state.formTitle} onChange={(e) => state.setFormTitle(e.target.value)} />
+                <input
+                  className="input w-full"
+                  aria-label="Gallery item title"
+                  value={state.formTitle}
+                  onChange={(e) => state.setFormTitle(e.target.value)}
+                />
               </div>
               <div>
-                <label className="label">Image URL</label>
-                <input className="input w-full" value={state.formImageUrl} onChange={(e) => state.setFormImageUrl(e.target.value)} />
-              </div>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="label">Media Type</label>
-                  <select
+                <label className="label">Image Upload</label>
+                <div className="space-y-2">
+                  {(state.formImageDataUrl || state.formImageUrl) && (
+                    <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+                      <div className="aspect-[16/9] bg-slate-950/60">
+                        <img
+                          src={state.formImageDataUrl || state.formImageUrl}
+                          alt="Gallery upload preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    aria-label="Upload gallery image"
                     className="input w-full"
-                    value={state.formMediaType}
-                    onChange={(e) => state.setFormMediaType(e.target.value)}
-                  >
-                    <option value="image">Image</option>
-                    <option value="video">Video</option>
-                  </select>
-                </div>
-                <div className="flex-1">
-                  <label className="label">Model</label>
-                  <input className="input w-full" value={state.formModel} onChange={(e) => state.setFormModel(e.target.value)} />
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      void handleSelectUploadImage(file)
+                    }}
+                  />
                 </div>
               </div>
-              {state.formMediaType === 'video' && (
-                <div>
-                  <label className="label">Video URL</label>
-                  <input className="input w-full" value={state.formVideoUrl} onChange={(e) => state.setFormVideoUrl(e.target.value)} />
-                </div>
-              )}
               <div>
-                <label className="label">Thumbnail URL</label>
-                <input className="input w-full" value={state.formThumbnailUrl} onChange={(e) => state.setFormThumbnailUrl(e.target.value)} />
+                <label className="label">Model</label>
+                <input
+                  className="input w-full"
+                  aria-label="Model"
+                  value={state.formModel}
+                  onChange={(e) => state.setFormModel(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="label">Connected Prompt</label>
+                <select
+                  className="input w-full"
+                  value={state.formConnectedPromptId === null ? '' : String(state.formConnectedPromptId)}
+                  aria-label="Connected prompt"
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    const nextId = raw ? Number(raw) : null
+                    state.setFormConnectedPromptId(Number.isFinite(nextId as number) ? nextId : null)
+
+                    const selected = raw
+                      ? promptOptions.find((p) => p.id === Number(raw))
+                      : undefined
+                    if (selected?.promptText) {
+                      state.setFormPromptUsed(selected.promptText)
+                    }
+                  }}
+                >
+                  <option value="">None</option>
+                  {promptOptions.map((prompt) => (
+                    <option key={prompt.id} value={String(prompt.id)}>
+                      {prompt.title || `Prompt #${prompt.id}`}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="label">Prompt Used</label>
-                <textarea className="textarea w-full" rows={3} value={state.formPromptUsed} onChange={(e) => state.setFormPromptUsed(e.target.value)} />
+                <textarea
+                  className="textarea w-full"
+                  aria-label="Prompt used"
+                  rows={3}
+                  value={state.formPromptUsed}
+                  onChange={(e) => state.setFormPromptUsed(e.target.value)}
+                />
               </div>
               <div>
                 <label className="label">Notes</label>
-                <textarea className="textarea w-full" rows={2} value={state.formNotes} onChange={(e) => state.setFormNotes(e.target.value)} />
+                <textarea
+                  className="textarea w-full"
+                  aria-label="Notes"
+                  rows={2}
+                  value={state.formNotes}
+                  onChange={(e) => state.setFormNotes(e.target.value)}
+                />
               </div>
               <div className="flex items-center gap-4">
                 <div>
@@ -477,6 +579,7 @@ export default function Gallery() {
                     <label className="label">Collection</label>
                     <select
                       className="input w-full"
+                      aria-label="Collection"
                       value={state.formCollectionId ?? ''}
                       onChange={(e) => state.setFormCollectionId(e.target.value || null)}
                     >

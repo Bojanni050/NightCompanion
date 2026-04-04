@@ -2,7 +2,6 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import * as schema from '../../src/lib/schema'
 import { registerPromptsIpc } from '../ipc/prompts'
 import { registerStyleProfilesIpc } from '../ipc/styleProfiles'
-import { registerGenerationLogIpc } from '../ipc/generationLog'
 import { registerNightCafeIpc } from '../ipc/nightcafe'
 import { registerCharactersIpc } from '../ipc/characters'
 import { registerSettingsIpc, type OpenRouterSettings } from '../ipc/settings'
@@ -29,7 +28,6 @@ export function registerIpcHandlers({
 }: RegisterIpcHandlersInput) {
   registerPromptsIpc({ db })
   registerStyleProfilesIpc({ db })
-  registerGenerationLogIpc({ db })
   registerNightCafeIpc({ db })
   registerCharactersIpc({ db })
   registerSettingsIpc({ db, onNativeWindowFrameChanged })

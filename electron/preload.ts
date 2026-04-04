@@ -1,5 +1,5 @@
 ﻿import { contextBridge, ipcRenderer } from 'electron'
-import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, GenerationEntry, NewGenerationEntry, Greylist, GalleryItem, Collection } from '../src/lib/schema'
+import type { Prompt, PromptVersion, NewPrompt, StyleProfile, NewStyleProfile, Greylist, GalleryItem, Collection } from '../src/lib/schema'
 
 type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
   imageDataUrl?: string | null
@@ -189,6 +189,19 @@ export type UsageDailyTotals = UsageTotals & {
   day: string
 }
 
+export type UsageCategory = 'generation' | 'improvement' | 'vision' | 'research_reasoning'
+
+export type UsageBreakdownModelRow = UsageTotals & {
+  providerId: string
+  modelId: string
+  displayName: string
+}
+
+export type UsageBreakdown = {
+  categories: Record<UsageCategory, UsageTotals>
+  topModels: UsageBreakdownModelRow[]
+}
+
 export type IpcResult<T> = { data: T; error?: never } | { data?: never; error: string }
 
 export type IpcUnexpectedErrorPayload = {
@@ -248,6 +261,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invokeWithFallback('prompts:create', data),
     listVersions: (promptId: number): Promise<IpcResult<PromptVersion[]>> =>
       invokeWithFallback('prompts:listVersions', promptId),
+    updateRating: (id: number, rating: number | null): Promise<IpcResult<Prompt>> =>
+      invokeWithFallback('prompts:updateRating', id, rating),
     update: (id: number, data: Partial<PromptMutationInput>): Promise<IpcResult<Prompt>> =>
       invokeWithFallback('prompts:update', id, data),
     delete: (id: number): Promise<IpcResult<void>> =>
@@ -264,16 +279,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invokeWithFallback('styleProfiles:update', id, data),
     delete: (id: number): Promise<IpcResult<void>> =>
       invokeWithFallback('styleProfiles:delete', id),
-  },
-  generationLog: {
-    list: (): Promise<IpcResult<GenerationEntry[]>> =>
-      invokeWithFallback('generationLog:list'),
-    create: (data: NewGenerationEntry): Promise<IpcResult<GenerationEntry>> =>
-      invokeWithFallback('generationLog:create', data),
-    update: (id: number, data: Partial<NewGenerationEntry>): Promise<IpcResult<GenerationEntry>> =>
-      invokeWithFallback('generationLog:update', id, data),
-    delete: (id: number): Promise<IpcResult<void>> =>
-      invokeWithFallback('generationLog:delete', id),
   },
   settings: {
     getOpenRouter: (): Promise<IpcResult<OpenRouterSettings>> =>
@@ -334,6 +339,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   usage: {
     getSummary: (): Promise<IpcResult<UsageSummary>> =>
       invokeWithFallback('usage:getSummary'),
+    getBreakdown: (input?: { days?: number; topModelsLimit?: number }): Promise<IpcResult<UsageBreakdown>> =>
+      invokeWithFallback('usage:getBreakdown', input),
     listDaily: (input?: { days?: number }): Promise<IpcResult<UsageDailyTotals[]>> =>
       invokeWithFallback('usage:listDaily', input),
     reset: (input?: { clearHistory?: boolean }): Promise<IpcResult<void>> =>
@@ -378,6 +385,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   gallery: {
     list: (filters?: GalleryFilters): Promise<IpcResult<{ items: GalleryItem[]; totalCount: number }>> =>
       invokeWithFallback('gallery:list', filters),
+    saveImage: (input: { dataUrl: string; fileName?: string }): Promise<IpcResult<{ fileUrl: string }>> =>
+      invokeWithFallback('gallery:saveImage', input),
     createItem: (input: Partial<GalleryItem>): Promise<IpcResult<GalleryItem>> =>
       invokeWithFallback('gallery:createItem', input),
     updateItem: (id: string, input: Partial<GalleryItem>): Promise<IpcResult<GalleryItem>> =>
