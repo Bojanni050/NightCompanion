@@ -64,7 +64,7 @@ export default function App() {
       {/* Drag region for frameless window */}
       {!nativeWindowFrameEnabled && <div className="drag-region fixed top-0 left-0 right-0 h-8 z-50" />}
 
-      <Sidebar activeScreen={screen} onNavigate={setScreen} />
+      <Sidebar activeScreen={screen} onNavigate={(next) => handleNavigate(next)} />
 
       <main className="flex-1 overflow-hidden">
         <div className="animate-fade-in h-full">

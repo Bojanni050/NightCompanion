@@ -300,3 +300,9 @@
 - Findings: Clicking on a recent image in the Dashboard only navigated to the Gallery page, but didn't open the specific image in the lightbox.
 - Conclusions: Pass the selected image ID when navigating from Dashboard to Gallery, and have Gallery open that image in the lightbox on mount.
 - Actions: Updated `src/screens/Dashboard.tsx` to pass `{ imageId: item.id }` as navigation params; updated `src/App.tsx` to support navigation params via `handleNavigate` and pass them to Gallery; updated `src/screens/Gallery.tsx` to accept `initialImageId` prop and auto-open the lightbox for that image; validated with `npm run build`.
+
+## 2026-04-06 (Dashboard image click crash fix)
+
+- Findings: Clicking a recent Dashboard image could crash the renderer when the lightbox opened while `images` was empty or an index was out of bounds.
+- Conclusions: Guard lightbox navigation logic against empty image arrays and keep `initialIndex` within bounds.
+- Actions: Updated `src/components/GalleryLightbox.tsx` to clamp/guard index navigation when `images.length === 0`; updated `src/screens/Gallery.tsx` to restore the `totalPages` calculation and stabilise lightbox opening dependencies; validated with `npm run build`.

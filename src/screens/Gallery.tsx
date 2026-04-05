@@ -51,6 +51,9 @@ export default function Gallery({ initialImageId }: GalleryProps) {
   const [slideshowMode, setSlideshowMode] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
+  const items = state.items
+  const setLightboxImage = state.setLightboxImage
+
   useEffect(() => {
     let ignore = false
 
@@ -71,33 +74,35 @@ export default function Gallery({ initialImageId }: GalleryProps) {
     localStorage.setItem('galleryDisplaySettings', JSON.stringify(displaySettings))
   }, [displaySettings])
 
+  const totalPages = Math.ceil(state.totalCount / state.pageSize)
+
   // Open lightbox for initial image ID when provided
   useEffect(() => {
-    if (!initialImageId || state.items.length === 0) return
+    if (!initialImageId || items.length === 0) return
 
-    const targetItem = state.items.find((item) => item.id === initialImageId)
+    const targetItem = items.find((item) => item.id === initialImageId)
     if (targetItem) {
-      const idx = state.items.findIndex((i) => i.id === targetItem.id)
+      const idx = items.findIndex((i) => i.id === targetItem.id)
       setLightboxIndex(idx >= 0 ? idx : 0)
-      state.setLightboxImage(targetItem)
+      setLightboxImage(targetItem)
     }
-  }, [initialImageId, state.items])
+  }, [initialImageId, items, setLightboxImage])
 
   const openLightbox = (item: GalleryItem) => {
-    const idx = state.items.findIndex((i) => i.id === item.id)
+    const idx = items.findIndex((i) => i.id === item.id)
     setLightboxIndex(idx >= 0 ? idx : 0)
-    state.setLightboxImage(item)
+    setLightboxImage(item)
   }
 
   const startSlideshow = () => {
-    if (state.items.length === 0) return
+    if (items.length === 0) return
     setLightboxIndex(0)
     setSlideshowMode(true)
-    state.setLightboxImage(state.items[0])
+    setLightboxImage(items[0])
   }
 
   const closeLightbox = () => {
-    state.setLightboxImage(null)
+    setLightboxImage(null)
     setSlideshowMode(false)
   }
 
@@ -701,6 +706,7 @@ export default function Gallery({ initialImageId }: GalleryProps) {
 
       {/* Lightbox */}
       <GalleryLightbox
+        key={`${initialImageId || 'none'}:${state.lightboxImage?.id || 'closed'}`}
         images={state.items}
         initialIndex={lightboxIndex}
         isOpen={!!state.lightboxImage}

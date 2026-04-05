@@ -63,7 +63,11 @@ export default function GalleryLightbox({
   autoPlay = false,
   displaySettings = DEFAULT_DISPLAY,
 }: GalleryLightboxProps) {
-  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (images.length <= 0) return 0
+    const next = Number.isFinite(initialIndex) ? Math.floor(initialIndex) : 0
+    return Math.max(0, Math.min(images.length - 1, next))
+  })
   const [playing, setPlaying] = useState(autoPlay)
   const [zenMode, setZenMode] = useState(() => localStorage.getItem('galleryZenMode') === 'true')
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -71,17 +75,15 @@ export default function GalleryLightbox({
   const thumbStripRef = useRef<HTMLDivElement>(null)
   const slideshowRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    setCurrentIndex(initialIndex)
-  }, [initialIndex])
-
   const currentItem = images[currentIndex]
 
   const goNext = useCallback(() => {
+    if (images.length <= 0) return
     setCurrentIndex((prev) => (prev + 1) % images.length)
   }, [images.length])
 
   const goPrev = useCallback(() => {
+    if (images.length <= 0) return
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
   }, [images.length])
 
