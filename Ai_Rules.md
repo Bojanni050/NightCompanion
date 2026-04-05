@@ -147,9 +147,9 @@ After every significant change, add at the end so dates are from oldest to newes
 
 ## Memory
 
-- When asked to remember something, use all available momery options to remember it.
-- When asked to recall something, use all available momery options to recall it.
-- When asked to forget something, use all available momery options to forget it.
+- When asked to remember something, use all available memory options to remember it.
+- When asked to recall something, use all available memory options to recall it.
+- When asked to forget something, use all available memory options to forget it.
 - Provide a summary of what was remembered, recalled, or forgotten.
 - Proactively use memory tools to maintain context across sessions.
 - Proactively store important information in memory to avoid repetition.
