@@ -39,7 +39,11 @@ function loadDisplaySettings(): DisplaySettings {
   return DEFAULT_DISPLAY
 }
 
-export default function Gallery() {
+interface GalleryProps {
+  initialImageId?: string
+}
+
+export default function Gallery({ initialImageId }: GalleryProps) {
   const state = useGalleryState()
   const [promptOptions, setPromptOptions] = useState<Prompt[]>([])
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(loadDisplaySettings)
@@ -67,7 +71,17 @@ export default function Gallery() {
     localStorage.setItem('galleryDisplaySettings', JSON.stringify(displaySettings))
   }, [displaySettings])
 
-  const totalPages = Math.ceil(state.totalCount / state.pageSize)
+  // Open lightbox for initial image ID when provided
+  useEffect(() => {
+    if (!initialImageId || state.items.length === 0) return
+
+    const targetItem = state.items.find((item) => item.id === initialImageId)
+    if (targetItem) {
+      const idx = state.items.findIndex((i) => i.id === targetItem.id)
+      setLightboxIndex(idx >= 0 ? idx : 0)
+      state.setLightboxImage(targetItem)
+    }
+  }, [initialImageId, state.items])
 
   const openLightbox = (item: GalleryItem) => {
     const idx = state.items.findIndex((i) => i.id === item.id)

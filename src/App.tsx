@@ -14,6 +14,7 @@ import { Toaster, toast } from 'sonner'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard')
+  const [screenParams, setScreenParams] = useState<Record<string, unknown> | undefined>(undefined)
   const [nativeWindowFrameEnabled, setNativeWindowFrameEnabled] = useState(false)
   const lastUnexpectedIpcToastAtRef = useRef<Map<string, number>>(new Map())
 
@@ -53,6 +54,11 @@ export default function App() {
     })
   }, [])
 
+  const handleNavigate = (newScreen: Screen, params?: Record<string, unknown>) => {
+    setScreen(newScreen)
+    setScreenParams(params)
+  }
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-night-950">
       {/* Drag region for frameless window */}
@@ -62,13 +68,13 @@ export default function App() {
 
       <main className="flex-1 overflow-hidden">
         <div className="animate-fade-in h-full">
-          {screen === 'dashboard' && <Dashboard onNavigate={setScreen} />}
+          {screen === 'dashboard' && <Dashboard onNavigate={handleNavigate} />}
           {screen === 'ai-config' && <AIConfig />}
           {screen === 'library' && <Library />}
           {screen === 'characters' && <Characters />}
           {screen === 'style-profiles' && <StyleProfiles />}
           {screen === 'generator' && <Generator />}
-          {screen === 'gallery' && <Gallery />}
+          {screen === 'gallery' && <Gallery initialImageId={screenParams?.imageId as string | undefined} />}
           {screen === 'usage' && <Usage />}
           {screen === 'settings' && <Settings />}
         </div>

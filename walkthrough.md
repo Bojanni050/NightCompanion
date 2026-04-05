@@ -294,3 +294,9 @@
 - Findings: Greylist words added in Generator could be overwritten on startup because the initial “save” ran before the DB load completed.
 - Conclusions: Only persist greylist changes after the initial greylist load finishes.
 - Actions: Updated `src/screens/Generator.tsx` to gate greylist saving behind a `greylistLoaded` flag; validated with `npm run build`.
+
+## 2026-04-06 (Dashboard → Gallery image navigation)
+
+- Findings: Clicking on a recent image in the Dashboard only navigated to the Gallery page, but didn't open the specific image in the lightbox.
+- Conclusions: Pass the selected image ID when navigating from Dashboard to Gallery, and have Gallery open that image in the lightbox on mount.
+- Actions: Updated `src/screens/Dashboard.tsx` to pass `{ imageId: item.id }` as navigation params; updated `src/App.tsx` to support navigation params via `handleNavigate` and pass them to Gallery; updated `src/screens/Gallery.tsx` to accept `initialImageId` prop and auto-open the lightbox for that image; validated with `npm run build`.

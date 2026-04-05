@@ -18,7 +18,7 @@ interface DashboardStats {
 }
 
 interface DashboardProps {
-  onNavigate: (screen: Screen) => void
+  onNavigate: (screen: Screen, params?: Record<string, unknown>) => void
 }
 
 interface DashboardCache {
@@ -295,7 +295,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => onNavigate('gallery')}
+                      onClick={() => onNavigate('gallery', { imageId: item.id })}
                       className="flex-shrink-0 w-[300px]"
                       title={item.title || undefined}
                       aria-label={item.title ? `Open Gallery: ${item.title}` : 'Open Gallery'}
