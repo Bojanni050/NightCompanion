@@ -354,3 +354,9 @@
 - Findings: Panels in Prompt Builder needed more spacing for better visual separation.
 - Conclusions: Add 1rem bottom margin to both the Greylist and settings panels.
 - Actions: Added `mb-4` class (1rem bottom margin) to both panel containers in `src/screens/Generator.tsx` builder tab; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Builder — move Max Words slider to Greylist panel)
+
+- Findings: Max Words slider was in the settings panel, but would fit better with Greylist controls for better balance.
+- Conclusions: Move Max Words slider to Greylist panel and ensure both panels have equal height.
+- Actions: Moved Max Words slider from settings panel to a new card below GreylistCard; updated grid layout with `lg:items-stretch` and `flex flex-col h-full` for equal heights; validated with `npm run build`.
