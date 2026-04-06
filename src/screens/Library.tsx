@@ -361,6 +361,7 @@ export default function Library() {
                               Template
                             </span>
                           )}
+                          {/* TODO: Add improved prompt indicator when improvedPrompt field exists */}
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
@@ -568,25 +569,31 @@ export default function Library() {
               className="pointer-events-auto w-full max-w-3xl rounded-[28px] border border-white/15 bg-black/45 px-5 py-4 text-white shadow-2xl backdrop-blur-2xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex items-center justify-center gap-1 text-glow-amber">
-                {[1, 2, 3, 4, 5].map((value) => {
-                  const fill = getStarFill(lightboxImage.rating, value)
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-white">{lightboxImage.title}</h3>
+                  {/* TODO: Add improved prompt checkmark when improvedPrompt field exists */}
+                </div>
+                <div className="flex items-center justify-center gap-1 text-glow-amber">
+                  {[1, 2, 3, 4, 5].map((value) => {
+                    const fill = getStarFill(lightboxImage.rating, value)
 
-                  if (fill === 'full') {
-                    return <Star key={value} size={16} fill="currentColor" />
-                  }
+                    if (fill === 'full') {
+                      return <Star key={value} size={16} fill="currentColor" />
+                    }
 
-                  if (fill === 'half') {
-                    return <StarHalf key={value} size={16} fill="currentColor" />
-                  }
+                    if (fill === 'half') {
+                      return <StarHalf key={value} size={16} fill="currentColor" />
+                    }
 
-                  return <Star key={value} size={16} className="text-white/35" />
-                })}
-                <span className="ml-2 text-sm font-medium text-white/90">
-                  {lightboxImage.rating > 0 ? lightboxImage.rating.toFixed(1) : '0.0'} / 5.0
-                </span>
+                    return <Star key={value} size={16} className="text-white/35" />
+                  })}
+                  <span className="ml-2 text-sm font-medium text-white/90">
+                    {lightboxImage.rating > 0 ? lightboxImage.rating.toFixed(1) : '0.0'} / 5.0
+                  </span>
+                </div>
               </div>
-              <p className="mt-3 text-center text-sm leading-relaxed text-white/92 whitespace-pre-wrap">
+              <p className="text-center text-sm leading-relaxed text-white/92 whitespace-pre-wrap">
                 {lightboxImage.promptText}
               </p>
             </div>

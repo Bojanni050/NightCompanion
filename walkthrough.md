@@ -360,3 +360,21 @@
 - Findings: Max Words slider was in the settings panel, but would fit better with Greylist controls for better balance.
 - Conclusions: Move Max Words slider to Greylist panel and ensure both panels have equal height.
 - Actions: Moved Max Words slider from settings panel to a new card below GreylistCard; updated grid layout with `lg:items-stretch` and `flex flex-col h-full` for equal heights; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Builder — undo improved prompt selection)
+
+- Findings: User requested to undo the recent improved prompt selection changes.
+- Conclusions: Revert the Prompt Builder back to its previous state without the dual prompt display and selection functionality.
+- Actions: Removed `selectedPromptType` state and `handleSaveGeneratedPromptToLibrary` function; reverted prompt display to single editable textarea with diff/final toggle for improved prompts; restored original copy functionality; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Form — add improved prompt selection)
+
+- Findings: Prompt edit form needed functionality to select between original and improved prompts with uneditable fields.
+- Conclusions: Add improved prompt display with checkboxes for selection to the PromptForm component, make both prompts uneditable, and allow only one selection at a time.
+- Actions: Added `improvedPrompt` and `selectedPromptType` state to `src/components/PromptForm.tsx`; created new UI layout showing both original and improved prompts with radio-style checkboxes; made prompt fields `readOnly` with an editable field for the selected prompt; updated handleSubmit and PromptPreview to use selected prompt; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Library — prepare improved prompt indicators)
+
+- Findings: Prompt library needs to show which prompt (original or improved) is selected on cards and overlay.
+- Conclusions: Add placeholder comments and structure for improved prompt indicators when the database field exists.
+- Actions: Added TODO comments in `src/screens/Library.tsx` for improved prompt indicators on prompt cards and in lightbox overlay; prepared structure for checkmark display when `improvedPrompt` field is added to schema; validated with `npm run build`.
