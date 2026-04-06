@@ -1055,41 +1055,6 @@ export default function Generator() {
               )}
             </div>
 
-            {/* Suggested Model Section */}
-            <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
-                <button
-                  type="button"
-                  onClick={() => void requestModelAdvice('ai', generatedPrompt)}
-                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
-                  className="btn-compact-teal"
-                >
-                  <Wand2 className="w-3.5 h-3.5" /> {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
-                </button>
-              </div>
-
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-slate-500 mr-1">Budget:</span>
-                {(['cheap', 'balanced', 'premium'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setBudgetMode(mode)}
-                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}`}
-                  >
-                    {mode === 'cheap' ? 'Goedkoop' : mode === 'balanced' ? 'Gebalanceerd' : 'Premium'}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-sm text-slate-500">Beste kwaliteit</span>
-                <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
-              </div>
-              <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
-            </div>
-
             {/* Improve Prompt Section - Teal styled */}
             <div className="mt-4 card border-teal-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-500/10 p-5">
               <div className="flex items-center justify-between gap-3">
@@ -1179,6 +1144,41 @@ export default function Generator() {
                   <Save className="w-3.5 h-3.5" /> Save to Library
                 </button>
               </div>
+            </div>
+
+            {/* Suggested Model Section */}
+            <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
+                <button
+                  type="button"
+                  onClick={() => void requestModelAdvice('ai', generatedPrompt)}
+                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
+                  className="btn-compact-teal"
+                >
+                  <Wand2 className="w-3.5 h-3.5" /> {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
+                </button>
+              </div>
+
+              <div className="mt-3 flex items-center gap-2">
+                <span className="text-xs text-slate-500 mr-1">Budget:</span>
+                {(['cheap', 'balanced', 'premium'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setBudgetMode(mode)}
+                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}`}
+                  >
+                    {mode === 'cheap' ? 'Goedkoop' : mode === 'balanced' ? 'Gebalanceerd' : 'Premium'}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <span className="text-sm text-slate-500">Beste kwaliteit</span>
+                <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
+              </div>
+              <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
             </div>
 
             {/* Status */}

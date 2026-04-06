@@ -306,3 +306,9 @@
 - Findings: Clicking a recent Dashboard image could crash the renderer when the lightbox opened while `images` was empty or an index was out of bounds.
 - Conclusions: Guard lightbox navigation logic against empty image arrays and keep `initialIndex` within bounds.
 - Actions: Updated `src/components/GalleryLightbox.tsx` to clamp/guard index navigation when `images.length === 0`; updated `src/screens/Gallery.tsx` to restore the `totalPages` calculation and stabilise lightbox opening dependencies; validated with `npm run build`.
+
+## 2026-04-06 (Generator — reorder Improve Prompt + title + Suggested Model)
+
+- Findings: The Generator page layout had the Suggested Model section above the Improve Prompt section, and the title/save controls were separated from the improvement flow.
+- Conclusions: Place the Improve Prompt section above Suggested Model, and keep the title field + related buttons directly under Improve Prompt for a more logical workflow.
+- Actions: Updated `src/screens/Generator.tsx` to move the Improve Prompt section above Suggested Model and position the title field + buttons under Improve Prompt; validated with `npm run build`.
