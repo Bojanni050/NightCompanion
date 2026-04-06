@@ -384,3 +384,9 @@
 - Findings: When uploading images to prompts, users need to select which prompt (original, improved, or custom) to use for each image.
 - Conclusions: Add image-specific prompt selection functionality with a dialog for new uploads and inline controls for existing images.
 - Actions: Added state for tracking image prompt selections and custom prompts in `src/components/PromptForm.tsx`; created image prompt selection dialog that appears after uploading images; added inline prompt selection UI for each image with radio buttons and custom prompt textarea; updated image upload flow to show prompt selection dialog; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Form — enhance image prompt dialog)
+
+- Findings: Image prompt selection dialog was too small and lacked model selection capability.
+- Conclusions: Make the dialog 50% larger and add a model selection dropdown for better UX.
+- Actions: Updated dialog container from `max-w-md` to `max-w-2xl` and added `max-h-[90vh] overflow-y-auto` for larger size; added model selection dropdown with populated `modelOptions` in the dialog; enhanced dialog layout for better usability; validated with `npm run build`.

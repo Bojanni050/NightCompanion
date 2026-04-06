@@ -961,7 +961,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
       {/* Image Prompt Selection Dialog */}
       {showImagePromptDialog && pendingImageId && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-semibold text-white mb-4">Select Prompt for Image</h3>
             
             <div className="space-y-3">
@@ -1025,6 +1025,23 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 />
               </div>
             )}
+
+            <div className="mt-6">
+              <label className="label !mb-2">Image Model</label>
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="input w-full"
+                aria-label="Select model for this image"
+              >
+                <option value="">Select a model...</option>
+                {modelOptions.map((modelOption) => (
+                  <option key={modelOption} value={modelOption}>
+                    {modelOption}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="flex gap-3 justify-end mt-6">
               <button
