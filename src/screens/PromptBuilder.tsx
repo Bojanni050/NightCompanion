@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import PromptPreview from '../components/PromptPreview'
 import PromptDiffView from '../components/PromptDiffView'
 import { toast } from 'sonner'
+import { usePromptImprovement } from '../hooks/usePromptImprovement'
 
 type Part = {
   id: string
@@ -61,18 +62,15 @@ export default function PromptBuilder({
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   const [isFillingAll, setIsFillingAll] = useState(false)
   const [generatedPrompt, setGeneratedPrompt] = useState('')
-  const [isImprovingGeneratedPrompt, setIsImprovingGeneratedPrompt] = useState(false)
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
-  const [generatedPromptViewTab, setGeneratedPromptViewTab] = useState<'final' | 'diff'>('final')
-  const [generatedImprovementDiff, setGeneratedImprovementDiff] = useState<{ originalPrompt: string; improvedPrompt: string } | null>(null)
+  const generatedPromptImprovement = usePromptImprovement()
+  const [uiStateLoaded, setUiStateLoaded] = useState(false)
+  const uiStateSaveTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
-    const stored = localStorage.getItem(PROMPT_BUILDER_UI_STATE_KEY)
-    if (!stored) return
+    let ignore = false
 
-    try {
-      const parsed = JSON.parse(stored) as PromptBuilderPersistedState
-
+    const applyPersisted = (parsed: PromptBuilderPersistedState) => {
       if (Array.isArray(parsed.parts)) {
         setParts((prev) => {
           const valueById = new Map(parsed.parts?.map((p) => [p.id, p.value] as const))
@@ -87,38 +85,83 @@ export default function PromptBuilder({
       setSavedTitle(parsed.savedTitle ?? '')
       setSelectedStyleProfileId?.(parsed.selectedStyleProfileId ?? '')
       setGeneratedPrompt(parsed.generatedPrompt ?? '')
-      setGeneratedImprovementDiff(parsed.generatedImprovementDiff ?? null)
+      generatedPromptImprovement.setImprovementDiff(parsed.generatedImprovementDiff ?? null)
 
       const nextTab = parsed.generatedPromptViewTab === 'diff' && parsed.generatedImprovementDiff ? 'diff' : 'final'
-      setGeneratedPromptViewTab(nextTab)
-    } catch {
-      setParts(DEFAULT_PARTS)
-      setSeparator(', ')
-      setSavedTitle('')
-      setSelectedStyleProfileId?.('')
-      setGeneratedPrompt('')
-      setGeneratedImprovementDiff(null)
-      setGeneratedPromptViewTab('final')
+      generatedPromptImprovement.setViewTab(nextTab)
     }
-  }, [])
+
+    async function loadUiState() {
+      try {
+        const settingsResult = await window.electronAPI.settings.getPromptBuilderUiState()
+        if (!ignore && !settingsResult.error && settingsResult.data && Object.keys(settingsResult.data).length > 0) {
+          applyPersisted(settingsResult.data)
+          setUiStateLoaded(true)
+          return
+        }
+
+        const legacy = localStorage.getItem(PROMPT_BUILDER_UI_STATE_KEY)
+        if (!legacy) {
+          setUiStateLoaded(true)
+          return
+        }
+
+        try {
+          const parsed = JSON.parse(legacy) as PromptBuilderPersistedState
+          applyPersisted(parsed)
+          await window.electronAPI.settings.savePromptBuilderUiState(parsed)
+          localStorage.removeItem(PROMPT_BUILDER_UI_STATE_KEY)
+        } catch {
+          localStorage.removeItem(PROMPT_BUILDER_UI_STATE_KEY)
+        }
+      } finally {
+        if (!ignore) setUiStateLoaded(true)
+      }
+    }
+
+    void loadUiState()
+
+    return () => {
+      ignore = true
+    }
+  }, [generatedPromptImprovement, setSelectedStyleProfileId])
 
   useEffect(() => {
-    try {
+    if (!uiStateLoaded) return
+
+    if (uiStateSaveTimeoutRef.current) {
+      window.clearTimeout(uiStateSaveTimeoutRef.current)
+    }
+
+    uiStateSaveTimeoutRef.current = window.setTimeout(() => {
       const nextState: PromptBuilderPersistedState = {
         parts: parts.map((p) => ({ id: p.id, value: p.value })),
         separator,
         savedTitle,
         selectedStyleProfileId,
         generatedPrompt,
-        generatedPromptViewTab,
-        generatedImprovementDiff,
+        generatedPromptViewTab: generatedPromptImprovement.viewTab,
+        generatedImprovementDiff: generatedPromptImprovement.improvementDiff,
       }
 
-      localStorage.setItem(PROMPT_BUILDER_UI_STATE_KEY, JSON.stringify(nextState))
-    } catch (e) {
-      console.error('Failed to save prompt builder state to localStorage:', e)
+      void window.electronAPI.settings.savePromptBuilderUiState(nextState)
+    }, 500)
+
+    return () => {
+      if (uiStateSaveTimeoutRef.current) {
+        window.clearTimeout(uiStateSaveTimeoutRef.current)
+      }
     }
-  }, [parts, separator, savedTitle, selectedStyleProfileId, generatedPrompt, generatedPromptViewTab, generatedImprovementDiff, setSelectedStyleProfileId])
+  }, [
+    uiStateLoaded,
+    parts,
+    separator,
+    savedTitle,
+    selectedStyleProfileId,
+    generatedPrompt,
+    generatedPromptImprovement.viewTab,
+    generatedPromptImprovement.improvementDiff,
+  ])
 
   const updatePart = (id: string, value: string) => {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, value } : p)))
@@ -226,23 +269,13 @@ export default function PromptBuilder({
     const value = generatedPrompt.trim()
     if (!value) return
 
-    setIsImprovingGeneratedPrompt(true)
-
     try {
-      const result = await window.electronAPI.generator.improvePrompt({ prompt: value })
-      if (result.error || !result.data?.prompt) {
-        throw new Error(result.error || 'No improved prompt returned.')
-      }
-
-      const improved = result.data.prompt
+      const improved = await generatedPromptImprovement.handleImprove(value)
+      if (!improved) return
       setGeneratedPrompt(improved)
-      setGeneratedImprovementDiff({ originalPrompt: value, improvedPrompt: improved })
-      setGeneratedPromptViewTab('diff')
       toast.success('Prompt improved!')
     } catch (error) {
       toast.error(`Failed to improve prompt: ${String(error)}`)
-    } finally {
-      setIsImprovingGeneratedPrompt(false)
     }
   }
 
@@ -362,8 +395,7 @@ export default function PromptBuilder({
     setParts(DEFAULT_PARTS)
     setSavedTitle('')
     setGeneratedPrompt('')
-    setGeneratedImprovementDiff(null)
-    setGeneratedPromptViewTab('final')
+    generatedPromptImprovement.clearDiff()
   }
 
   return (
@@ -444,36 +476,36 @@ export default function PromptBuilder({
 
             <div className="mt-4">
               <label className="label">Generated Prompt</label>
-              {generatedImprovementDiff ? (
+              {generatedPromptImprovement.improvementDiff ? (
                 <div>
                   <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
                     <button
                       type="button"
-                      onClick={() => setGeneratedPromptViewTab('diff')}
-                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${generatedPromptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                      onClick={() => generatedPromptImprovement.setViewTab('diff')}
+                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${generatedPromptImprovement.viewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                     >
                       Diff View
                     </button>
                     <button
                       type="button"
-                      onClick={() => setGeneratedPromptViewTab('final')}
-                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${generatedPromptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                      onClick={() => generatedPromptImprovement.setViewTab('final')}
+                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${generatedPromptImprovement.viewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
                     >
                       Final Result
                     </button>
                   </div>
 
-                  {generatedPromptViewTab === 'diff' ? (
+                  {generatedPromptImprovement.viewTab === 'diff' ? (
                     <div className="mt-3">
                       <PromptDiffView
-                        originalPrompt={generatedImprovementDiff.originalPrompt}
-                        improvedPrompt={generatedImprovementDiff.improvedPrompt}
+                        originalPrompt={generatedPromptImprovement.improvementDiff.originalPrompt}
+                        improvedPrompt={generatedPromptImprovement.improvementDiff.improvedPrompt}
                       />
                     </div>
                   ) : (
                     <textarea
                       className="textarea mt-3 w-full"
-                      value={generatedImprovementDiff.improvedPrompt}
+                      value={generatedPromptImprovement.improvementDiff.improvedPrompt}
                       readOnly
                       rows={4}
                       placeholder="Improved prompt result"
@@ -485,9 +517,8 @@ export default function PromptBuilder({
                   value={generatedPrompt}
                   onChange={(e) => {
                     setGeneratedPrompt(e.target.value)
-                    if (generatedImprovementDiff) {
-                      setGeneratedImprovementDiff(null)
-                      setGeneratedPromptViewTab('final')
+                    if (generatedPromptImprovement.improvementDiff) {
+                      generatedPromptImprovement.clearDiff()
                     }
                   }}
                   className="textarea w-full"
@@ -506,11 +537,11 @@ export default function PromptBuilder({
                 </button>
                 <button
                   type="button"
-                  disabled={!generatedPrompt.trim() || isImprovingGeneratedPrompt}
+                  disabled={!generatedPrompt.trim() || generatedPromptImprovement.isImproving}
                   onClick={() => void handleImproveGeneratedPrompt()}
                   className="btn-compact-teal"
                 >
-                  {isImprovingGeneratedPrompt ? 'Improving…' : 'Improve Prompt'}
+                  {generatedPromptImprovement.isImproving ? 'Improving…' : 'Improve Prompt'}
                 </button>
               </div>
             </div>

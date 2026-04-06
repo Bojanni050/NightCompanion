@@ -162,6 +162,40 @@ type UsageBreakdown = {
   categories: Record<UsageCategory, UsageTotals>
   topModels: UsageBreakdownModelRow[]
 }
+
+type GeneratorUiStateStore = {
+  tab?: 'generator' | 'builder'
+  selectedPreset?: string
+  maxWords?: number
+  generatedPrompt?: string
+  negativePrompt?: string
+  negativePromptViewTab?: 'final' | 'diff'
+  negativeImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  savedTitle?: string
+  promptViewTab?: 'final' | 'diff'
+  improvementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  quickStartIdea?: string
+  quickStartCreativity?: 'focused' | 'balanced' | 'wild'
+  magicRandomCreativity?: 'focused' | 'balanced' | 'wild'
+  quickStartCharacterId?: string | null
+  recommendedModel?: string
+  recommendedModelReason?: string
+  recommendedModelMode?: 'rule' | 'ai' | null
+  advisorBestValue?: string
+  advisorFastest?: string
+  supportsNegativePrompt?: boolean | null
+  budgetMode?: 'cheap' | 'balanced' | 'premium'
+}
+
+type PromptBuilderUiStateStore = {
+  parts?: Array<{ id: string; value: string }>
+  separator?: ', ' | '. ' | ' | '
+  savedTitle?: string
+  selectedStyleProfileId?: number | ''
+  generatedPrompt?: string
+  generatedPromptViewTab?: 'final' | 'diff'
+  generatedImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+}
 type IpcUnexpectedErrorPayload = {
   channel: string
   message: string
@@ -193,6 +227,10 @@ declare global {
         saveProviderMeta(providerId: string, input: Partial<ProviderMetaStore>): Promise<IpcResult<ProviderMetaStore>>
         getAiConfigState(): Promise<IpcResult<AiConfigStateStore>>
         saveAiConfigState(input: AiConfigStateStore): Promise<IpcResult<AiConfigStateStore>>
+        getGeneratorUiState(): Promise<IpcResult<GeneratorUiStateStore>>
+        saveGeneratorUiState(state: GeneratorUiStateStore): Promise<IpcResult<GeneratorUiStateStore>>
+        getPromptBuilderUiState(): Promise<IpcResult<PromptBuilderUiStateStore>>
+        savePromptBuilderUiState(state: PromptBuilderUiStateStore): Promise<IpcResult<PromptBuilderUiStateStore>>
         getNightCompanionFolderPath(): Promise<IpcResult<string>>
         saveNightCompanionFolderPath(input: string): Promise<IpcResult<string>>
         resetNightCompanionFolderPath(): Promise<IpcResult<string>>

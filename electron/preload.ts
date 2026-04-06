@@ -145,6 +145,40 @@ export type NightcafePresetOption = {
   presetPrompt: string
 }
 
+export type GeneratorUiStateStore = {
+  tab?: 'generator' | 'builder'
+  selectedPreset?: string
+  maxWords?: number
+  generatedPrompt?: string
+  negativePrompt?: string
+  negativePromptViewTab?: 'final' | 'diff'
+  negativeImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  savedTitle?: string
+  promptViewTab?: 'final' | 'diff'
+  improvementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  quickStartIdea?: string
+  quickStartCreativity?: 'focused' | 'balanced' | 'wild'
+  magicRandomCreativity?: 'focused' | 'balanced' | 'wild'
+  quickStartCharacterId?: string | null
+  recommendedModel?: string
+  recommendedModelReason?: string
+  recommendedModelMode?: 'rule' | 'ai' | null
+  advisorBestValue?: string
+  advisorFastest?: string
+  supportsNegativePrompt?: boolean | null
+  budgetMode?: 'cheap' | 'balanced' | 'premium'
+}
+
+export type PromptBuilderUiStateStore = {
+  parts?: Array<{ id: string; value: string }>
+  separator?: ', ' | '. ' | ' | '
+  savedTitle?: string
+  selectedStyleProfileId?: number | ''
+  generatedPrompt?: string
+  generatedPromptViewTab?: 'final' | 'diff'
+  generatedImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+}
+
 export type GalleryFilters = {
   search?: string
   collectionId?: string | null
@@ -323,6 +357,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invokeWithFallback('settings:refreshOpenRouterModels', input),
     testOpenRouter: (input?: Partial<OpenRouterSettings>): Promise<IpcResult<{ ok: boolean; modelCount: number }>> =>
       invokeWithFallback('settings:testOpenRouter', input),
+
+    getGeneratorUiState: (): Promise<IpcResult<GeneratorUiStateStore>> =>
+      invokeWithFallback('settings:getGeneratorUiState'),
+    saveGeneratorUiState: (state: GeneratorUiStateStore): Promise<IpcResult<GeneratorUiStateStore>> =>
+      invokeWithFallback('settings:saveGeneratorUiState', state),
+    getPromptBuilderUiState: (): Promise<IpcResult<PromptBuilderUiStateStore>> =>
+      invokeWithFallback('settings:getPromptBuilderUiState'),
+    savePromptBuilderUiState: (state: PromptBuilderUiStateStore): Promise<IpcResult<PromptBuilderUiStateStore>> =>
+      invokeWithFallback('settings:savePromptBuilderUiState', state),
   },
   generator: {
     magicRandom: (input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>> =>

@@ -8,18 +8,14 @@ type ImprovementSectionProps = {
   generatedPrompt: string
   setGeneratedPrompt: (value: string) => void
   negativePrompt: string
-  setNegativePrompt: (value: string) => void
-  improvementDiff: { originalPrompt: string; improvedPrompt: string } | null
-  setImprovementDiff: (value: { originalPrompt: string; improvedPrompt: string } | null) => void
   negativeImprovementDiff: { originalPrompt: string; improvedPrompt: string } | null
-  setNegativeImprovementDiff: (value: { originalPrompt: string; improvedPrompt: string } | null) => void
-  promptViewTab: PromptViewTab
-  setPromptViewTab: (value: PromptViewTab) => void
+  viewTab: PromptViewTab
+  setViewTab: (value: PromptViewTab) => void
   negativePromptViewTab: NegativePromptViewTab
   setNegativePromptViewTab: (value: NegativePromptViewTab) => void
-  improving: boolean
-  setImproving: (value: boolean) => void
-  handleImprovePrompt: () => void
+  improvementDiff: { originalPrompt: string; improvedPrompt: string } | null
+  isImproving: boolean
+  handleImprove: () => void
   handleImproveNegativePrompt: () => void
   handleCopyPrompt: () => void
   handleCopyNegativePrompt: () => void
@@ -35,17 +31,14 @@ export default function ImprovementSection({
   generatedPrompt,
   setGeneratedPrompt,
   negativePrompt,
-  setNegativePrompt,
-  improvementDiff,
-  setImprovementDiff,
   negativeImprovementDiff,
-  setNegativeImprovementDiff,
-  promptViewTab,
-  setPromptViewTab,
+  viewTab,
+  setViewTab,
   negativePromptViewTab,
   setNegativePromptViewTab,
-  improving,
-  handleImprovePrompt,
+  improvementDiff,
+  isImproving,
+  handleImprove,
   handleImproveNegativePrompt,
   handleCopyPrompt,
   handleCopyNegativePrompt,
@@ -136,18 +129,18 @@ export default function ImprovementSection({
             <button
               type="button"
               onClick={handleCopyPrompt}
-              disabled={!(improvementDiff?.improvedPrompt ?? generatedPrompt).trim() || loading || improving || generatingNegative || improvingNegative}
+              disabled={!(improvementDiff?.improvedPrompt ?? generatedPrompt).trim() || loading || isImproving || generatingNegative || improvingNegative}
               className="btn-compact-ghost"
             >
               <Copy className="w-3.5 h-3.5" /> Copy Prompt
             </button>
             <button
               type="button"
-              onClick={handleImprovePrompt}
-              disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
+              onClick={handleImprove}
+              disabled={!generatedPrompt.trim() || loading || isImproving || generatingNegative || improvingNegative}
               className="btn-compact-teal"
             >
-              {improving ? 'Improving...' : 'Improve Prompt'}
+              {isImproving ? 'Improving...' : 'Improve Prompt'}
             </button>
           </div>
         </div>
@@ -157,21 +150,21 @@ export default function ImprovementSection({
             <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
               <button
                 type="button"
-                onClick={() => setPromptViewTab('diff')}
-                className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                onClick={() => setViewTab('diff')}
+                className={`px-3 py-1.5 rounded-md text-xs transition-colors ${viewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
               >
                 Diff View
               </button>
               <button
                 type="button"
-                onClick={() => setPromptViewTab('final')}
-                className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                onClick={() => setViewTab('final')}
+                className={`px-3 py-1.5 rounded-md text-xs transition-colors ${viewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
               >
                 Final Result
               </button>
             </div>
 
-            {promptViewTab === 'diff' ? (
+            {viewTab === 'diff' ? (
               <PromptDiffView
                 originalPrompt={improvementDiff.originalPrompt}
                 improvedPrompt={improvementDiff.improvedPrompt}
@@ -200,7 +193,7 @@ export default function ImprovementSection({
               <button
                 type="button"
                 onClick={handleCopyNegativePrompt}
-                disabled={!negativeImprovementDiff.improvedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
+                disabled={!negativeImprovementDiff.improvedPrompt.trim() || loading || isImproving || generatingNegative || improvingNegative}
                 className="btn-compact-ghost"
               >
                 <Copy className="w-3.5 h-3.5" /> Copy Negative
@@ -208,7 +201,7 @@ export default function ImprovementSection({
               <button
                 type="button"
                 onClick={handleImproveNegativePrompt}
-                disabled={!negativePrompt.trim() || loading || improving || generatingNegative || improvingNegative}
+                disabled={!negativePrompt.trim() || loading || isImproving || generatingNegative || improvingNegative}
                 className="btn-compact-red"
               >
                 {improvingNegative ? 'Improving...' : 'Improve Negative'}

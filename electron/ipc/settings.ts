@@ -39,6 +39,40 @@ type AiConfigStateStore = {
   storeAiPromptResponseForUsage?: boolean
 }
 
+type GeneratorUiStateStore = {
+  tab?: 'generator' | 'builder'
+  selectedPreset?: string
+  maxWords?: number
+  generatedPrompt?: string
+  negativePrompt?: string
+  negativePromptViewTab?: 'final' | 'diff'
+  negativeImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  savedTitle?: string
+  promptViewTab?: 'final' | 'diff'
+  improvementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  quickStartIdea?: string
+  quickStartCreativity?: 'focused' | 'balanced' | 'wild'
+  magicRandomCreativity?: 'focused' | 'balanced' | 'wild'
+  quickStartCharacterId?: string | null
+  recommendedModel?: string
+  recommendedModelReason?: string
+  recommendedModelMode?: 'rule' | 'ai' | null
+  advisorBestValue?: string
+  advisorFastest?: string
+  supportsNegativePrompt?: boolean | null
+  budgetMode?: 'cheap' | 'balanced' | 'premium'
+}
+
+type PromptBuilderUiStateStore = {
+  parts?: Array<{ id: string; value: string }>
+  separator?: ', ' | '. ' | ' | '
+  savedTitle?: string
+  selectedStyleProfileId?: number | ''
+  generatedPrompt?: string
+  generatedPromptViewTab?: 'final' | 'diff'
+  generatedImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+}
+
 type LocalEndpointStore = {
   id?: string
   provider?: string
@@ -74,6 +108,8 @@ type StoredSettings = {
   providerMeta?: Record<string, Partial<ProviderMetaStore>>
   aiConfig?: AiConfigStateStore
   localEndpoints?: LocalEndpointStore[]
+  generatorUiState?: GeneratorUiStateStore
+  promptBuilderUiState?: PromptBuilderUiStateStore
 }
 
 type DashboardRole = 'generation' | 'improvement' | 'vision' | 'general'
@@ -111,6 +147,99 @@ function normalizeRoleRouteState(input: unknown): RoleRouteState | undefined {
       providerId: typeof rawRole.providerId === 'string' ? rawRole.providerId : '',
       modelId: typeof rawRole.modelId === 'string' ? rawRole.modelId : '',
     }
+  }
+
+  return normalized
+}
+
+function normalizeGeneratorUiState(input: unknown): GeneratorUiStateStore {
+  if (!isRecord(input)) return {}
+
+  const normalized: GeneratorUiStateStore = {}
+
+  if (input.tab === 'generator' || input.tab === 'builder') normalized.tab = input.tab
+  if (typeof input.selectedPreset === 'string') normalized.selectedPreset = input.selectedPreset
+  if (typeof input.maxWords === 'number' && Number.isFinite(input.maxWords) && input.maxWords > 0) normalized.maxWords = input.maxWords
+  if (typeof input.generatedPrompt === 'string') normalized.generatedPrompt = input.generatedPrompt
+  if (typeof input.negativePrompt === 'string') normalized.negativePrompt = input.negativePrompt
+  if (input.negativePromptViewTab === 'final' || input.negativePromptViewTab === 'diff') normalized.negativePromptViewTab = input.negativePromptViewTab
+  if (input.promptViewTab === 'final' || input.promptViewTab === 'diff') normalized.promptViewTab = input.promptViewTab
+
+  if (isRecord(input.improvementDiff) && typeof input.improvementDiff.originalPrompt === 'string' && typeof input.improvementDiff.improvedPrompt === 'string') {
+    normalized.improvementDiff = {
+      originalPrompt: input.improvementDiff.originalPrompt,
+      improvedPrompt: input.improvementDiff.improvedPrompt,
+    }
+  } else if (input.improvementDiff === null) {
+    normalized.improvementDiff = null
+  }
+
+  if (isRecord(input.negativeImprovementDiff) && typeof input.negativeImprovementDiff.originalPrompt === 'string' && typeof input.negativeImprovementDiff.improvedPrompt === 'string') {
+    normalized.negativeImprovementDiff = {
+      originalPrompt: input.negativeImprovementDiff.originalPrompt,
+      improvedPrompt: input.negativeImprovementDiff.improvedPrompt,
+    }
+  } else if (input.negativeImprovementDiff === null) {
+    normalized.negativeImprovementDiff = null
+  }
+
+  if (typeof input.savedTitle === 'string') normalized.savedTitle = input.savedTitle
+  if (typeof input.quickStartIdea === 'string') normalized.quickStartIdea = input.quickStartIdea
+  if (input.quickStartCreativity === 'focused' || input.quickStartCreativity === 'balanced' || input.quickStartCreativity === 'wild') {
+    normalized.quickStartCreativity = input.quickStartCreativity
+  }
+  if (input.magicRandomCreativity === 'focused' || input.magicRandomCreativity === 'balanced' || input.magicRandomCreativity === 'wild') {
+    normalized.magicRandomCreativity = input.magicRandomCreativity
+  }
+  if (typeof input.quickStartCharacterId === 'string' || input.quickStartCharacterId === null) {
+    normalized.quickStartCharacterId = input.quickStartCharacterId
+  }
+
+  if (typeof input.recommendedModel === 'string') normalized.recommendedModel = input.recommendedModel
+  if (typeof input.recommendedModelReason === 'string') normalized.recommendedModelReason = input.recommendedModelReason
+  if (input.recommendedModelMode === 'rule' || input.recommendedModelMode === 'ai' || input.recommendedModelMode === null) {
+    normalized.recommendedModelMode = input.recommendedModelMode
+  }
+  if (typeof input.advisorBestValue === 'string') normalized.advisorBestValue = input.advisorBestValue
+  if (typeof input.advisorFastest === 'string') normalized.advisorFastest = input.advisorFastest
+  if (typeof input.supportsNegativePrompt === 'boolean' || input.supportsNegativePrompt === null) {
+    normalized.supportsNegativePrompt = input.supportsNegativePrompt
+  }
+  if (input.budgetMode === 'cheap' || input.budgetMode === 'balanced' || input.budgetMode === 'premium') {
+    normalized.budgetMode = input.budgetMode
+  }
+
+  return normalized
+}
+
+function normalizePromptBuilderUiState(input: unknown): PromptBuilderUiStateStore {
+  if (!isRecord(input)) return {}
+
+  const normalized: PromptBuilderUiStateStore = {}
+
+  if (Array.isArray(input.parts)) {
+    normalized.parts = input.parts
+      .filter((item): item is Record<string, unknown> => isRecord(item))
+      .map((item) => ({
+        id: typeof item.id === 'string' ? item.id : '',
+        value: typeof item.value === 'string' ? item.value : '',
+      }))
+      .filter((item) => item.id)
+  }
+
+  if (input.separator === ', ' || input.separator === '. ' || input.separator === ' | ') normalized.separator = input.separator
+  if (typeof input.savedTitle === 'string') normalized.savedTitle = input.savedTitle
+  if (typeof input.selectedStyleProfileId === 'number' || input.selectedStyleProfileId === '') normalized.selectedStyleProfileId = input.selectedStyleProfileId
+  if (typeof input.generatedPrompt === 'string') normalized.generatedPrompt = input.generatedPrompt
+  if (input.generatedPromptViewTab === 'final' || input.generatedPromptViewTab === 'diff') normalized.generatedPromptViewTab = input.generatedPromptViewTab
+
+  if (isRecord(input.generatedImprovementDiff) && typeof input.generatedImprovementDiff.originalPrompt === 'string' && typeof input.generatedImprovementDiff.improvedPrompt === 'string') {
+    normalized.generatedImprovementDiff = {
+      originalPrompt: input.generatedImprovementDiff.originalPrompt,
+      improvedPrompt: input.generatedImprovementDiff.improvedPrompt,
+    }
+  } else if (input.generatedImprovementDiff === null) {
+    normalized.generatedImprovementDiff = null
   }
 
   return normalized
@@ -192,6 +321,9 @@ function normalizeStoredSettings(input: unknown): StoredSettings {
     normalized.localEndpoints = input.localEndpoints.filter((item): item is LocalEndpointStore => isRecord(item))
   }
 
+  normalized.generatorUiState = normalizeGeneratorUiState(input.generatorUiState)
+  normalized.promptBuilderUiState = normalizePromptBuilderUiState(input.promptBuilderUiState)
+
   return normalized
 }
 
@@ -248,6 +380,8 @@ async function writeStoredSettings(settings: {
   providerMeta?: Record<string, Partial<ProviderMetaStore>>
   aiConfig?: AiConfigStateStore
   localEndpoints?: LocalEndpointStore[]
+  generatorUiState?: GeneratorUiStateStore
+  promptBuilderUiState?: PromptBuilderUiStateStore
 }) {
   const settingsPath = getSettingsFilePath()
   await mkdir(path.dirname(settingsPath), { recursive: true })
@@ -525,6 +659,64 @@ export function registerSettingsIpc({
     try {
       const stored = await readStoredSettings()
       return { data: stored.aiConfig || {} }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:getGeneratorUiState', async () => {
+    try {
+      const stored = await readStoredSettings()
+      return { data: normalizeGeneratorUiState(stored.generatorUiState) }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:saveGeneratorUiState', async (_, input: GeneratorUiStateStore) => {
+    try {
+      const stored = await readStoredSettings()
+      const nextGeneratorUiState = normalizeGeneratorUiState(input)
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(stored.openRouter),
+        providerMeta: stored.providerMeta,
+        aiConfig: stored.aiConfig,
+        localEndpoints: stored.localEndpoints,
+        generatorUiState: nextGeneratorUiState,
+        promptBuilderUiState: stored.promptBuilderUiState,
+      })
+
+      return { data: nextGeneratorUiState }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:getPromptBuilderUiState', async () => {
+    try {
+      const stored = await readStoredSettings()
+      return { data: normalizePromptBuilderUiState(stored.promptBuilderUiState) }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:savePromptBuilderUiState', async (_, input: PromptBuilderUiStateStore) => {
+    try {
+      const stored = await readStoredSettings()
+      const nextPromptBuilderUiState = normalizePromptBuilderUiState(input)
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(stored.openRouter),
+        providerMeta: stored.providerMeta,
+        aiConfig: stored.aiConfig,
+        localEndpoints: stored.localEndpoints,
+        generatorUiState: stored.generatorUiState,
+        promptBuilderUiState: nextPromptBuilderUiState,
+      })
+
+      return { data: nextPromptBuilderUiState }
     } catch (error) {
       return { error: String(error) }
     }

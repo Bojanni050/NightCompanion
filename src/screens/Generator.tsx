@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PromptBuilder from './PromptBuilder'
 import { PageContainer } from '../components/PageContainer'
 import QuickstartPanel from '../components/generator/QuickstartPanel'
@@ -6,6 +6,7 @@ import ImprovementSection from '../components/generator/ImprovementSection'
 import ModelAdvisorCard from '../components/generator/ModelAdvisorCard'
 import TitleSaveSection from '../components/generator/TitleSaveSection'
 import GreylistCard from '../components/generator/GreylistCard'
+import { usePromptImprovement } from '../hooks/usePromptImprovement'
 
 const DEFAULT_GREYLIST = ['jellyfish', 'neon', 'cyber']
 const DEFAULT_TITLE_MAX_LENGTH = 140
@@ -71,13 +72,11 @@ export default function Generator() {
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS)
   const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [negativePrompt, setNegativePrompt] = useState('')
-  const [improvementDiff, setImprovementDiff] = useState<{ originalPrompt: string; improvedPrompt: string } | null>(null)
   const [negativeImprovementDiff, setNegativeImprovementDiff] = useState<{ originalPrompt: string; improvedPrompt: string } | null>(null)
-  const [promptViewTab, setPromptViewTab] = useState<PromptViewTab>('final')
   const [negativePromptViewTab, setNegativePromptViewTab] = useState<NegativePromptViewTab>('final')
   const [status, setStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [improving, setImproving] = useState(false)
+  const promptImprovement = usePromptImprovement()
   const [generatingNegative, setGeneratingNegative] = useState(false)
   const [improvingNegative, setImprovingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
@@ -92,6 +91,8 @@ export default function Generator() {
   const [greylistWords, setGreylistWords] = useState<string[]>(DEFAULT_GREYLIST)
   const [greylistInput, setGreylistInput] = useState('')
   const [greylistLoaded, setGreylistLoaded] = useState(false)
+  const [uiStateLoaded, setUiStateLoaded] = useState(false)
+  const uiStateSaveTimeoutRef = useRef<number | null>(null)
 
   const [quickStartIdea, setQuickStartIdea] = useState('')
   const [quickStartCreativity, setQuickStartCreativity] = useState<CreativityLevel>('balanced')
@@ -151,9 +152,8 @@ export default function Generator() {
       const nextPrompt = result.data.prompt
       setGeneratedPrompt(nextPrompt)
       setSavedTitle(buildDefaultTitle(nextPrompt))
-      setImprovementDiff(null)
+      promptImprovement.clearDiff()
       setNegativeImprovementDiff(null)
-      setPromptViewTab('final')
       setNegativePromptViewTab('final')
       setTab('generator')
       void requestModelAdvice('rule', nextPrompt)
@@ -380,12 +380,9 @@ export default function Generator() {
   }, [])
 
   useEffect(() => {
-    const stored = localStorage.getItem(GENERATOR_UI_STATE_KEY)
-    if (!stored) return
+    let ignore = false
 
-    try {
-      const parsed = JSON.parse(stored) as GeneratorPersistedState
-
+    const applyPersisted = (parsed: GeneratorPersistedState) => {
       setTab(parsed.tab === 'builder' ? 'builder' : 'generator')
       setSelectedPreset(parsed.selectedPreset ?? '')
       const persistedMaxWords = Number.isFinite(parsed.maxWords)
@@ -396,7 +393,7 @@ export default function Generator() {
       setNegativePrompt(parsed.negativePrompt ?? '')
       setNegativeImprovementDiff(parsed.negativeImprovementDiff ?? null)
       setSavedTitle(parsed.savedTitle ?? '')
-      setImprovementDiff(parsed.improvementDiff ?? null)
+      promptImprovement.setImprovementDiff(parsed.improvementDiff ?? null)
       setRecommendedModel(parsed.recommendedModel ?? '')
       setRecommendedModelReason(parsed.recommendedModelReason ?? '')
       setRecommendedModelMode(parsed.recommendedModelMode ?? null)
@@ -410,38 +407,55 @@ export default function Generator() {
       setBudgetMode(parsed.budgetMode === 'cheap' ? 'cheap' : parsed.budgetMode === 'premium' ? 'premium' : 'balanced')
 
       const nextPromptViewTab = parsed.promptViewTab === 'diff' && parsed.improvementDiff ? 'diff' : 'final'
-      setPromptViewTab(nextPromptViewTab)
+      promptImprovement.setViewTab(nextPromptViewTab)
       const nextNegativePromptViewTab = parsed.negativePromptViewTab === 'diff' && parsed.negativeImprovementDiff ? 'diff' : 'final'
       setNegativePromptViewTab(nextNegativePromptViewTab)
-    } catch {
-      setTab('generator')
-      setSelectedPreset('')
-      setMaxWords(DEFAULT_MAX_WORDS)
-      setGeneratedPrompt('')
-      setNegativePrompt('')
-      setSavedTitle('')
-      setRecommendedModel('')
-      setRecommendedModelReason('')
-      setRecommendedModelMode(null)
-      setAdvisorBestValue('')
-      setAdvisorFastest('')
-      setSupportsNegativePrompt(null)
-      setImprovementDiff(null)
-      setNegativeImprovementDiff(null)
-      setPromptViewTab('final')
-      setNegativePromptViewTab('final')
-      setQuickStartIdea('')
-      setQuickStartCreativity('balanced')
-      setMagicRandomCreativity('balanced')
-      setQuickStartCharacterId(null)
-      setBudgetMode('balanced')
     }
 
-  }, [])
+    async function loadUiState() {
+      try {
+        const settingsResult = await window.electronAPI.settings.getGeneratorUiState()
+        if (!ignore && !settingsResult.error && settingsResult.data && Object.keys(settingsResult.data).length > 0) {
+          applyPersisted(settingsResult.data)
+          setUiStateLoaded(true)
+          return
+        }
+
+        const legacy = localStorage.getItem(GENERATOR_UI_STATE_KEY)
+        if (!legacy) {
+          setUiStateLoaded(true)
+          return
+        }
+
+        try {
+          const parsed = JSON.parse(legacy) as GeneratorPersistedState
+          applyPersisted(parsed)
+          await window.electronAPI.settings.saveGeneratorUiState(parsed)
+          localStorage.removeItem(GENERATOR_UI_STATE_KEY)
+        } catch {
+          localStorage.removeItem(GENERATOR_UI_STATE_KEY)
+        }
+      } finally {
+        if (!ignore) setUiStateLoaded(true)
+      }
+    }
+
+    void loadUiState()
+
+    return () => {
+      ignore = true
+    }
+  }, [promptImprovement])
 
   useEffect(() => {
-    try {
-      localStorage.setItem(GENERATOR_UI_STATE_KEY, JSON.stringify({
+    if (!uiStateLoaded) return
+
+    if (uiStateSaveTimeoutRef.current) {
+      window.clearTimeout(uiStateSaveTimeoutRef.current)
+    }
+
+    uiStateSaveTimeoutRef.current = window.setTimeout(() => {
+      const nextState: GeneratorPersistedState = {
         tab,
         selectedPreset,
         maxWords,
@@ -456,18 +470,47 @@ export default function Generator() {
         advisorBestValue,
         advisorFastest,
         supportsNegativePrompt,
-        promptViewTab,
-        improvementDiff,
+        promptViewTab: promptImprovement.viewTab,
+        improvementDiff: promptImprovement.improvementDiff,
         quickStartIdea,
         quickStartCreativity,
         magicRandomCreativity,
         quickStartCharacterId,
         budgetMode,
-      } satisfies GeneratorPersistedState))
-    } catch (e) {
-      console.error('Failed to save generator state to localStorage:', e)
+      }
+
+      void window.electronAPI.settings.saveGeneratorUiState(nextState)
+    }, 500)
+
+    return () => {
+      if (uiStateSaveTimeoutRef.current) {
+        window.clearTimeout(uiStateSaveTimeoutRef.current)
+      }
     }
-  }, [tab, selectedPreset, maxWords, generatedPrompt, negativePrompt, negativePromptViewTab, negativeImprovementDiff, savedTitle, recommendedModel, recommendedModelReason, recommendedModelMode, advisorBestValue, advisorFastest, supportsNegativePrompt, promptViewTab, improvementDiff, quickStartIdea, quickStartCreativity, magicRandomCreativity, quickStartCharacterId, budgetMode])
+  }, [
+    uiStateLoaded,
+    tab,
+    selectedPreset,
+    maxWords,
+    generatedPrompt,
+    negativePrompt,
+    negativePromptViewTab,
+    negativeImprovementDiff,
+    savedTitle,
+    recommendedModel,
+    recommendedModelReason,
+    recommendedModelMode,
+    advisorBestValue,
+    advisorFastest,
+    supportsNegativePrompt,
+    promptImprovement.viewTab,
+    promptImprovement.improvementDiff,
+    quickStartIdea,
+    quickStartCreativity,
+    magicRandomCreativity,
+    quickStartCharacterId,
+    budgetMode,
+  ])
 
   useEffect(() => {
     let ignore = false
@@ -479,6 +522,7 @@ export default function Generator() {
           setGreylistWords(DEFAULT_GREYLIST)
           return
         }
+
         setGreylistWords(result.data.words || DEFAULT_GREYLIST)
       } catch (error) {
         console.error('Failed to load greylist:', error)
@@ -490,7 +534,9 @@ export default function Generator() {
 
     loadGreylist()
 
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [])
 
   useEffect(() => {
@@ -508,7 +554,9 @@ export default function Generator() {
 
     saveGreylist()
 
-    return () => { ignore = true }
+    return () => {
+      ignore = true
+    }
   }, [greylistLoaded, greylistWords])
 
   const handleGenerate = async () => {
@@ -551,9 +599,8 @@ export default function Generator() {
       const previousPrompt = generatedPrompt
 
       setGeneratedPrompt(nextPrompt)
-      setImprovementDiff(null)
+      promptImprovement.clearDiff()
       setNegativeImprovementDiff(null)
-      setPromptViewTab('final')
       setNegativePromptViewTab('final')
       setSavedTitle((currentTitle) => {
         const trimmedTitle = currentTitle.trim()
@@ -581,46 +628,24 @@ export default function Generator() {
     }
 
     setStatus(null)
-    setImproving(true)
 
     try {
-      const result = await window.electronAPI.generator.improvePrompt({
-        prompt: generatedPrompt,
-      })
-
-      if (!result) {
-        setStatus('Error: Improver returned an empty response.')
-        return
-      }
-
-      if (result.error) {
-        setStatus(result.error)
-        return
-      }
-
-      if (!result.data?.prompt) {
-        setStatus('Error: Improver returned no data.')
-        return
-      }
-
-      const nextPrompt = result.data.prompt
       const previousPrompt = generatedPrompt
 
-       setImprovementDiff({
-         originalPrompt: previousPrompt,
-         improvedPrompt: nextPrompt,
-       })
-      setPromptViewTab('diff')
+      const improved = await promptImprovement.handleImprove(generatedPrompt)
+      if (!improved) {
+        setStatus('Error: Failed to improve prompt.')
+        return
+      }
+
       setSavedTitle((currentTitle) => {
         const trimmedTitle = currentTitle.trim()
         if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
-        return buildDefaultTitle(nextPrompt)
+        return buildDefaultTitle(improved)
       })
       setStatus('Prompt improved.')
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to improve prompt.')
-    } finally {
-      setImproving(false)
     }
   }
 
@@ -780,18 +805,14 @@ export default function Generator() {
               generatedPrompt={generatedPrompt}
               setGeneratedPrompt={setGeneratedPrompt}
               negativePrompt={negativePrompt}
-              setNegativePrompt={setNegativePrompt}
-              improvementDiff={improvementDiff}
-              setImprovementDiff={setImprovementDiff}
+              improvementDiff={promptImprovement.improvementDiff}
+              viewTab={promptImprovement.viewTab}
+              setViewTab={promptImprovement.setViewTab}
+              isImproving={promptImprovement.isImproving}
+              handleImprove={handleImprovePrompt}
               negativeImprovementDiff={negativeImprovementDiff}
-              setNegativeImprovementDiff={setNegativeImprovementDiff}
-              promptViewTab={promptViewTab}
-              setPromptViewTab={setPromptViewTab}
               negativePromptViewTab={negativePromptViewTab}
               setNegativePromptViewTab={setNegativePromptViewTab}
-              improving={improving}
-              setImproving={setImproving}
-              handleImprovePrompt={handleImprovePrompt}
               handleImproveNegativePrompt={handleImproveNegativePrompt}
               handleCopyPrompt={handleCopyPrompt}
               handleCopyNegativePrompt={handleCopyNegativePrompt}
@@ -815,7 +836,7 @@ export default function Generator() {
               handleGenerateTitle={handleGenerateTitle}
               handleSaveToLibrary={handleSaveToLibrary}
               loading={loading}
-              improving={improving}
+              improving={promptImprovement.isImproving}
               generatingNegative={generatingNegative}
               improvingNegative={improvingNegative}
             />
@@ -841,7 +862,7 @@ export default function Generator() {
               setAdvisingAi={setAdvisingAi}
               handleAdviseModel={handleAdviseModel}
               loading={loading}
-              improving={improving}
+              improving={promptImprovement.isImproving}
               generatingNegative={generatingNegative}
               improvingNegative={improvingNegative}
             />

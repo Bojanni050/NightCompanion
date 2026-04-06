@@ -408,3 +408,15 @@
 - Findings: Prompt library images need an indicator for which prompt variant was used to generate each image.
 - Conclusions: Add a per-image selector with checkmark-style options (Generated / Improved when available / Custom) and persist the choice in `imagesJson`.
 - Actions: Updated `src/components/PromptForm.tsx` to add `promptSource` to image drafts (stored in `imagesJson`), default to `generated` (with backwards-compat for stored `original`), show an inline checkmark selector per image, and conditionally show “Improved” when `improvedPrompt` is available; validated with `npm run build`.
+
+## 2026-04-06 (usePromptImprovement shared hook)
+
+- Findings: Generator and PromptBuilder duplicated the same improvement flow logic (IPC call, diff tracking, tab switching, PromptDiffView rendering).
+- Conclusions: A shared hook eliminates duplication and ensures consistent improvement UX across both screens.
+- Actions: Created `src/hooks/usePromptImprovement.ts`; refactored `src/components/generator/ImprovementSection.tsx` and `src/screens/PromptBuilder.tsx` to use it; updated `src/screens/Generator.tsx` to wire the shared improvement state into ImprovementSection and localStorage persistence; validated with `npm run build`.
+
+## 2026-04-06 (Generator + PromptBuilder UI state migrated to Electron settings store)
+
+- Findings: Generator and PromptBuilder UI state were the last remaining localStorage consumers, inconsistent with the established settings store architecture.
+- Conclusions: Migrating to settings IPC aligns with existing patterns and eliminates renderer localStorage dependency for persistent data.
+- Actions: Added `settings:getGeneratorUiState`, `settings:saveGeneratorUiState`, `settings:getPromptBuilderUiState`, `settings:savePromptBuilderUiState` IPC handlers in `electron/ipc/settings.ts`; exposed in `electron/preload.ts` + `src/types/electron.d.ts`; refactored `src/screens/Generator.tsx` and `src/screens/PromptBuilder.tsx` with one-time legacy migration and debounced settings store persistence; validated with `npm run build`.
