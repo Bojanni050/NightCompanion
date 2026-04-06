@@ -44,7 +44,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [rating, setRating] = useState<number>(initial?.rating ?? 0)
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [improvedPrompt, setImprovedPrompt] = useState('')
-  const [selectedPromptType, setSelectedPromptType] = useState<'original' | 'improved'>('original')
+  const [selectedPromptType, setSelectedPromptType] = useState<'original' | 'improved' | 'custom'>('original')
+  const [customPrompt, setCustomPrompt] = useState('')
   const [imagePromptSelection, setImagePromptSelection] = useState<{ [imageId: string]: 'original' | 'improved' | 'custom' }>({})
   const [imageCustomPrompts, setImageCustomPrompts] = useState<{ [imageId: string]: string }>({})
   const [showImagePromptDialog, setShowImagePromptDialog] = useState(false)
@@ -352,7 +353,9 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const selectedPrompt = selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : promptText
+    const selectedPrompt = selectedPromptType === 'custom' ? customPrompt : 
+                        selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : 
+                        promptText
     if (!title.trim() || !selectedPrompt.trim()) return
 
     setSubmitting(true)
@@ -625,15 +628,16 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                     id="original-prompt"
                     checked={selectedPromptType === 'original'}
                     onChange={() => setSelectedPromptType('original')}
-                    className="w-4 h-4 text-teal-500 border-slate-600 rounded focus:ring-teal-500 focus:ring-2"
+                    disabled={selectedPromptType === 'custom'}
+                    className="w-4 h-4 text-teal-500 border-slate-600 rounded focus:ring-teal-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
-                  <label htmlFor="original-prompt" className="text-sm font-medium text-white">Original Prompt</label>
+                  <label htmlFor="original-prompt" className={`text-sm font-medium ${selectedPromptType === 'custom' ? 'text-slate-500' : 'text-white'}`}>Original Prompt</label>
                   <span className="text-[10px] text-slate-500 ml-auto">{promptText.length} chars</span>
                 </div>
                 <textarea
                   value={promptText}
                   readOnly
-                  className="textarea"
+                  className={`textarea ${selectedPromptType === 'custom' ? 'opacity-50 bg-slate-800' : ''}`}
                   rows={3}
                   placeholder="Describe what you want to generate…"
                 />
@@ -648,33 +652,62 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                       id="improved-prompt"
                       checked={selectedPromptType === 'improved'}
                       onChange={() => setSelectedPromptType('improved')}
-                      className="w-4 h-4 text-teal-500 border-slate-600 rounded focus:ring-teal-500 focus:ring-2"
+                      disabled={selectedPromptType === 'custom'}
+                      className="w-4 h-4 text-teal-500 border-slate-600 rounded focus:ring-teal-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     />
-                    <label htmlFor="improved-prompt" className="text-sm font-medium text-white">Improved Prompt</label>
+                    <label htmlFor="improved-prompt" className={`text-sm font-medium ${selectedPromptType === 'custom' ? 'text-slate-500' : 'text-white'}`}>Improved Prompt</label>
                     <span className="text-[10px] text-slate-500 ml-auto">{improvedPrompt.length} chars</span>
                   </div>
                   <textarea
                     value={improvedPrompt}
                     readOnly
-                    className="textarea"
+                    className={`textarea ${selectedPromptType === 'custom' ? 'opacity-50 bg-slate-800' : ''}`}
                     rows={3}
                     placeholder="Improved version of the prompt…"
                   />
                 </div>
               )}
 
+              {/* Custom Prompt */}
+              <div className="mt-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="checkbox"
+                    id="custom-prompt"
+                    checked={selectedPromptType === 'custom'}
+                    onChange={() => setSelectedPromptType('custom')}
+                    className="w-4 h-4 text-teal-500 border-slate-600 rounded focus:ring-teal-500 focus:ring-2"
+                  />
+                  <label htmlFor="custom-prompt" className="text-sm font-medium text-white">Custom Prompt</label>
+                  <span className="text-[10px] text-slate-500 ml-auto">{customPrompt.length} chars</span>
+                </div>
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  className="textarea"
+                  rows={3}
+                  placeholder="Enter a custom prompt…"
+                />
+              </div>
+
               {/* Edit field for the selected prompt */}
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="label !mb-0">Edit {selectedPromptType === 'improved' ? 'Improved' : 'Original'} Prompt *</label>
+                  <label className="label !mb-0">Edit {selectedPromptType === 'improved' ? 'Improved' : selectedPromptType === 'custom' ? 'Custom' : 'Original'} Prompt *</label>
                   <span className="text-[10px] text-slate-500">
-                    {(selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt.length : promptText.length)} chars
+                    {selectedPromptType === 'custom' ? customPrompt.length : 
+                     selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt.length : 
+                     promptText.length} chars
                   </span>
                 </div>
                 <textarea
-                  value={selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : promptText}
+                  value={selectedPromptType === 'custom' ? customPrompt : 
+                        selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : 
+                        promptText}
                   onChange={(e) => {
-                    if (selectedPromptType === 'improved') {
+                    if (selectedPromptType === 'custom') {
+                      setCustomPrompt(e.target.value)
+                    } else if (selectedPromptType === 'improved') {
                       setImprovedPrompt(e.target.value)
                     } else {
                       setPromptText(e.target.value)
@@ -928,7 +961,9 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             <div className="overflow-y-auto p-4 border-t border-slate-800/50 lg:border-t-0 lg:border-l md:p-5">
               <div className="lg:sticky lg:top-0">
                 <PromptPreview
-                  promptText={selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : promptText}
+                  promptText={selectedPromptType === 'custom' ? customPrompt : 
+                           selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : 
+                           promptText}
                   negativePrompt={negativePrompt}
                   styleSnippet={selectedStyleProfile?.basePromptSnippet ?? ''}
                   styleNegative={selectedStyleProfile?.commonNegativePrompts ?? ''}
@@ -936,7 +971,9 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                   maxWords={70}
                   onSave={() => formRef.current?.requestSubmit()}
                   saveLabel={isEdit ? 'Save changes' : 'Create prompt'}
-                  saveDisabled={submitting || !title.trim() || !(selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : promptText).trim()}
+                  saveDisabled={submitting || !title.trim() || !(selectedPromptType === 'custom' ? customPrompt : 
+                           selectedPromptType === 'improved' && improvedPrompt ? improvedPrompt : 
+                           promptText).trim()}
                 />
               </div>
             </div>

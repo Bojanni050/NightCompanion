@@ -390,3 +390,9 @@
 - Findings: Image prompt selection dialog was too small and lacked model selection capability.
 - Conclusions: Make the dialog 50% larger and add a model selection dropdown for better UX.
 - Actions: Updated dialog container from `max-w-md` to `max-w-2xl` and added `max-h-[90vh] overflow-y-auto` for larger size; added model selection dropdown with populated `modelOptions` in the dialog; enhanced dialog layout for better usability; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Form — add custom prompt option with disable logic)
+
+- Findings: Prompt form needed a custom prompt option and proper disable logic when custom is selected.
+- Conclusions: Add custom prompt option to the prompt selection and disable original/improved fields when custom is active.
+- Actions: Added `customPrompt` state and updated `selectedPromptType` to include 'custom'; added custom prompt checkbox and editable textarea; implemented disable logic for original and improved prompt fields when custom is selected (disabled checkboxes, dimmed textareas, grayed labels); updated all prompt selection logic in handleSubmit, PromptPreview, and edit field to handle custom case; validated with `npm run build`.
