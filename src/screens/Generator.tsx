@@ -1,26 +1,17 @@
 import { useEffect, useState } from 'react'
-import { User, Sparkles, Minus, Copy, Edit3, Save, ArrowRight, Wand2 } from 'lucide-react'
 import PromptBuilder from './PromptBuilder'
-import PromptDiffView from '../components/PromptDiffView'
 import { PageContainer } from '../components/PageContainer'
+import QuickstartPanel from '../components/generator/QuickstartPanel'
+import ImprovementSection from '../components/generator/ImprovementSection'
+import ModelAdvisorCard from '../components/generator/ModelAdvisorCard'
+import TitleSaveSection from '../components/generator/TitleSaveSection'
+import GreylistCard from '../components/generator/GreylistCard'
 
 const DEFAULT_GREYLIST = ['jellyfish', 'neon', 'cyber']
 const DEFAULT_TITLE_MAX_LENGTH = 140
 const DEFAULT_MAX_WORDS = 70
 const MAX_ALLOWED_WORDS = 100
 const GENERATOR_UI_STATE_KEY = 'generatorUiState'
-const GREYLIST_SUGGESTIONS = [
-  'jellyfish',
-  'neon',
-  'cyber',
-  'glowing',
-  'futuristic',
-  'holographic',
-  'sci-fi',
-  'chrome',
-  'vaporwave',
-  'laser',
-]
 
 type PresetOption = {
   presetName: string
@@ -85,8 +76,8 @@ export default function Generator() {
   const [status, setStatus] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [improving, setImproving] = useState(false)
-  const [generatingNegative] = useState(false)
-  const [improvingNegative] = useState(false)
+  const [generatingNegative, setGeneratingNegative] = useState(false)
+  const [improvingNegative, setImprovingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
   const [savedTitle, setSavedTitle] = useState('')
   const [recommendedModel, setRecommendedModel] = useState('')
@@ -105,7 +96,6 @@ export default function Generator() {
   const [magicRandomCreativity, setMagicRandomCreativity] = useState<CreativityLevel>('balanced')
   const [quickStartCharacterId, setQuickStartCharacterId] = useState<string | null>(null)
   const [quickStartCharacterList, setQuickStartCharacterList] = useState<Array<{ id: string; name: string; description: string }>>([]) 
-  const [showCharacterPicker, setShowCharacterPicker] = useState(false)
   const [budgetMode, setBudgetMode] = useState<BudgetMode>('balanced')
   const [expandingIdea, setExpandingIdea] = useState(false)
   const [advisingAi, setAdvisingAi] = useState(false)
@@ -235,6 +225,116 @@ export default function Generator() {
   }
 
   const normalizeGreylistWord = (value: string) => value.trim().toLowerCase()
+
+  const handleMagicRandom = async () => {
+    await handleGenerate()
+  }
+
+  const handleAdviseModel = () => {
+    void requestModelAdvice('ai', generatedPrompt)
+  }
+
+  const handleCopyPrompt = async () => {
+    await handleCopy()
+  }
+
+  const handleCopyNegativePrompt = async () => {
+    if (!negativePrompt) return
+    await navigator.clipboard.writeText(negativePrompt)
+    setStatus('Negative prompt copied to clipboard.')
+  }
+
+  const handleImprovePrompt = async () => {
+    await handleImprove()
+  }
+
+  const handleImproveNegativePrompt = async () => {
+    if (!negativePrompt.trim()) {
+      setStatus('No negative prompt to improve.')
+      return
+    }
+
+    setStatus(null)
+    setImprovingNegative(true)
+
+    try {
+      const result = await window.electronAPI.generator.improvePrompt({
+        prompt: negativePrompt,
+      })
+
+      if (!result) {
+        setStatus('Error: Improver returned an empty response.')
+        return
+      }
+
+      if (result.error) {
+        setStatus(result.error)
+        return
+      }
+
+      if (!result.data?.prompt) {
+        setStatus('Error: Improver returned no data.')
+        return
+      }
+
+      const nextPrompt = result.data.prompt
+      const previousPrompt = negativePrompt
+
+      setNegativeImprovementDiff({
+        originalPrompt: previousPrompt,
+        improvedPrompt: nextPrompt,
+      })
+      setNegativePromptViewTab('diff')
+      setStatus('Negative prompt improved.')
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Error: Failed to improve negative prompt.')
+    } finally {
+      setImprovingNegative(false)
+    }
+  }
+
+  const handleGenerateNegative = async () => {
+    if (!generatedPrompt.trim()) {
+      setStatus('Generate a prompt first before creating a negative prompt.')
+      return
+    }
+
+    setStatus(null)
+    setGeneratingNegative(true)
+
+    try {
+      // For now, we'll use the improve prompt endpoint as a placeholder
+      // since generateNegative doesn't exist yet
+      const result = await window.electronAPI.generator.improvePrompt({
+        prompt: generatedPrompt,
+      })
+
+      if (!result) {
+        setStatus('Error: Negative generator returned an empty response.')
+        return
+      }
+
+      if (result.error) {
+        setStatus(result.error)
+        return
+      }
+
+      if (!result.data?.prompt) {
+        setStatus('Error: Negative generator returned no data.')
+        return
+      }
+
+      // Convert the improved prompt to act as a negative prompt
+      setNegativePrompt(result.data.prompt)
+      setNegativeImprovementDiff(null)
+      setNegativePromptViewTab('final')
+      setStatus('Negative prompt generated.')
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Error: Failed to generate negative prompt.')
+    } finally {
+      setGeneratingNegative(false)
+    }
+  }
 
   const addGreylistWord = () => {
     const normalized = normalizeGreylistWord(greylistInput)
@@ -464,18 +564,6 @@ export default function Generator() {
     setStatus('Prompt copied to clipboard.')
   }
 
-  const handleCopyImprovedPrompt = async () => {
-    const value = (improvementDiff?.improvedPrompt ?? generatedPrompt).trim()
-    if (!value) return
-
-    try {
-      await navigator.clipboard.writeText(value)
-      setStatus('Prompt copied to clipboard.')
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Error: Failed to copy prompt.')
-    }
-  }
-
   const handleImprove = async () => {
     if (!generatedPrompt.trim()) {
       setStatus('Nothing to improve yet. Generate (or paste) a prompt first.')
@@ -508,11 +596,10 @@ export default function Generator() {
       const nextPrompt = result.data.prompt
       const previousPrompt = generatedPrompt
 
-      setGeneratedPrompt(nextPrompt)
-      setImprovementDiff({
-        originalPrompt: previousPrompt,
-        improvedPrompt: nextPrompt,
-      })
+       setImprovementDiff({
+         originalPrompt: previousPrompt,
+         improvedPrompt: nextPrompt,
+       })
       setPromptViewTab('diff')
       setSavedTitle((currentTitle) => {
         const trimmedTitle = currentTitle.trim()
@@ -609,81 +696,6 @@ export default function Generator() {
     setStatus('Saved to Prompt Library.')
   }
 
-  const greylistSuggestions = GREYLIST_SUGGESTIONS.filter((item) => {
-    const normalizedInput = normalizeGreylistWord(greylistInput)
-    if (!normalizedInput) return !greylistWords.includes(item)
-    return item.includes(normalizedInput) && !greylistWords.includes(item)
-  })
-
-  const greylistCard = (
-    <div className="card p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-white">Greylist</h2>
-          <p className="text-xs text-slate-500 mt-1">Words the AI should try to avoid or use with low probability.</p>
-        </div>
-        <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${greylistEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
-          <input
-            type="checkbox"
-            checked={greylistEnabled}
-            onChange={(e) => setGreylistEnabled(e.target.checked)}
-            className="mr-1 h-3.5 w-3.5 accent-green-500"
-            aria-label="Enable greylist"
-          />
-          {greylistEnabled ? 'On' : 'Off'}
-        </label>
-      </div>
-
-      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-        <div>
-          <input
-            type="text"
-            list="generator-greylist-suggestions"
-            value={greylistInput}
-            onChange={(e) => setGreylistInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter') return
-              e.preventDefault()
-              addGreylistWord()
-            }}
-            className="input"
-            placeholder="Add word to greylist"
-          />
-          <datalist id="generator-greylist-suggestions">
-            {greylistSuggestions.map((item) => (
-              <option key={item} value={item} />
-            ))}
-          </datalist>
-        </div>
-        <button type="button" onClick={addGreylistWord} className="btn-ghost border border-slate-700/50">
-          Add
-        </button>
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        {greylistWords.length === 0 ? (
-          <p className="text-xs text-slate-500">No greylist words added.</p>
-        ) : (
-          greylistWords.map((word) => (
-            <span key={word} className="tag-removable">
-              {word}
-              <button
-                type="button"
-                onClick={() => removeGreylistWord(word)}
-                className="rounded px-1 text-slate-400 hover:bg-slate-700 hover:text-white"
-                aria-label={`Remove ${word}`}
-              >
-                x
-              </button>
-            </span>
-          ))
-        )}
-      </div>
-    </div>
-  )
-
-  const showNegativePromptControls = supportsNegativePrompt !== false
-
   return (
     <div className="no-drag-region h-full overflow-y-auto px-8 pt-8 pb-10">
       <PageContainer>
@@ -709,477 +721,120 @@ export default function Generator() {
           <>
             {/* Greylist */}
             <div className="mt-5">
-              {greylistCard}
+              <GreylistCard
+                greylistEnabled={greylistEnabled}
+                setGreylistEnabled={setGreylistEnabled}
+                greylistWords={greylistWords}
+                setGreylistWords={setGreylistWords}
+                greylistInput={greylistInput}
+                setGreylistInput={setGreylistInput}
+                addGreylistWord={addGreylistWord}
+                removeGreylistWord={removeGreylistWord}
+              />
             </div>
 
             {/* Input Cards - side by side */}
-            <div className="mt-5 grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
-              {/* LEFT: Magic Quickstart card */}
-              <div className="card p-5 h-full flex flex-col">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5">
-                    <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-teal-500/20">
-                      <Sparkles className="w-4 h-4 text-teal-400" />
-                    </div>
-                    <div>
-                      <h2 className="text-base font-semibold text-white">Magic Quickstart</h2>
-                      <p className="text-xs text-slate-500 mt-0.5 min-h-8">Describe your idea and let AI do the heavy lifting</p>
-                    </div>
-                  </div>
-
-                  {/* Character picker */}
-                  <div className="relative flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowCharacterPicker((v) => !v)}
-                      className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-teal-500/60 text-teal-300' : 'border-slate-700/50'}`}
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      {quickStartCharacterId
-                        ? (quickStartCharacterList.find((c) => c.id === quickStartCharacterId)?.name ?? 'Character')
-                        : 'Add Character'}
-                    </button>
-                    {showCharacterPicker && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
-                        <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-slate-700/50 bg-slate-900 p-1 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
-                            className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 rounded-lg"
-                          >
-                            No character
-                          </button>
-                          {quickStartCharacterList.map((c) => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
-                              className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-teal-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}
-                            >
-                              {c.name}
-                            </button>
-                          ))}
-                          {quickStartCharacterList.length === 0 && (
-                            <p className="px-3 py-2 text-xs text-slate-500">No characters found.</p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Idea textarea */}
-                <div className="mt-4 relative rounded-xl border border-slate-700/50 bg-slate-900/60 overflow-hidden">
-                  <textarea
-                    value={quickStartIdea}
-                    onChange={(e) => setQuickStartIdea(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-                        e.preventDefault()
-                        handleQuickExpand()
-                      }
-                    }}
-                    className="w-full bg-transparent px-4 py-4 text-sm text-white placeholder-night-500 resize-none min-h-36 focus:outline-none"
-                    placeholder={'Describe your image idea in simple terms... (e.g. "A neon cyberpunk cityscape in the rain")'}
-                  />
-                </div>
-
-                <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-900/40 p-4">
-                  <div>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Max words</p>
-                      <span className="text-xs text-slate-400">{maxWords}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={MAX_ALLOWED_WORDS}
-                      value={maxWords}
-                      onChange={(e) => setMaxWords(Math.max(1, Math.min(MAX_ALLOWED_WORDS, Number(e.target.value))))}
-                      className="mt-2 w-full accent-teal-500"
-                      aria-label="Max words"
-                    />
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
-                      <select
-                        className="input mt-2"
-                        value={selectedPreset}
-                        onChange={(e) => setSelectedPreset(e.target.value)}
-                        aria-label="NightCafe preset"
-                      >
-                        <option value="">None</option>
-                        {Array.from(new Set(presetOptions.map((p) => p.category))).map((category) => (
-                          <optgroup key={category} label={category}>
-                            {presetOptions
-                              .filter((p) => p.category === category)
-                              .map((preset) => (
-                                <option key={preset.presetName} value={preset.presetName}>
-                                  {preset.presetName}
-                                </option>
-                              ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {(['focused', 'balanced', 'wild'] as const).map((mode) => (
-                          <button
-                            key={mode}
-                            type="button"
-                            onClick={() => setQuickStartCreativity(mode)}
-                            className={quickStartCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
-                          >
-                            {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleQuickExpand}
-                    disabled={!quickStartIdea.trim() || expandingIdea}
-                    className="btn-ai-expansion"
-                  >
-                    <Sparkles className="w-4 h-4" /> {expandingIdea ? 'Expanding...' : 'Magic AI Expansion'}
-                  </button>
-                </div>
-              </div>
-
-              {/* RIGHT: Magic Random AI controls */}
-              <div className="card p-5 h-full flex flex-col border-glow-amber/25 bg-gradient-to-br from-night-900 via-night-900 to-glow-amber/5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5">
-                    <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-glow-amber/20">
-                      <Sparkles className="w-4 h-4 text-glow-amber" />
-                    </div>
-                    <div>
-                      <h2 className="text-base font-semibold text-white">Magic Random</h2>
-                      <p className="text-xs text-slate-400 mt-0.5 min-h-8">Generate a surprise prompt with AI</p>
-                    </div>
-                  </div>
-
-                  <div className="relative flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowCharacterPicker((v) => !v)}
-                      className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-glow-amber/60 text-glow-amber' : 'border-slate-700/50'}`}
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      {quickStartCharacterId
-                        ? (quickStartCharacterList.find((c) => c.id === quickStartCharacterId)?.name ?? 'Character')
-                        : 'Add Character'}
-                    </button>
-                    {showCharacterPicker && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
-                        <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-slate-700/50 bg-slate-900 p-1 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
-                            className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 rounded-lg"
-                          >
-                            No character
-                          </button>
-                          {quickStartCharacterList.map((c) => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
-                              className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-glow-amber text-white' : 'text-slate-300 hover:bg-slate-800'}`}
-                            >
-                              {c.name}
-                            </button>
-                          ))}
-                          {quickStartCharacterList.length === 0 && (
-                            <p className="px-3 py-2 text-xs text-slate-500">No characters found.</p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-900/60 overflow-hidden">
-                  <textarea
-                    value={generatedPrompt}
-                    readOnly
-                    aria-label="Generated prompt preview"
-                    className="w-full bg-transparent px-4 py-4 text-sm text-slate-300 placeholder-night-500 resize-none min-h-36 focus:outline-none"
-                    placeholder="Generated prompt will appear here."
-                  />
-                </div>
-
-                <div className="mt-4 rounded-xl border border-slate-700/50 bg-slate-900/40 p-4">
-                  <div>
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Max words</p>
-                      <span className="text-xs text-slate-400">{maxWords}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={1}
-                      max={MAX_ALLOWED_WORDS}
-                      value={maxWords}
-                      onChange={(e) => setMaxWords(Math.max(1, Math.min(MAX_ALLOWED_WORDS, Number(e.target.value))))}
-                      className="mt-2 w-full accent-teal-500"
-                      aria-label="Max words"
-                    />
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
-                      <select
-                        className="input mt-2"
-                        value={selectedPreset}
-                        onChange={(e) => setSelectedPreset(e.target.value)}
-                        aria-label="NightCafe preset"
-                      >
-                        <option value="">None</option>
-                        {Array.from(new Set(presetOptions.map((p) => p.category))).map((category) => (
-                          <optgroup key={category} label={category}>
-                            {presetOptions
-                              .filter((p) => p.category === category)
-                              .map((preset) => (
-                                <option key={preset.presetName} value={preset.presetName}>
-                                  {preset.presetName}
-                                </option>
-                              ))}
-                          </optgroup>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {(['focused', 'balanced', 'wild'] as const).map((mode) => (
-                          <button
-                            key={mode}
-                            type="button"
-                            onClick={() => setMagicRandomCreativity(mode)}
-                            className={magicRandomCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
-                          >
-                            {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto pt-4 flex flex-wrap justify-end gap-3">
-                  <button
-                    onClick={handleGenerate}
-                    disabled={loading}
-                    className="btn-primary"
-                  >
-                    {loading ? 'Generating...' : 'Magic Random (AI)'}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Generated Output Card */}
-            <div className="card mt-5 p-5">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-white">Generated Prompt</h2>
-                <span className="text-[10px] text-slate-500">{generatedPrompt.length} characters</span>
-              </div>
-
-              <textarea
-                className="textarea mt-3 min-h-32"
-                value={generatedPrompt}
-                onChange={(e) => setGeneratedPrompt(e.target.value)}
-                placeholder="Your generated prompt will appear here."
+            <div className="mt-5">
+              <QuickstartPanel
+                quickStartIdea={quickStartIdea}
+                setQuickStartIdea={setQuickStartIdea}
+                quickStartCreativity={quickStartCreativity}
+                setQuickStartCreativity={setQuickStartCreativity}
+                quickStartCharacterId={quickStartCharacterId}
+                setQuickStartCharacterId={setQuickStartCharacterId}
+                quickStartCharacterList={quickStartCharacterList}
+                magicRandomCreativity={magicRandomCreativity}
+                setMagicRandomCreativity={setMagicRandomCreativity}
+                selectedPreset={selectedPreset}
+                setSelectedPreset={setSelectedPreset}
+                presetOptions={presetOptions}
+                maxWords={maxWords}
+                setMaxWords={setMaxWords}
+                generatedPrompt={generatedPrompt}
+                setGeneratedPrompt={setGeneratedPrompt}
+                negativePrompt={negativePrompt}
+                setNegativePrompt={setNegativePrompt}
+                greylistEnabled={greylistEnabled}
+                greylistWords={greylistWords}
+                setStatus={setStatus}
+                handleQuickExpand={handleQuickExpand}
+                handleMagicRandom={handleMagicRandom}
+                handleGenerateNegative={handleGenerateNegative}
+                expandingIdea={expandingIdea}
+                loading={loading}
               />
-
-              {/* Compact Action Buttons */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  disabled={!generatedPrompt}
-                  className="btn-compact-ghost"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copy Prompt
-                </button>
-                <button
-                  type="button"
-                  disabled={!negativePrompt}
-                  className="btn-compact-ghost"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copy Negative
-                </button>
-                <button
-                  type="button"
-                  className="btn-compact-ghost"
-                >
-                  <Edit3 className="w-3.5 h-3.5" /> Edit in Manual
-                </button>
-                <button
-                  onClick={handleSaveToLibrary}
-                  disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
-                  className="btn-save-library-main"
-                >
-                  <Save className="w-3.5 h-3.5" /> Save to Library
-                </button>
-                <button
-                  type="button"
-                  className="btn-compact-ghost ml-auto"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" /> Guided Mode
-                </button>
-              </div>
-
-              {/* Negative Prompt Section */}
-              {showNegativePromptControls && negativePrompt && (
-                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wide">Negative Prompt</h3>
-                    <span className="text-[10px] text-slate-500">{negativePrompt.length} chars</span>
-                  </div>
-                  <p className="text-sm text-slate-300 leading-relaxed">{negativePrompt}</p>
-                </div>
-              )}
             </div>
 
-            {/* Improve Prompt Section - Teal styled */}
-            <div className="mt-4 card border-teal-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-teal-500/10 p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-teal-400" />
-                  <p className="text-sm font-semibold text-teal-300">Verbeter Prompt</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleCopyImprovedPrompt()}
-                    disabled={!(improvementDiff?.improvedPrompt ?? generatedPrompt).trim() || loading || improving || generatingNegative || improvingNegative}
-                    className="btn-compact-ghost"
-                  >
-                    <Copy className="w-3.5 h-3.5" /> Copy Prompt
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleImprove}
-                    disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative}
-                    className="btn-compact-teal"
-                  >
-                    {improving ? 'Improving...' : 'Improve Prompt'}
-                  </button>
-                </div>
-              </div>
+            {/* Improvement Section */}
+            <ImprovementSection
+              generatedPrompt={generatedPrompt}
+              setGeneratedPrompt={setGeneratedPrompt}
+              negativePrompt={negativePrompt}
+              setNegativePrompt={setNegativePrompt}
+              improvementDiff={improvementDiff}
+              setImprovementDiff={setImprovementDiff}
+              negativeImprovementDiff={negativeImprovementDiff}
+              setNegativeImprovementDiff={setNegativeImprovementDiff}
+              promptViewTab={promptViewTab}
+              setPromptViewTab={setPromptViewTab}
+              negativePromptViewTab={negativePromptViewTab}
+              setNegativePromptViewTab={setNegativePromptViewTab}
+              improving={improving}
+              setImproving={setImproving}
+              handleImprovePrompt={handleImprovePrompt}
+              handleImproveNegativePrompt={handleImproveNegativePrompt}
+              handleCopyPrompt={handleCopyPrompt}
+              handleCopyNegativePrompt={handleCopyNegativePrompt}
+              loading={loading}
+              generatingNegative={generatingNegative}
+              improvingNegative={improvingNegative}
+              savedTitle={savedTitle}
+              handleSaveToLibrary={handleSaveToLibrary}
+              supportsNegativePrompt={supportsNegativePrompt}
+            />
 
-              {improvementDiff && (
-                <div className="mt-4">
-                  <div className="inline-flex rounded-lg border border-slate-700/50 bg-slate-900/40 p-1">
-                    <button
-                      type="button"
-                      onClick={() => setPromptViewTab('diff')}
-                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'diff' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                    >
-                      Diff View
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPromptViewTab('final')}
-                      className={`px-3 py-1.5 rounded-md text-xs transition-colors ${promptViewTab === 'final' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
-                    >
-                      Final Result
-                    </button>
-                  </div>
+            {/* Title and Save Section */}
+            <TitleSaveSection
+              savedTitle={savedTitle}
+              setSavedTitle={setSavedTitle}
+              generatedPrompt={generatedPrompt}
+              negativePrompt={negativePrompt}
+              recommendedModel={recommendedModel}
+              generatingTitle={generatingTitle}
+              setGeneratingTitle={setGeneratingTitle}
+              handleGenerateTitle={handleGenerateTitle}
+              handleSaveToLibrary={handleSaveToLibrary}
+              loading={loading}
+              improving={improving}
+              generatingNegative={generatingNegative}
+              improvingNegative={improvingNegative}
+            />
 
-                  {promptViewTab === 'diff' ? (
-                    <PromptDiffView
-                      originalPrompt={improvementDiff.originalPrompt}
-                      improvedPrompt={improvementDiff.improvedPrompt}
-                    />
-                  ) : (
-                    <textarea
-                      className="textarea mt-3 min-h-32"
-                      value={improvementDiff.improvedPrompt}
-                      readOnly
-                      placeholder="Improved prompt result"
-                    />
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Save Section */}
-            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-              <input
-                type="text"
-                value={savedTitle}
-                onChange={(e) => setSavedTitle(e.target.value)}
-                className="input"
-                placeholder="Title to save in Prompt Library"
-              />
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleGenerateTitle}
-                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || generatingTitle}
-                  className="btn-compact-primary"
-                >
-                  {generatingTitle ? 'Generating title...' : 'Generate Title (AI)'}
-                </button>
-                <button
-                  onClick={handleSaveToLibrary}
-                  disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
-                  className="btn-save-library-secondary"
-                >
-                  <Save className="w-3.5 h-3.5" /> Save to Library
-                </button>
-              </div>
-            </div>
-
-            {/* Suggested Model Section */}
-            <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
-                <button
-                  type="button"
-                  onClick={() => void requestModelAdvice('ai', generatedPrompt)}
-                  disabled={!generatedPrompt.trim() || loading || improving || generatingNegative || improvingNegative || advisingAi}
-                  className="btn-compact-teal"
-                >
-                  <Wand2 className="w-3.5 h-3.5" /> {advisingAi ? 'Getting AI Advice...' : 'Get AI Advice'}
-                </button>
-              </div>
-
-              <div className="mt-3 flex items-center gap-2">
-                <span className="text-xs text-slate-500 mr-1">Budget:</span>
-                {(['cheap', 'balanced', 'premium'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setBudgetMode(mode)}
-                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${budgetMode === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}`}
-                  >
-                    {mode === 'cheap' ? 'Goedkoop' : mode === 'balanced' ? 'Gebalanceerd' : 'Premium'}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-sm text-slate-500">Beste kwaliteit</span>
-                <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
-              </div>
-              <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
-            </div>
+            {/* Model Advisor Card */}
+            <ModelAdvisorCard
+              generatedPrompt={generatedPrompt}
+              recommendedModel={recommendedModel}
+              setRecommendedModel={setRecommendedModel}
+              recommendedModelReason={recommendedModelReason}
+              setRecommendedModelReason={setRecommendedModelReason}
+              recommendedModelMode={recommendedModelMode}
+              setRecommendedModelMode={setRecommendedModelMode}
+              advisorBestValue={advisorBestValue}
+              setAdvisorBestValue={setAdvisorBestValue}
+              advisorFastest={advisorFastest}
+              setAdvisorFastest={setAdvisorFastest}
+              supportsNegativePrompt={supportsNegativePrompt}
+              setSupportsNegativePrompt={setSupportsNegativePrompt}
+              budgetMode={budgetMode}
+              setBudgetMode={setBudgetMode}
+              advisingAi={advisingAi}
+              setAdvisingAi={setAdvisingAi}
+              handleAdviseModel={handleAdviseModel}
+              loading={loading}
+              improving={improving}
+              generatingNegative={generatingNegative}
+              improvingNegative={improvingNegative}
+            />
 
             {/* Status */}
             {status && (
@@ -1227,7 +882,16 @@ export default function Generator() {
             </div>
 
             <div className="mt-5">
-              {greylistCard}
+              <GreylistCard
+                greylistEnabled={greylistEnabled}
+                setGreylistEnabled={setGreylistEnabled}
+                greylistWords={greylistWords}
+                setGreylistWords={setGreylistWords}
+                greylistInput={greylistInput}
+                setGreylistInput={setGreylistInput}
+                addGreylistWord={addGreylistWord}
+                removeGreylistWord={removeGreylistWord}
+              />
             </div>
             <div className="mt-1 card border-slate-800/50">
               <PromptBuilder embedded greylistEnabled={greylistEnabled} greylistWords={greylistWords} maxWords={maxWords} creativity={magicRandomCreativity} />

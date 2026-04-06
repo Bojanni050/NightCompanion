@@ -312,3 +312,15 @@
 - Findings: The Generator page layout had the Suggested Model section above the Improve Prompt section, and the title/save controls were separated from the improvement flow.
 - Conclusions: Place the Improve Prompt section above Suggested Model, and keep the title field + related buttons directly under Improve Prompt for a more logical workflow.
 - Actions: Updated `src/screens/Generator.tsx` to move the Improve Prompt section above Suggested Model and position the title field + buttons under Improve Prompt; validated with `npm run build`.
+
+## 2026-04-06 (Generator — improve prompt no longer replaces generated prompt)
+
+- Findings: The Improve Prompt button was replacing the original generated prompt with the improved version, making it impossible to keep the original.
+- Conclusions: Keep the original generated prompt intact and only show the improvement in the diff view, not replace the main prompt field.
+- Actions: Updated `src/screens/Generator.tsx` `handleImprove` to remove `setGeneratedPrompt(nextPrompt)` so only `improvementDiff` is updated; validated with `npm run build`.
+
+## 2026-04-06 (Generator sub-component extraction)
+
+- Findings: Generator.tsx handled too many UI concerns in a single file, making maintenance difficult.
+- Conclusions: Extract five focused child components (QuickstartPanel, ImprovementSection, ModelAdvisorCard, TitleSaveSection, GreylistCard) while keeping all state and handlers in Generator as orchestrator.
+- Actions: Created `src/components/generator/QuickstartPanel.tsx`, `ImprovementSection.tsx`, `ModelAdvisorCard.tsx`, `TitleSaveSection.tsx`, `GreylistCard.tsx`; refactored `src/screens/Generator.tsx` to import and render them with prop-passing; validated with `npm run build`.
