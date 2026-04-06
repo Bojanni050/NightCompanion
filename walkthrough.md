@@ -324,3 +324,15 @@
 - Findings: Generator.tsx handled too many UI concerns in a single file, making maintenance difficult.
 - Conclusions: Extract five focused child components (QuickstartPanel, ImprovementSection, ModelAdvisorCard, TitleSaveSection, GreylistCard) while keeping all state and handlers in Generator as orchestrator.
 - Actions: Created `src/components/generator/QuickstartPanel.tsx`, `ImprovementSection.tsx`, `ModelAdvisorCard.tsx`, `TitleSaveSection.tsx`, `GreylistCard.tsx`; refactored `src/screens/Generator.tsx` to import and render them with prop-passing; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Builder — side-by-side Greylist + Max Words/Creativity + preset dropdown)
+
+- Findings: Prompt Builder had Greylist and Max Words/Creativity controls in separate sections, and lacked preset dropdown functionality.
+- Conclusions: Put Greylist and Max Words/Creativity cards side by side in a 2-column grid, and add preset dropdown to Prompt Builder header.
+- Actions: Updated `src/screens/PromptBuilder.tsx` to add preset dropdown props and render it in header when available; added Max Words/Creativity display card; updated `src/screens/Generator.tsx` builder tab to use side-by-side layout and pass preset options; validated with `npm run build`.
+
+## 2026-04-06 (Prompt Builder — reorganize controls to Max Words/Creativity panel)
+
+- Findings: Prompt Builder had separate Max Words panel and header dropdowns, creating unnecessary UI clutter.
+- Conclusions: Remove top Max Words panel, move preset and style profile dropdowns to the Max Words/Creativity panel for better organization.
+- Actions: Removed Max Words panel from `src/screens/PromptBuilder.tsx`; moved preset and style profile dropdowns from header to Max Words/Creativity panel in `src/screens/Generator.tsx`; updated style profile prop types; validated with `npm run build`.

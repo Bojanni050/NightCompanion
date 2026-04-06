@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { StyleProfile } from '../types'
 import PromptPreview from '../components/PromptPreview'
 import PromptDiffView from '../components/PromptDiffView'
 import { toast } from 'sonner'
@@ -29,6 +28,9 @@ type PromptBuilderProps = {
   greylistWords?: string[]
   maxWords?: number
   creativity?: 'focused' | 'balanced' | 'wild'
+  styleProfiles?: Array<{ id: number; name: string; basePromptSnippet?: string; commonNegativePrompts?: string }>
+  selectedStyleProfileId?: number | ''
+  setSelectedStyleProfileId?: (value: number | '') => void
 }
 
 type PromptBuilderPersistedState = {
@@ -41,13 +43,20 @@ type PromptBuilderPersistedState = {
   generatedImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
 }
 
-export default function PromptBuilder({ embedded = false, greylistEnabled = true, greylistWords = [], maxWords = 70, creativity = 'balanced' }: PromptBuilderProps) {
+export default function PromptBuilder({ 
+  embedded = false, 
+  greylistEnabled = true, 
+  greylistWords = [], 
+  maxWords = 70, 
+  creativity = 'balanced',
+  styleProfiles = [],
+  selectedStyleProfileId = '',
+  setSelectedStyleProfileId
+}: PromptBuilderProps) {
   const [parts, setParts] = useState<Part[]>(DEFAULT_PARTS)
   const [separator, setSeparator] = useState<', ' | '. ' | ' | '>( ', ')
   const [savedTitle, setSavedTitle] = useState('')
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
-  const [styleProfiles, setStyleProfiles] = useState<StyleProfile[]>([])
-  const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<number | ''>('')
   const [generatingPartId, setGeneratingPartId] = useState<string | null>(null)
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false)
   const [isFillingAll, setIsFillingAll] = useState(false)
@@ -76,7 +85,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
       }
 
       setSavedTitle(parsed.savedTitle ?? '')
-      setSelectedStyleProfileId(parsed.selectedStyleProfileId ?? '')
+      setSelectedStyleProfileId?.(parsed.selectedStyleProfileId ?? '')
       setGeneratedPrompt(parsed.generatedPrompt ?? '')
       setGeneratedImprovementDiff(parsed.generatedImprovementDiff ?? null)
 
@@ -86,7 +95,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
       setParts(DEFAULT_PARTS)
       setSeparator(', ')
       setSavedTitle('')
-      setSelectedStyleProfileId('')
+      setSelectedStyleProfileId?.('')
       setGeneratedPrompt('')
       setGeneratedImprovementDiff(null)
       setGeneratedPromptViewTab('final')
@@ -109,7 +118,7 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
     } catch (e) {
       console.error('Failed to save prompt builder state to localStorage:', e)
     }
-  }, [parts, separator, savedTitle, selectedStyleProfileId, generatedPrompt, generatedPromptViewTab, generatedImprovementDiff])
+  }, [parts, separator, savedTitle, selectedStyleProfileId, generatedPrompt, generatedPromptViewTab, generatedImprovementDiff, setSelectedStyleProfileId])
 
   const updatePart = (id: string, value: string) => {
     setParts((prev) => prev.map((p) => (p.id === id ? { ...p, value } : p)))
@@ -280,22 +289,6 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
     .filter(Boolean)
     .join(separator)
 
-  useEffect(() => {
-    let ignore = false
-
-    async function loadStyleProfiles() {
-      const result = await window.electronAPI.styleProfiles.list()
-      if (ignore || result.error || !result.data) return
-      setStyleProfiles(result.data)
-    }
-
-    loadStyleProfiles()
-
-    return () => {
-      ignore = true
-    }
-  }, [])
-
   const selectedStyleProfile = useMemo(
     () => styleProfiles.find((profile) => profile.id === selectedStyleProfileId),
     [styleProfiles, selectedStyleProfileId]
@@ -395,22 +388,6 @@ export default function PromptBuilder({ embedded = false, greylistEnabled = true
                 <option value=", ">comma</option>
                 <option value=". ">period</option>
                 <option value=" | ">pipe</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500">Style profile</span>
-              <select
-                value={selectedStyleProfileId}
-                onChange={(e) => setSelectedStyleProfileId(e.target.value ? Number(e.target.value) : '')}
-                className="input w-44 text-xs"
-                aria-label="Style profile"
-              >
-                <option value="">none</option>
-                {styleProfiles.map((profile) => (
-                  <option key={profile.id} value={profile.id}>
-                    {profile.name}
-                  </option>
-                ))}
               </select>
             </div>
             <button onClick={handleClear} className="btn-ghost text-xs">Clear all</button>

@@ -66,6 +66,8 @@ export default function Generator() {
   const [tab, setTab] = useState<'generator' | 'builder'>('generator')
   const [presetOptions, setPresetOptions] = useState<PresetOption[]>([])
   const [selectedPreset, setSelectedPreset] = useState('')
+  const [styleProfiles, setStyleProfiles] = useState<Array<{ id: number; name: string; basePromptSnippet?: string; commonNegativePrompts?: string }>>([])
+  const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<number | ''>('')
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS)
   const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [negativePrompt, setNegativePrompt] = useState('')
@@ -362,7 +364,15 @@ export default function Generator() {
       setPresetOptions(result.data)
     }
 
+    async function loadStyleProfiles() {
+      const result = await window.electronAPI.styleProfiles.list()
+      if (ignore || result.error || !result.data) return
+
+      setStyleProfiles(result.data)
+    }
+
     loadPresets()
+    loadStyleProfiles()
 
     return () => {
       ignore = true
@@ -881,7 +891,8 @@ export default function Generator() {
               </div>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+              {/* LEFT: Greylist Card */}
               <GreylistCard
                 greylistEnabled={greylistEnabled}
                 setGreylistEnabled={setGreylistEnabled}
@@ -892,9 +903,101 @@ export default function Generator() {
                 addGreylistWord={addGreylistWord}
                 removeGreylistWord={removeGreylistWord}
               />
+              
+              {/* RIGHT: Max Words and Creativity */}
+              <div className="card p-5">
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Preset and Style Profile Row */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
+                      <select
+                        value={selectedPreset}
+                        onChange={(e) => setSelectedPreset(e.target.value)}
+                        className="input mt-2 w-full text-xs"
+                        aria-label="NightCafe preset"
+                      >
+                        <option value="">None</option>
+                        {Array.from(new Set(presetOptions.map((p) => p.category))).map((category) => (
+                          <optgroup key={category} label={category}>
+                            {presetOptions
+                              .filter((p) => p.category === category)
+                              .map((preset) => (
+                                <option key={preset.presetName} value={preset.presetName}>
+                                  {preset.presetName}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Style profile</p>
+                      <select
+                        value={selectedStyleProfileId}
+                        onChange={(e) => setSelectedStyleProfileId(e.target.value ? Number(e.target.value) : '')}
+                        className="input mt-2 w-full text-xs"
+                        aria-label="Style profile"
+                      >
+                        <option value="">none</option>
+                        {styleProfiles.map((profile) => (
+                          <option key={profile.id} value={profile.id}>
+                            {profile.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Max Words and Creativity Row */}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Max words</p>
+                        <span className="text-xs text-slate-400">{maxWords}</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={1}
+                        max={MAX_ALLOWED_WORDS}
+                        value={maxWords}
+                        onChange={(e) => setMaxWords(Math.max(1, Math.min(MAX_ALLOWED_WORDS, Number(e.target.value))))}
+                        className="mt-2 w-full accent-teal-500"
+                        aria-label="Max words"
+                      />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Creativity</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(['focused', 'balanced', 'wild'] as const).map((mode) => (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setMagicRandomCreativity(mode)}
+                            className={magicRandomCreativity === mode ? 'btn-compact-primary' : 'btn-compact-ghost'}
+                          >
+                            {mode === 'focused' ? 'Focused' : mode === 'balanced' ? 'Balanced' : 'Wild'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="mt-1 card border-slate-800/50">
-              <PromptBuilder embedded greylistEnabled={greylistEnabled} greylistWords={greylistWords} maxWords={maxWords} creativity={magicRandomCreativity} />
+              <PromptBuilder 
+                embedded 
+                greylistEnabled={greylistEnabled} 
+                greylistWords={greylistWords} 
+                maxWords={maxWords} 
+                creativity={magicRandomCreativity}
+                styleProfiles={styleProfiles}
+                selectedStyleProfileId={selectedStyleProfileId}
+                setSelectedStyleProfileId={setSelectedStyleProfileId}
+              />
             </div>
           </>
         )}
