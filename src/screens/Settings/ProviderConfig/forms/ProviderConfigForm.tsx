@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { ExternalLink, Key, Zap } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 
 import { syncTaskModel } from '../../../../hooks/useTaskModels'
 import type { ApiKeyInfo, ModelOption } from '../../types'
@@ -148,12 +148,12 @@ export function ProviderConfigForm({
 
   const handleSave = useCallback(async () => {
     if (!adapter) {
-      toast.error('Provider adapter not found')
+      notifications.show({ message: 'Provider adapter not found', color: 'red' })
       return
     }
 
     if (!inputValue.trim()) {
-      toast.error('Please enter an API key')
+      notifications.show({ message: 'Please enter an API key', color: 'red' })
       return
     }
 
@@ -197,17 +197,19 @@ export function ProviderConfigForm({
       await loadKeys()
 
       if (modelSyncWarning) {
-        toast.warning(`${provider.name} key saved, but model sync failed`, {
-          description: modelSyncWarning,
+        notifications.show({
+          title: `${provider.name} key saved, but model sync failed`,
+          message: modelSyncWarning,
+          color: 'yellow',
         })
       } else {
-        toast.success(`${provider.name} key saved successfully`)
+        notifications.show({ message: `${provider.name} key saved successfully`, color: 'green' })
       }
 
       setIsEditing(false)
       setInputValue('')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to save key')
+      notifications.show({ message: error instanceof Error ? error.message : 'Failed to save key', color: 'red' })
     } finally {
       setActionLoading(null)
     }
@@ -215,7 +217,7 @@ export function ProviderConfigForm({
 
   const handleDelete = useCallback(async () => {
     if (!adapter) {
-      toast.error('Provider adapter not found')
+      notifications.show({ message: 'Provider adapter not found', color: 'red' })
       return
     }
 
@@ -228,9 +230,9 @@ export function ProviderConfigForm({
 
       await persistProviderMeta(getDefaultProviderMeta('openai/gpt-4o-mini'))
       await loadKeys()
-      toast.success(`${provider.name} key removed`)
+      notifications.show({ message: `${provider.name} key removed`, color: 'green' })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete key')
+      notifications.show({ message: error instanceof Error ? error.message : 'Failed to delete key', color: 'red' })
     } finally {
       setActionLoading(null)
     }
@@ -276,9 +278,15 @@ export function ProviderConfigForm({
 
       await loadKeys()
       await loadLocalEndpoints()
-      toast.success(`${provider.name} ${role} ${isActive ? 'deactivated' : 'activated'}`)
+      notifications.show({
+        message: `${provider.name} ${role} ${isActive ? 'deactivated' : 'activated'}`,
+        color: 'green',
+      })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : `Failed to update ${provider.name}`)
+      notifications.show({
+        message: error instanceof Error ? error.message : `Failed to update ${provider.name}`,
+        color: 'red',
+      })
     } finally {
       setActionLoading(null)
     }
@@ -286,7 +294,7 @@ export function ProviderConfigForm({
 
   const handleFetchModels = useCallback(async () => {
     if (!adapter) {
-      toast.error('Provider adapter not found')
+      notifications.show({ message: 'Provider adapter not found', color: 'red' })
       return
     }
 
@@ -310,9 +318,9 @@ export function ProviderConfigForm({
 
       setLastModelsUpdatedAt(new Date().toISOString())
 
-      toast.success('Models list updated')
+      notifications.show({ message: 'Models list updated', color: 'green' })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to fetch models')
+      notifications.show({ message: error instanceof Error ? error.message : 'Failed to fetch models', color: 'red' })
     } finally {
       setActionLoading(null)
     }
@@ -335,17 +343,17 @@ export function ProviderConfigForm({
     if (meta.is_active_general) syncTaskModel('general', provider.id, generalId)
 
     if (!isEditing && keyInfo)
-      toast.success('Model preferences updated')
+      notifications.show({ message: 'Model preferences updated', color: 'green' })
   }, [providerMeta, persistProviderMeta, provider.id, isEditing, keyInfo])
 
   const handleTestConnection = useCallback(async () => {
     if (!adapter) {
-      toast.error('Provider adapter not found')
+      notifications.show({ message: 'Provider adapter not found', color: 'red' })
       return
     }
 
     if ((!isEditing && !keyInfo) || (isEditing && !inputValue.trim())) {
-      toast.error('Please enter an API key first')
+      notifications.show({ message: 'Please enter an API key first', color: 'red' })
       return
     }
 
@@ -359,9 +367,15 @@ export function ProviderConfigForm({
       if (result.error || !result.data)
         throw new Error(result.error)
 
-      toast.success(`Connection successful (${result.data.modelCount} models available)`)
+      notifications.show({
+        message: `Connection successful (${result.data.modelCount} models available)`,
+        color: 'green',
+      })
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Connection failed. Please check your API key.')
+      notifications.show({
+        message: error instanceof Error ? error.message : 'Connection failed. Please check your API key.',
+        color: 'red',
+      })
     } finally {
       setActionLoading(null)
     }

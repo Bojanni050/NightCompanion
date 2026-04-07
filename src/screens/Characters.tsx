@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Loader2, Plus, Search, X } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import { invalidateDashboardCache } from '../lib/cacheEvents'
 import CharacterCard from '../components/characters/CharacterCard'
 import CharacterFormModal from '../components/characters/CharacterFormModal'
@@ -41,7 +41,7 @@ export default function Characters() {
 
       const listResult = await window.electronAPI.characters.list()
       if (listResult.error) {
-        toast.error('Failed to load characters from database')
+        notifications.show({ message: 'Failed to load characters from database', color: 'red' })
         setCharacters([])
         setLoading(false)
         return
@@ -64,7 +64,7 @@ export default function Characters() {
       for (const item of legacyCharacters) {
         const createResult = await window.electronAPI.characters.create(item)
         if (createResult.error) {
-          toast.error('Failed to migrate one or more legacy characters')
+          notifications.show({ message: 'Failed to migrate one or more legacy characters', color: 'red' })
           setCharacters(legacyCharacters)
           setLoading(false)
           return
@@ -74,7 +74,10 @@ export default function Characters() {
       localStorage.removeItem(STORAGE_KEY)
       const migrated = await window.electronAPI.characters.list()
       setCharacters(migrated.error || !migrated.data ? legacyCharacters : migrated.data)
-      toast.success(`Migrated ${legacyCharacters.length} character${legacyCharacters.length === 1 ? '' : 's'} to database`)
+      notifications.show({
+        message: `Migrated ${legacyCharacters.length} character${legacyCharacters.length === 1 ? '' : 's'} to database`,
+        color: 'green',
+      })
       setLoading(false)
     }
 
@@ -134,7 +137,7 @@ export default function Characters() {
   async function handleSaveCharacter() {
     const name = formName.trim()
     if (!name) {
-      toast.error('Character name is required')
+      notifications.show({ message: 'Character name is required', color: 'red' })
       return
     }
 
@@ -170,7 +173,7 @@ export default function Characters() {
           }
         }
 
-        toast.success('Character updated')
+        notifications.show({ message: 'Character updated', color: 'green' })
         invalidateDashboardCache()
       } else {
         const createResult = await window.electronAPI.characters.create({
@@ -188,7 +191,7 @@ export default function Characters() {
         }
 
         setCharacters((prev) => [createResult.data!, ...prev])
-        toast.success('Character created')
+        notifications.show({ message: 'Character created', color: 'green' })
         invalidateDashboardCache()
       }
 
@@ -215,13 +218,13 @@ export default function Characters() {
 
     const deleteResult = await window.electronAPI.characters.delete(id)
     if (deleteResult.error) {
-      toast.error(deleteResult.error)
+      notifications.show({ message: deleteResult.error, color: 'red' })
       return
     }
 
     setCharacters((prev) => prev.filter((char) => char.id !== id))
     setExpandedId((prev) => (prev === id ? null : prev))
-    toast.success('Character deleted')
+    notifications.show({ message: 'Character deleted', color: 'green' })
     invalidateDashboardCache()
   }
 
@@ -255,9 +258,12 @@ export default function Characters() {
         return [...prev, ...newImages]
       })
 
-      toast.success(`${uploaded.length} image${uploaded.length === 1 ? '' : 's'} added`)
+      notifications.show({
+        message: `${uploaded.length} image${uploaded.length === 1 ? '' : 's'} added`,
+        color: 'green',
+      })
     } catch {
-      toast.error('Failed to save one or more images to local storage')
+      notifications.show({ message: 'Failed to save one or more images to local storage', color: 'red' })
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''

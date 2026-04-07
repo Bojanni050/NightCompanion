@@ -14,7 +14,7 @@ import {
   ChevronRight,
   X,
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import useGalleryState from '../hooks/useGalleryState'
 import MediaRenderer from '../components/MediaRenderer'
 import StarRating from '../components/StarRating'
@@ -116,14 +116,14 @@ export default function Gallery({ initialImageId }: GalleryProps) {
           fileName: state.formImageFileName || undefined,
         })
         if (saved.error || !saved.data?.fileUrl) {
-          toast.error(saved.error || 'Failed to save image')
+          notifications.show({ message: saved.error || 'Failed to save image', color: 'red' })
           return
         }
         imageUrl = saved.data.fileUrl
       }
 
       if (!imageUrl) {
-        toast.warning('Upload an image first.')
+        notifications.show({ message: 'Upload an image first.', color: 'yellow' })
         return
       }
 
@@ -149,25 +149,25 @@ export default function Gallery({ initialImageId }: GalleryProps) {
       if (state.editingItem) {
         const result = await window.electronAPI.gallery.updateItem(state.editingItem.id, payload)
         if (result.error) {
-          toast.error(result.error)
+          notifications.show({ message: result.error, color: 'red' })
           return
         }
         invalidateDashboardCache()
-        toast.success('Item updated')
+        notifications.show({ message: 'Item updated', color: 'green' })
       } else {
         const result = await window.electronAPI.gallery.createItem(payload)
         if (result.error) {
-          toast.error(result.error)
+          notifications.show({ message: result.error, color: 'red' })
           return
         }
         invalidateDashboardCache()
-        toast.success('Item added')
+        notifications.show({ message: 'Item added', color: 'green' })
       }
 
       state.setShowItemEditor(false)
       void state.loadData()
     } catch (err) {
-      toast.error(String(err))
+      notifications.show({ message: String(err), color: 'red' })
     } finally {
       state.setSaving(false)
     }
@@ -188,7 +188,7 @@ export default function Gallery({ initialImageId }: GalleryProps) {
 
   const handleSaveCollection = async () => {
     if (!state.collName.trim()) {
-      toast.warning('Collection name is required')
+      notifications.show({ message: 'Collection name is required', color: 'yellow' })
       return
     }
     try {
@@ -198,10 +198,10 @@ export default function Gallery({ initialImageId }: GalleryProps) {
         color: state.collColor,
       })
       if (result.error) {
-        toast.error(result.error)
+        notifications.show({ message: result.error, color: 'red' })
         return
       }
-      toast.success('Collection created')
+      notifications.show({ message: 'Collection created', color: 'green' })
       state.setShowCollectionEditor(false)
       state.setCollName('')
       state.setCollDesc('')
@@ -209,7 +209,7 @@ export default function Gallery({ initialImageId }: GalleryProps) {
       invalidateDashboardCache()
       void state.loadData()
     } catch (err) {
-      toast.error(String(err))
+      notifications.show({ message: String(err), color: 'red' })
     }
   }
 
@@ -641,11 +641,26 @@ export default function Gallery({ initialImageId }: GalleryProps) {
             <div className="space-y-3">
               <div>
                 <label className="label">Name</label>
-                <input className="input w-full" value={state.collName} onChange={(e) => state.setCollName(e.target.value)} />
+                <input
+                  className="input w-full"
+                  aria-label="Collection name"
+                  title="Collection name"
+                  placeholder="My collection"
+                  value={state.collName}
+                  onChange={(e) => state.setCollName(e.target.value)}
+                />
               </div>
               <div>
                 <label className="label">Description</label>
-                <textarea className="textarea w-full" rows={2} value={state.collDesc} onChange={(e) => state.setCollDesc(e.target.value)} />
+                <textarea
+                  className="textarea w-full"
+                  aria-label="Collection description"
+                  title="Collection description"
+                  placeholder="Optional"
+                  rows={2}
+                  value={state.collDesc}
+                  onChange={(e) => state.setCollDesc(e.target.value)}
+                />
               </div>
               <div>
                 <label className="label">Colour</label>

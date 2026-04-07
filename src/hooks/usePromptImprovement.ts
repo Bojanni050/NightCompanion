@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 
 export type UsePromptImprovementReturn = {
   isImproving: boolean
@@ -31,7 +31,10 @@ export function usePromptImprovement(): UsePromptImprovementReturn {
       const result = await window.electronAPI.generator.improvePrompt({ prompt })
 
       if (result.error || !result.data?.prompt) {
-        toast.error(result.error || 'Failed to improve prompt.')
+        notifications.show({
+          message: result.error || 'Failed to improve prompt.',
+          color: 'red',
+        })
         return null
       }
 
@@ -40,7 +43,10 @@ export function usePromptImprovement(): UsePromptImprovementReturn {
       setViewTab('diff')
       return improvedPrompt
     } catch (error) {
-      toast.error(`Failed to improve prompt: ${String(error)}`)
+      notifications.show({
+        message: `Failed to improve prompt: ${String(error)}`,
+        color: 'red',
+      })
       return null
     } finally {
       setIsImproving(false)

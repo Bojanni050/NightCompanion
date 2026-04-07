@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronDown, ChevronUp, RefreshCcw } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import type { Screen } from '../types'
 
 type Props = {
@@ -76,7 +76,7 @@ export default function TokenCostWidget({ onNavigate }: Props) {
       setLoading(false)
     } catch (error) {
       setLoading(false)
-      toast.error(String(error))
+      notifications.show({ message: String(error), color: 'red' })
     }
   }
 
@@ -119,7 +119,7 @@ export default function TokenCostWidget({ onNavigate }: Props) {
 
       setDetailTotals(totals)
     } catch (error) {
-      toast.error(String(error))
+      notifications.show({ message: String(error), color: 'red' })
     } finally {
       setDetailLoading(false)
     }
@@ -231,6 +231,9 @@ export default function TokenCostWidget({ onNavigate }: Props) {
               <p className="text-[11px] text-slate-500">Days</p>
               <input
                 type="number"
+                aria-label="Custom period days"
+                title="Custom period days"
+                placeholder="30"
                 className="input !py-1.5 !text-xs !w-20"
                 value={String(customDays)}
                 min={1}

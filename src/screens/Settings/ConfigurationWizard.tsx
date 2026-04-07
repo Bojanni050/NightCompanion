@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowLeft, Check, Cpu } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 
 import { LocalEndpointCard } from '../../components/LocalEndpointCard'
 import { LOCAL_PROVIDERS, type AIRole } from '../../lib/constants'
@@ -199,9 +199,9 @@ export function ConfigurationWizard({
                     modelGeneral,
                   })
                   await loadLocalEndpoints()
-                  toast.success('Ollama config saved')
+                  notifications.show({ message: 'Ollama config saved', color: 'green' })
                 } catch {
-                  toast.error('Failed to save Ollama')
+                  notifications.show({ message: 'Failed to save Ollama', color: 'red' })
                 } finally {
                   setActionLoading(null)
                 }
@@ -211,9 +211,9 @@ export function ConfigurationWizard({
                 try {
                   await removeEndpoint(LOCAL_PROVIDERS.OLLAMA)
                   await loadLocalEndpoints()
-                  toast.success('Ollama removed')
+                  notifications.show({ message: 'Ollama removed', color: 'green' })
                 } catch {
-                  toast.error('Failed to remove')
+                  notifications.show({ message: 'Failed to remove', color: 'red' })
                 } finally {
                   setActionLoading(null)
                 }
@@ -230,7 +230,7 @@ export function ConfigurationWizard({
                   await loadLocalEndpoints()
                   await loadKeys()
                 } catch {
-                  toast.error('Failed to toggle')
+                  notifications.show({ message: 'Failed to toggle', color: 'red' })
                 } finally {
                   setActionLoading(null)
                 }
@@ -255,9 +255,9 @@ export function ConfigurationWizard({
                     modelGeneral,
                   })
                   await loadLocalEndpoints()
-                  toast.success('LM Studio config saved')
+                  notifications.show({ message: 'LM Studio config saved', color: 'green' })
                 } catch {
-                  toast.error('Failed to save LM Studio')
+                  notifications.show({ message: 'Failed to save LM Studio', color: 'red' })
                 } finally {
                   setActionLoading(null)
                 }
@@ -267,9 +267,9 @@ export function ConfigurationWizard({
                 try {
                   await removeEndpoint(LOCAL_PROVIDERS.LMSTUDIO)
                   await loadLocalEndpoints()
-                  toast.success('LM Studio removed')
+                  notifications.show({ message: 'LM Studio removed', color: 'green' })
                 } catch {
-                  toast.error('Failed to remove')
+                  notifications.show({ message: 'Failed to remove', color: 'red' })
                 } finally {
                   setActionLoading(null)
                 }
@@ -286,7 +286,7 @@ export function ConfigurationWizard({
                   await loadLocalEndpoints()
                   await loadKeys()
                 } catch {
-                  toast.error('Failed to toggle')
+                  notifications.show({ message: 'Failed to toggle', color: 'red' })
                 } finally {
                   setActionLoading(null)
                 }

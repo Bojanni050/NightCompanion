@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import { PageContainer } from '../components/PageContainer'
 
 type UsageTotals = {
@@ -77,7 +77,7 @@ export default function Usage() {
       const rawRate = settingsResult.data?.eurRate
       if (typeof rawRate === 'number' && Number.isFinite(rawRate) && rawRate > 0) setEurRate(rawRate)
     } catch (error) {
-      toast.error(String(error))
+      notifications.show({ message: String(error), color: 'red' })
     } finally {
       setLoading(false)
     }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import PromptPreview from '../components/PromptPreview'
 import PromptDiffView from '../components/PromptDiffView'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import { usePromptImprovement } from '../hooks/usePromptImprovement'
 
 type Part = {
@@ -182,7 +182,7 @@ export default function PromptBuilder({
   const handleGenerateTitle = async () => {
     const prompt = composedPrompt.trim()
     if (!prompt) {
-      toast.warning('Build a prompt first.')
+      notifications.show({ message: 'Build a prompt first.', color: 'yellow' })
       return
     }
 
@@ -195,9 +195,9 @@ export default function PromptBuilder({
       }
 
       setSavedTitle(result.data.title)
-      toast.success('Title generated!')
+      notifications.show({ message: 'Title generated!', color: 'green' })
     } catch (error) {
-      toast.error(`Failed to generate title: ${String(error)}`)
+      notifications.show({ message: `Failed to generate title: ${String(error)}`, color: 'red' })
     } finally {
       setIsGeneratingTitle(false)
     }
@@ -231,7 +231,10 @@ export default function PromptBuilder({
 
       updatePart(partId, result.data.text)
     } catch (error) {
-      toast.error(`Failed to generate ${part.label.toLowerCase()}: ${String(error)}`)
+      notifications.show({
+        message: `Failed to generate ${part.label.toLowerCase()}: ${String(error)}`,
+        color: 'red',
+      })
     } finally {
       setGeneratingPartId(null)
     }
@@ -257,9 +260,9 @@ export default function PromptBuilder({
       }
 
       setGeneratedPrompt(result.data.prompt)
-      toast.success('Prompt generated!')
+      notifications.show({ message: 'Prompt generated!', color: 'green' })
     } catch (error) {
-      toast.error(`Failed to generate prompt: ${String(error)}`)
+      notifications.show({ message: `Failed to generate prompt: ${String(error)}`, color: 'red' })
     } finally {
       setIsGeneratingPrompt(false)
     }
@@ -271,9 +274,9 @@ export default function PromptBuilder({
 
     try {
       await navigator.clipboard.writeText(value)
-      toast.success('Copied!')
+      notifications.show({ message: 'Copied!', color: 'green' })
     } catch (error) {
-      toast.error(`Failed to copy: ${String(error)}`)
+      notifications.show({ message: `Failed to copy: ${String(error)}`, color: 'red' })
     }
   }
 
@@ -285,9 +288,9 @@ export default function PromptBuilder({
       const improved = await generatedPromptImprovement.handleImprove(value)
       if (!improved) return
       setGeneratedPrompt(improved)
-      toast.success('Prompt improved!')
+      notifications.show({ message: 'Prompt improved!', color: 'green' })
     } catch (error) {
-      toast.error(`Failed to improve prompt: ${String(error)}`)
+      notifications.show({ message: `Failed to improve prompt: ${String(error)}`, color: 'red' })
     }
   }
 
@@ -318,12 +321,15 @@ export default function PromptBuilder({
 
       const filledCount = Object.keys(generatedFields).length
       if (filledCount > 0) {
-        toast.success(`Filled ${filledCount} empty field${filledCount === 1 ? '' : 's'}!`)
+        notifications.show({
+          message: `Filled ${filledCount} empty field${filledCount === 1 ? '' : 's'}!`,
+          color: 'green',
+        })
       } else {
-        toast.info('All fields already have content.')
+        notifications.show({ message: 'All fields already have content.', color: 'blue' })
       }
     } catch (error) {
-      toast.error(`Failed to fill fields: ${String(error)}`)
+      notifications.show({ message: `Failed to fill fields: ${String(error)}`, color: 'red' })
     } finally {
       setIsFillingAll(false)
     }

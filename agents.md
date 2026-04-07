@@ -1,6 +1,6 @@
 # ⚠️ Archivo generado automáticamente
 # Fuente: Ai_Rules.md
-# Fecha: 2026-04-06 03:58:11
+# Fecha: 2026-04-07 21:13:32
 # No editar directamente - los cambios se sobrescribirán
 # 
 # Para actualizar estas reglas, edita Ai_Rules.md y ejecuta:
@@ -23,6 +23,23 @@ Changes here are automatically synchronized to:
 - Generic agents (agents.md)
 
 ## 📋 General Rules
+
+# Memory Protocol
+
+Bij elke nieuwe conversatie:
+1. Zoek eerst bestaande herinneringen via supermemory `search` tool voordat je antwoord geeft
+2. Gebruik de `context` tool om het gebruikersprofiel te laden
+3. Sla nieuwe relevante feiten, beslissingen en voorkeuren op via `addMemory` aan het einde van elk gesprek
+
+## Wat opslaan:
+- Technische beslissingen en architectuurkeuzes
+- Gebruikersvoorkeuren (taal, frameworks, code stijl)
+- Projectcontext en voortgang
+- Problemen en oplossingen
+
+## Wat NIET opslaan:
+- Triviale vragen zonder projectwaarde
+- Informatie die al opgeslagen is
 
 ## Cortex
 

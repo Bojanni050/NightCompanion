@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { FolderOpen, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 
 import { PageContainer } from '../components/PageContainer'
 
@@ -62,11 +62,11 @@ export default function Settings() {
     const clearHistory = window.confirm('Also clear usage history?')
     const result = await window.electronAPI.usage.reset({ clearHistory })
     if (result.error) {
-      toast.error(result.error)
+      notifications.show({ message: result.error, color: 'red' })
       return
     }
 
-    toast.success('Usage counters reset.')
+    notifications.show({ message: 'Usage counters reset.', color: 'green' })
   }
 
   const loadHuggingFaceSyncInfo = async () => {
@@ -258,6 +258,9 @@ export default function Settings() {
                 </div>
                 <input
                   type="text"
+                  aria-label="EUR conversion rate"
+                  title="EUR conversion rate"
+                  placeholder="0.92"
                   value={eurRate}
                   onChange={(event) => {
                     void handleEurRateChange(event.target.value)

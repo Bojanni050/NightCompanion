@@ -450,3 +450,9 @@
 - Findings: On the Generator Quickstart view it wasn’t obvious whether the AI generation model was configured, leading to confusing failures when API settings were missing.
 - Conclusions: A small status indicator provides immediate feedback without changing the existing generation flow.
 - Actions: Updated `src/screens/Generator.tsx`, `src/components/generator/QuickstartPanel.tsx`, and `src/components/generator/ImprovementSection.tsx` to show AI status indicators (green dot + active model when configured, red dot + configuration prompt when missing) inside Magic Quickstart, Magic Random, and Improve Prompt panels; validated with `npm run build`.
+
+## 2026-04-07 (Migrate notifications from Sonner to Mantine)
+
+- Findings: The renderer used `sonner` (`toast.*` + `<Toaster />`) across multiple screens/components, but the project standard is to use Mantine Notifications.
+- Conclusions: A full swap to Mantine keeps behaviour consistent while removing an unnecessary dependency.
+- Actions: Wired `MantineProvider` + `<Notifications />` in `src/main.tsx` (with Mantine CSS); replaced all `toast.*` calls with `notifications.show(...)` across the renderer (screens, hooks, and components); removed `sonner` from dependencies; fixed a few input accessibility lints by adding `aria-label`/`title`/`placeholder`; validated with `npm run build`.

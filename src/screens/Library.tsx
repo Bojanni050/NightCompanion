@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { Prompt } from '../types'
 import PromptForm from '../components/PromptForm'
 import { BookTemplate, Check, Copy, Edit3, Eye, EyeOff, Filter, Heart, Plus, Search, SlidersHorizontal, Star, StarHalf, Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 
 import { invalidateDashboardCache } from '../lib/cacheEvents'
@@ -168,7 +168,7 @@ export default function Library() {
     if (form.mode === 'edit' && form.prompt.id === id) {
       setForm({ mode: 'closed' })
     }
-    toast.success('Prompt verwijderd')
+    notifications.show({ message: 'Prompt verwijderd', color: 'green' })
   }
 
   const handleCopy = async (prompt: Prompt) => {

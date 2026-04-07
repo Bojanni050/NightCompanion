@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import type { GalleryItem, Collection } from '../lib/schema'
 import { invalidateDashboardCache } from '../lib/cacheEvents'
 
@@ -84,7 +84,7 @@ export default function useGalleryState() {
       ])
 
       if (itemsResult.error) {
-        toast.error(itemsResult.error)
+        notifications.show({ message: itemsResult.error, color: 'red' })
       } else if (itemsResult.data) {
         const promptItems: GalleryItem[] = []
         if (!('error' in promptsResult) && Array.isArray(promptsResult.data)) {
@@ -136,12 +136,12 @@ export default function useGalleryState() {
       }
 
       if (collectionsResult.error) {
-        toast.error(collectionsResult.error)
+        notifications.show({ message: collectionsResult.error, color: 'red' })
       } else if (collectionsResult.data) {
         setCollections(collectionsResult.data)
       }
     } catch (err) {
-      toast.error(String(err))
+      notifications.show({ message: String(err), color: 'red' })
     } finally {
       setLoading(false)
     }
@@ -154,9 +154,9 @@ export default function useGalleryState() {
   const handleDeleteItem = useCallback(async (id: string) => {
     const result = await window.electronAPI.gallery.deleteItem(id)
     if (result.error) {
-      toast.error(result.error)
+      notifications.show({ message: result.error, color: 'red' })
     } else {
-      toast.success('Item deleted')
+      notifications.show({ message: 'Item deleted', color: 'green' })
       invalidateDashboardCache()
       void loadData()
     }
@@ -167,7 +167,7 @@ export default function useGalleryState() {
     if (metadata?.source === 'prompt' && typeof metadata.promptId === 'number') {
       const result = await window.electronAPI.prompts.updateRating(metadata.promptId, rating || null)
       if (result.error) {
-        toast.error(result.error)
+        notifications.show({ message: result.error, color: 'red' })
       } else {
         setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, rating } : i)))
       }
@@ -176,7 +176,7 @@ export default function useGalleryState() {
 
     const result = await window.electronAPI.gallery.updateItem(item.id, { rating })
     if (result.error) {
-      toast.error(result.error)
+      notifications.show({ message: result.error, color: 'red' })
     } else {
       setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, rating } : i)))
     }
@@ -185,9 +185,9 @@ export default function useGalleryState() {
   const handleDeleteCollection = useCallback(async (id: string) => {
     const result = await window.electronAPI.gallery.deleteCollection(id)
     if (result.error) {
-      toast.error(result.error)
+      notifications.show({ message: result.error, color: 'red' })
     } else {
-      toast.success('Collection deleted')
+      notifications.show({ message: 'Collection deleted', color: 'green' })
       invalidateDashboardCache()
       if (filterCollection === id) setFilterCollection(null)
       void loadData()

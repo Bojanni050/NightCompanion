@@ -11,7 +11,7 @@ import Settings from './screens/Settings'
 import Usage from './screens/Usage'
 import ScreenErrorBoundary from './components/ScreenErrorBoundary'
 import type { Screen } from './types'
-import { Toaster, toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('dashboard')
@@ -51,7 +51,10 @@ export default function App() {
       }
 
       lastUnexpectedIpcToastAtRef.current.set(key, now)
-      toast.error('Unexpected app error. Please try again.')
+      notifications.show({
+        message: 'Unexpected app error. Please try again.',
+        color: 'red',
+      })
     })
   }, [])
 
@@ -116,8 +119,6 @@ export default function App() {
           )}
         </div>
       </main>
-
-      <Toaster richColors position="bottom-right" />
     </div>
   )
 }

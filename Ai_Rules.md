@@ -14,6 +14,23 @@ Changes here are automatically synchronized to:
 
 ## 📋 General Rules
 
+# Memory Protocol
+
+Bij elke nieuwe conversatie:
+1. Zoek eerst bestaande herinneringen via supermemory `search` tool voordat je antwoord geeft
+2. Gebruik de `context` tool om het gebruikersprofiel te laden
+3. Sla nieuwe relevante feiten, beslissingen en voorkeuren op via `addMemory` aan het einde van elk gesprek
+
+## Wat opslaan:
+- Technische beslissingen en architectuurkeuzes
+- Gebruikersvoorkeuren (taal, frameworks, code stijl)
+- Projectcontext en voortgang
+- Problemen en oplossingen
+
+## Wat NIET opslaan:
+- Triviale vragen zonder projectwaarde
+- Informatie die al opgeslagen is
+
 ## Cortex
 
 Cortex Memory Rules — MANDATORY

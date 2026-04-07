@@ -14,7 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
-import { toast } from 'sonner'
+import { notifications } from '@mantine/notifications'
 import type { GalleryItem } from '../lib/schema'
 import MediaRenderer from './MediaRenderer'
 import StarRating from './StarRating'
@@ -162,9 +162,9 @@ export default function GalleryLightbox({
     if (!currentItem?.promptUsed) return
     try {
       await navigator.clipboard.writeText(currentItem.promptUsed)
-      toast.success('Prompt copied to clipboard')
+      notifications.show({ message: 'Prompt copied to clipboard', color: 'green' })
     } catch {
-      toast.error('Failed to copy prompt')
+      notifications.show({ message: 'Failed to copy prompt', color: 'red' })
     }
   }
 

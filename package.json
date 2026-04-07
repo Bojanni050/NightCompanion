@@ -19,6 +19,11 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mantine/core": "^7.17.0",
+    "@mantine/hooks": "^7.17.0",
+    "@mantine/notifications": "^7.17.0",
     "diff": "^8.0.3",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.38.4",
@@ -26,8 +31,7 @@
     "jiti": "^2.6.1",
     "lucide-react": "^0.577.0",
     "postgres": "^3.4.5",
-    "react-blurhash": "^0.3.0",
-    "sonner": "^2.0.7"
+    "react-blurhash": "^0.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
