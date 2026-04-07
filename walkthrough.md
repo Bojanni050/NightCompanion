@@ -432,3 +432,9 @@
 - Findings: Only the final prompt text was saved to Library, losing the original AI-generated version and making it impossible to compare or trace prompt evolution.
 - Conclusions: Adding an `original_prompt` column preserves the full generation lineage without changing the existing save flow.
 - Actions: Added `original_prompt` to `prompts` and `prompt_versions` in `src/lib/schema.ts` with migration; updated `electron/ipc/prompts.ts` create/update to persist `originalPrompt` and include it in version snapshots; updated types in `src/types/index.ts` + `src/types/electron.d.ts` + `electron/preload.ts`; updated save flows in Generator and PromptBuilder to pass `originalPrompt` when an improvement diff exists; validated with `npm run build` and `npm run db:migrate`.
+
+## 2026-04-07 (Generator Quickstart tab toggle fix)
+
+- Findings: Switching Generator tabs could appear to do nothing because the settings UI-state hydration effect was re-running and resetting `tab` back to the persisted value.
+- Conclusions: The hydration effect should only run once on mount; its dependencies must not include unstable objects.
+- Actions: Updated `src/screens/Generator.tsx` to remove the unstable `promptImprovement` object from the hydration effect dependency list (depend only on the stable setter functions); validated with `npm run build`.

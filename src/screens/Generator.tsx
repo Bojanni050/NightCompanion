@@ -445,7 +445,7 @@ export default function Generator() {
     return () => {
       ignore = true
     }
-  }, [promptImprovement])
+  }, [promptImprovement.setImprovementDiff, promptImprovement.setViewTab])
 
   useEffect(() => {
     if (!uiStateLoaded) return
