@@ -102,6 +102,11 @@ export default function Generator() {
   const [budgetMode, setBudgetMode] = useState<BudgetMode>('balanced')
   const [expandingIdea, setExpandingIdea] = useState(false)
   const [advisingAi, setAdvisingAi] = useState(false)
+  const [generationAiModel, setGenerationAiModel] = useState<string | null>(null)
+  const [hasGenerationAiConfigured, setHasGenerationAiConfigured] = useState(false)
+  const [openRouterApiKeyPresent, setOpenRouterApiKeyPresent] = useState(false)
+  const [improvementAiModel, setImprovementAiModel] = useState<string | null>(null)
+  const [hasImprovementAiConfigured, setHasImprovementAiConfigured] = useState(false)
 
   const selectedPresetPrompt = presetOptions.find((preset) => preset.presetName === selectedPreset)?.presetPrompt?.trim() || ''
   const selectedPresetContext = selectedPresetPrompt
@@ -123,6 +128,71 @@ export default function Generator() {
 
     return () => { ignore = true }
   }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadGenerationModel() {
+      const result = await window.electronAPI.settings.getOpenRouter()
+
+      if (ignore || result.error || !result.data) {
+        setGenerationAiModel(null)
+        setHasGenerationAiConfigured(false)
+        return
+      }
+
+      const model = (result.data.model ?? '').trim()
+      const apiKey = (result.data.apiKey ?? '').trim()
+
+      setGenerationAiModel(model || null)
+      setHasGenerationAiConfigured(Boolean(model && apiKey))
+      setOpenRouterApiKeyPresent(Boolean(apiKey))
+    }
+
+    void loadGenerationModel()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadImprovementModel() {
+      const result = await window.electronAPI.settings.getAiConfigState()
+
+      if (ignore || result.error || !result.data) {
+        setImprovementAiModel(null)
+        setHasImprovementAiConfigured(false)
+        return
+      }
+
+      const routing = result.data.dashboardRoleRouting
+      const improvementRoute = typeof routing === 'object' && routing !== null
+        ? (routing as Record<string, unknown>).improvement
+        : undefined
+
+      const providerId = typeof improvementRoute === 'object' && improvementRoute !== null
+        ? String((improvementRoute as Record<string, unknown>).providerId || '')
+        : ''
+      const modelId = typeof improvementRoute === 'object' && improvementRoute !== null
+        ? String((improvementRoute as Record<string, unknown>).modelId || '')
+        : ''
+
+      setImprovementAiModel(modelId.trim() || null)
+
+      const hasRoute = Boolean(providerId.trim() && modelId.trim())
+      const hasKeyIfNeeded = providerId.trim() !== 'openrouter' || openRouterApiKeyPresent
+      setHasImprovementAiConfigured(hasRoute && hasKeyIfNeeded)
+    }
+
+    void loadImprovementModel()
+
+    return () => {
+      ignore = true
+    }
+  }, [openRouterApiKeyPresent])
 
   const handleQuickExpand = async () => {
     const idea = quickStartIdea.trim()
@@ -227,10 +297,6 @@ export default function Generator() {
   }
 
   const normalizeGreylistWord = (value: string) => value.trim().toLowerCase()
-
-  const handleMagicRandom = async () => {
-    await handleGenerate()
-  }
 
   const handleAdviseModel = () => {
     void requestModelAdvice('ai', generatedPrompt)
@@ -801,10 +867,12 @@ export default function Generator() {
                 greylistWords={greylistWords}
                 setStatus={setStatus}
                 handleQuickExpand={handleQuickExpand}
-                handleMagicRandom={handleMagicRandom}
+                handleMagicRandom={handleGenerate}
                 handleGenerateNegative={handleGenerateNegative}
                 expandingIdea={expandingIdea}
                 loading={loading}
+                generationAiModel={generationAiModel}
+                hasGenerationAiConfigured={hasGenerationAiConfigured}
               />
             </div>
 
@@ -830,6 +898,8 @@ export default function Generator() {
               savedTitle={savedTitle}
               handleSaveToLibrary={handleSaveToLibrary}
               supportsNegativePrompt={supportsNegativePrompt}
+              improvementAiModel={improvementAiModel}
+              hasImprovementAiConfigured={hasImprovementAiConfigured}
             />
 
             {/* Title and Save Section */}

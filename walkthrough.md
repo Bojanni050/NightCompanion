@@ -444,3 +444,9 @@
 - Findings: Navigating away from Generator (or Prompt Builder) within the 500ms debounce window could cancel the pending settings save, so returning to the screen rehydrated empty/default state.
 - Conclusions: Debounced persistence must flush the latest UI state on unmount to guarantee navigation doesn’t drop state.
 - Actions: Updated `src/screens/Generator.tsx` and `src/screens/PromptBuilder.tsx` to flush any pending debounced `settings.save*UiState` call during effect cleanup; validated with `npm run build`.
+
+## 2026-04-07 (Quickstart AI model status indicator)
+
+- Findings: On the Generator Quickstart view it wasn’t obvious whether the AI generation model was configured, leading to confusing failures when API settings were missing.
+- Conclusions: A small status indicator provides immediate feedback without changing the existing generation flow.
+- Actions: Updated `src/screens/Generator.tsx`, `src/components/generator/QuickstartPanel.tsx`, and `src/components/generator/ImprovementSection.tsx` to show AI status indicators (green dot + active model when configured, red dot + configuration prompt when missing) inside Magic Quickstart, Magic Random, and Improve Prompt panels; validated with `npm run build`.

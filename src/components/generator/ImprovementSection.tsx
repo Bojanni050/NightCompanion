@@ -25,6 +25,8 @@ type ImprovementSectionProps = {
   savedTitle: string
   handleSaveToLibrary: () => void
   supportsNegativePrompt: boolean | null
+  improvementAiModel: string | null
+  hasImprovementAiConfigured: boolean
 }
 
 export default function ImprovementSection({
@@ -48,6 +50,8 @@ export default function ImprovementSection({
   savedTitle,
   handleSaveToLibrary,
   supportsNegativePrompt,
+  improvementAiModel,
+  hasImprovementAiConfigured,
 }: ImprovementSectionProps) {
   const showNegativePromptControls = supportsNegativePrompt !== false
 
@@ -124,6 +128,20 @@ export default function ImprovementSection({
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-teal-400" />
             <p className="text-sm font-semibold text-teal-300">Verbeter Prompt</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${hasImprovementAiConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}
+              aria-hidden
+            />
+            {hasImprovementAiConfigured ? (
+              <p className="text-xs text-night-100">
+                AI:
+                <span className="ml-1 text-night-400">{improvementAiModel ?? 'Unknown'}</span>
+              </p>
+            ) : (
+              <p className="text-xs text-night-400">Configure an improvement model in AI Config.</p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button

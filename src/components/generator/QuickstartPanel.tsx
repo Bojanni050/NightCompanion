@@ -36,6 +36,8 @@ type QuickstartPanelProps = {
   handleGenerateNegative: () => void
   expandingIdea: boolean
   loading: boolean
+  generationAiModel: string | null
+  hasGenerationAiConfigured: boolean
 }
 
 const MAX_ALLOWED_WORDS = 100
@@ -60,13 +62,15 @@ export default function QuickstartPanel({
   handleMagicRandom,
   expandingIdea,
   loading,
+  generationAiModel,
+  hasGenerationAiConfigured,
 }: QuickstartPanelProps) {
   const [showCharacterPicker, setShowCharacterPicker] = useState(false)
 
   return (
     <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
       {/* LEFT: Magic Quickstart card */}
-      <div className="card p-5 h-full flex flex-col">
+      <div className="card p-5 h-full flex flex-col relative">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-teal-500/20">
@@ -205,10 +209,27 @@ export default function QuickstartPanel({
             <Sparkles className="w-4 h-4" /> {expandingIdea ? 'Expanding...' : 'Magic AI Expansion'}
           </button>
         </div>
+
+        <div className="absolute left-5 bottom-5">
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${hasGenerationAiConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}
+              aria-hidden
+            />
+            {hasGenerationAiConfigured ? (
+              <p className="text-xs text-night-100">
+                AI:
+                <span className="ml-1 text-night-400">{generationAiModel ?? 'Unknown'}</span>
+              </p>
+            ) : (
+              <p className="text-xs text-night-400">Configure an AI model in Settings.</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* RIGHT: Magic Random AI controls */}
-      <div className="card p-5 h-full flex flex-col border-glow-amber/25 bg-gradient-to-br from-night-900 via-night-900 to-glow-amber/5">
+      <div className="card p-5 h-full flex flex-col relative border-glow-amber/25 bg-gradient-to-br from-night-900 via-night-900 to-glow-amber/5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2.5">
             <div className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-glow-amber/20">
@@ -338,6 +359,23 @@ export default function QuickstartPanel({
           >
             {loading ? 'Generating...' : 'Magic Random (AI)'}
           </button>
+        </div>
+
+        <div className="absolute left-5 bottom-5">
+          <div className="flex items-center gap-2">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${hasGenerationAiConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}
+              aria-hidden
+            />
+            {hasGenerationAiConfigured ? (
+              <p className="text-xs text-night-100">
+                AI:
+                <span className="ml-1 text-night-400">{generationAiModel ?? 'Unknown'}</span>
+              </p>
+            ) : (
+              <p className="text-xs text-night-400">Configure an AI model in Settings.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
