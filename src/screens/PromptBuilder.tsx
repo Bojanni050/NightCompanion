@@ -285,10 +285,14 @@ export default function PromptBuilder({
     if (!value) return
 
     try {
-      const improved = await generatedPromptImprovement.handleImprove(value)
-      if (!improved) return
-      setGeneratedPrompt(improved)
-      notifications.show({ message: 'Prompt improved!', color: 'green' })
+      const result = await generatedPromptImprovement.handleImproveWithMeta(value)
+      if (!result?.prompt) return
+
+      setGeneratedPrompt(result.prompt)
+      notifications.show({
+        message: result.modelId ? `Prompt improved with ${result.modelId}.` : 'Prompt improved.',
+        color: 'green',
+      })
     } catch (error) {
       notifications.show({ message: `Failed to improve prompt: ${String(error)}`, color: 'red' })
     }

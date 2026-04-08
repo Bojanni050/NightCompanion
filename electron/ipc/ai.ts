@@ -1253,7 +1253,7 @@ export function registerAiIpc({
         })
 
         resultPrompt = improved
-        return { data: { prompt: improved } }
+        return { data: { prompt: improved, providerId, modelId } }
       }
 
       const localEndpointsRaw = stored.localEndpoints
@@ -1314,7 +1314,7 @@ export function registerAiIpc({
       })
 
       resultPrompt = improved
-      return { data: { prompt: improved } }
+      return { data: { prompt: improved, providerId, modelId } }
     } catch (error) {
       errorMessage = String(error)
       return { error: String(error) }

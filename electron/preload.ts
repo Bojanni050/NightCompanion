@@ -371,7 +371,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   generator: {
     magicRandom: (input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>> =>
       invokeWithFallback('generator:magicRandom', input),
-    improvePrompt: (input?: { prompt?: string }): Promise<IpcResult<{ prompt: string }>> =>
+    improvePrompt: (input?: { prompt?: string }): Promise<IpcResult<{ prompt: string; providerId: string; modelId: string }>> =>
       invokeWithFallback('generator:improvePrompt', input),
     generateNegativePrompt: (input?: { prompt?: string }): Promise<IpcResult<{ negativePrompt: string }>> =>
       invokeWithFallback('generator:generateNegativePrompt', input),

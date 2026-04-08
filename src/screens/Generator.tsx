@@ -53,6 +53,7 @@ type GeneratorPersistedState = {
   advisorFastest?: string
   supportsNegativePrompt?: boolean | null
   budgetMode?: BudgetMode
+  autoTitleEnabled?: boolean
 }
 
 function buildDefaultTitle(value: string) {
@@ -81,6 +82,7 @@ export default function Generator() {
   const [improvingNegative, setImprovingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
   const [savedTitle, setSavedTitle] = useState('')
+  const [autoTitleEnabled, setAutoTitleEnabled] = useState(true)
   const [recommendedModel, setRecommendedModel] = useState('')
   const [recommendedModelReason, setRecommendedModelReason] = useState('')
   const [recommendedModelMode, setRecommendedModelMode] = useState<'rule' | 'ai' | null>(null)
@@ -93,6 +95,7 @@ export default function Generator() {
   const [greylistLoaded, setGreylistLoaded] = useState(false)
   const [uiStateLoaded, setUiStateLoaded] = useState(false)
   const uiStateSaveTimeoutRef = useRef<number | null>(null)
+  const lastAutoTitlePromptRef = useRef<string | null>(null)
 
   const [quickStartIdea, setQuickStartIdea] = useState('')
   const [quickStartCreativity, setQuickStartCreativity] = useState<CreativityLevel>('balanced')
@@ -107,6 +110,29 @@ export default function Generator() {
   const [openRouterApiKeyPresent, setOpenRouterApiKeyPresent] = useState(false)
   const [improvementAiModel, setImprovementAiModel] = useState<string | null>(null)
   const [hasImprovementAiConfigured, setHasImprovementAiConfigured] = useState(false)
+
+  const handleSavedTitleChange = (value: string) => {
+    lastAutoTitlePromptRef.current = null
+    setSavedTitle(value)
+  }
+
+  const maybeAutoGenerateTitle = async (nextPrompt: string, previousPrompt: string) => {
+    if (!autoTitleEnabled) return
+
+    const trimmedTitle = savedTitle.trim()
+    const canOverwrite = !trimmedTitle || lastAutoTitlePromptRef.current === previousPrompt
+    if (!canOverwrite) return
+
+    setGeneratingTitle(true)
+    try {
+      const result = await window.electronAPI.generator.generateTitle({ prompt: nextPrompt })
+      if (result.error || !result.data?.title) return
+      lastAutoTitlePromptRef.current = nextPrompt
+      setSavedTitle(result.data.title)
+    } finally {
+      setGeneratingTitle(false)
+    }
+  }
 
   const selectedPresetPrompt = presetOptions.find((preset) => preset.presetName === selectedPreset)?.presetPrompt?.trim() || ''
   const selectedPresetContext = selectedPresetPrompt
@@ -221,12 +247,15 @@ export default function Generator() {
 
       const nextPrompt = result.data.prompt
       setGeneratedPrompt(nextPrompt)
-      setSavedTitle(buildDefaultTitle(nextPrompt))
+      if (!autoTitleEnabled) {
+        setSavedTitle(buildDefaultTitle(nextPrompt))
+      }
       promptImprovement.clearDiff()
       setNegativeImprovementDiff(null)
       setNegativePromptViewTab('final')
       setTab('generator')
       void requestModelAdvice('rule', nextPrompt)
+      void maybeAutoGenerateTitle(nextPrompt, generatedPrompt)
     } catch (error) {
       console.error('Quick expand failed:', error)
     } finally {
@@ -471,6 +500,7 @@ export default function Generator() {
       setMagicRandomCreativity(parsed.magicRandomCreativity ?? 'balanced')
       setQuickStartCharacterId(parsed.quickStartCharacterId ?? null)
       setBudgetMode(parsed.budgetMode === 'cheap' ? 'cheap' : parsed.budgetMode === 'premium' ? 'premium' : 'balanced')
+      setAutoTitleEnabled(parsed.autoTitleEnabled !== false)
 
       const nextPromptViewTab = parsed.promptViewTab === 'diff' && parsed.improvementDiff ? 'diff' : 'final'
       promptImprovement.setViewTab(nextPromptViewTab)
@@ -538,6 +568,7 @@ export default function Generator() {
       magicRandomCreativity,
       quickStartCharacterId,
       budgetMode,
+      autoTitleEnabled,
     })
 
     if (uiStateSaveTimeoutRef.current) {
@@ -672,11 +703,14 @@ export default function Generator() {
       promptImprovement.clearDiff()
       setNegativeImprovementDiff(null)
       setNegativePromptViewTab('final')
-      setSavedTitle((currentTitle) => {
-        const trimmedTitle = currentTitle.trim()
-        if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
-        return buildDefaultTitle(nextPrompt)
-      })
+      if (!autoTitleEnabled) {
+        setSavedTitle((currentTitle) => {
+          const trimmedTitle = currentTitle.trim()
+          if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
+          return buildDefaultTitle(nextPrompt)
+        })
+      }
+      void maybeAutoGenerateTitle(nextPrompt, previousPrompt)
       void requestModelAdvice('rule', nextPrompt)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to generate prompt.')
@@ -708,11 +742,15 @@ export default function Generator() {
         return
       }
 
-      setSavedTitle((currentTitle) => {
-        const trimmedTitle = currentTitle.trim()
-        if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
-        return buildDefaultTitle(improved)
-      })
+      if (!autoTitleEnabled) {
+        setSavedTitle((currentTitle) => {
+          const trimmedTitle = currentTitle.trim()
+          if (trimmedTitle && trimmedTitle !== buildDefaultTitle(previousPrompt)) return currentTitle
+          return buildDefaultTitle(improved)
+        })
+      }
+
+      void maybeAutoGenerateTitle(improved, previousPrompt)
       setStatus('Prompt improved.')
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to improve prompt.')
@@ -750,6 +788,7 @@ export default function Generator() {
 
       setSavedTitle(result.data.title)
       setStatus('AI title generated.')
+      lastAutoTitlePromptRef.current = generatedPrompt
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to generate title.')
     } finally {
@@ -829,7 +868,7 @@ export default function Generator() {
         {tab === 'generator' ? (
           <>
             {/* Greylist */}
-            <div className="mt-5">
+            <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[1fr_280px] lg:items-start">
               <GreylistCard
                 greylistEnabled={greylistEnabled}
                 setGreylistEnabled={setGreylistEnabled}
@@ -840,6 +879,24 @@ export default function Generator() {
                 addGreylistWord={addGreylistWord}
                 removeGreylistWord={removeGreylistWord}
               />
+              <div className="card p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-semibold text-white">Auto title</h2>
+                    <p className="text-xs text-slate-500 mt-1">Generate a title automatically after generating or improving a prompt.</p>
+                  </div>
+                  <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${autoTitleEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
+                    <input
+                      type="checkbox"
+                      checked={autoTitleEnabled}
+                      onChange={(e) => setAutoTitleEnabled(e.target.checked)}
+                      className="mr-1 h-3.5 w-3.5 accent-green-500"
+                      aria-label="Enable automatic title generation"
+                    />
+                    {autoTitleEnabled ? 'On' : 'Off'}
+                  </label>
+                </div>
+              </div>
             </div>
 
             {/* Input Cards - side by side */}
@@ -905,7 +962,7 @@ export default function Generator() {
             {/* Title and Save Section */}
             <TitleSaveSection
               savedTitle={savedTitle}
-              setSavedTitle={setSavedTitle}
+              setSavedTitle={handleSavedTitleChange}
               generatedPrompt={generatedPrompt}
               negativePrompt={negativePrompt}
               recommendedModel={recommendedModel}
@@ -1046,6 +1103,23 @@ export default function Generator() {
                         </button>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Auto title</p>
+                      <p className="text-[11px] text-slate-500 mt-1">Generate a title automatically.</p>
+                    </div>
+                    <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${autoTitleEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
+                      <input
+                        type="checkbox"
+                        checked={autoTitleEnabled}
+                        onChange={(e) => setAutoTitleEnabled(e.target.checked)}
+                        className="mr-1 h-3.5 w-3.5 accent-green-500"
+                        aria-label="Enable automatic title generation"
+                      />
+                      {autoTitleEnabled ? 'On' : 'Off'}
+                    </label>
                   </div>
                 </div>
               </div>

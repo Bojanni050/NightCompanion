@@ -14,6 +14,38 @@ Changes here are automatically synchronized to:
 
 ## 📋 General Rules
 
+# Memstate MCP - Memory Storage
+
+This project uses Memstate MCP for persistent, versioned memory across sessions.
+
+## REQUIRED: Start and end every task with memory
+
+**BEFORE starting any task**, load existing context so you don't redo past work or revert intentional decisions:
+```
+memstate_get(project_id="<your_project>")
+```
+
+**AFTER completing any task**, save what you did so the next session has context:
+```
+memstate_remember(project_id="<your_project>", content="## Task Summary\n- What was done\n- Key decisions made\n- Files modified", source="agent")
+```
+
+These two calls are mandatory. Skipping them means the next session starts blind.
+
+## Tool reference
+
+| Tool | When to use |
+|------|-------------|
+| memstate_get | **Start of every task.** Browse project tree or fetch content at a keypath. |
+| memstate_remember | **End of every task.** Save markdown summaries, notes, decisions. |
+| memstate_search | Find memories by meaning when you don't know the exact keypath. |
+| memstate_set | Store a single key=value fact (e.g. config.port). Not for summaries. |
+| memstate_history | View version history of a keypath. |
+| memstate_delete | Soft-delete a keypath (history preserved). |
+
+## Project naming
+Use a short snake_case name matching your repo or topic (e.g. my_app, api_service). All related memories should share the same project_id.
+
 # Memory Protocol
 
 Bij elke nieuwe conversatie:
