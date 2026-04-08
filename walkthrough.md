@@ -480,3 +480,15 @@
 - Findings: ESLint flagged synchronous `setState` calls inside effects in `src/screens/Library.tsx` (page resets and lightbox visibility).
 - Conclusions: Moving page reset/clamping logic into event handlers/derived values and keeping lightbox animation state within open/close handlers avoids unnecessary effect-driven state changes.
 - Actions: Refactored `src/screens/Library.tsx` to remove page reset/clamp effects and drive `lightboxVisible` from `openLightbox`/`closeLightbox`; validated with `npm run build`.
+
+## 2026-04-08 (Library popup cover scales + card actions under title)
+
+- Findings: The prompt details popup cover image still felt smaller than the lightbox, and Library grid cards had action icons competing for space next to the title.
+- Conclusions: A percent-based cover column with sensible min/max better matches the lightbox feel across window sizes, and moving card actions under the title improves title readability.
+- Actions: Updated `src/screens/Library.tsx` popup cover column to a percent-based width with min/max constraints and ensured header actions stay pinned right; moved Library grid card action icons to render under the title; validated with `npm run build`.
+
+## 2026-04-08 (Prompt details popup: rating + prompt layout)
+
+- Findings: The prompt details popup was missing the star rating near the title, and the prompt/negative prompt fields were laid out side-by-side, which reduced readability.
+- Conclusions: Showing rating next to the title mirrors the lightbox context, and stacking Negative Prompt beneath a full-width Prompt makes long text easier to read.
+- Actions: Updated `src/screens/Library.tsx` to render the star rating next to the title in the popup header and make the Prompt span both columns with Negative Prompt beneath; validated with `npm run build`.

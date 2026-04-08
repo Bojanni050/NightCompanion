@@ -372,68 +372,67 @@ export default function Library() {
                     ) : null}
                     <div className="flex flex-1 min-w-0 flex-col">
                       <div className="p-5 pb-0">
-                        <div className="flex items-start justify-between mb-2">
+                        <button
+                          type="button"
+                          className="flex items-start gap-2 min-w-0 text-left"
+                          onClick={() => setSelectedPrompt(prompt)}
+                          aria-label={`Open details for ${prompt.title || 'prompt'}`}
+                          title="Open details"
+                        >
+                          <h3 className="text-sm font-semibold text-white line-clamp-2">{prompt.title || 'Untitled'}</h3>
+                          {prompt.isTemplate && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 bg-teal-500/10 text-teal-400 rounded-md flex-shrink-0">
+                              Template
+                            </span>
+                          )}
+                          {/* TODO: Add improved prompt indicator when improvedPrompt field exists */}
+                        </button>
+
+                        <div className="mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
-                            type="button"
-                            className="flex items-center gap-2 min-w-0 text-left"
-                            onClick={() => setSelectedPrompt(prompt)}
-                            aria-label={`Open details for ${prompt.title || 'prompt'}`}
-                            title="Open details"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              void handleCopy(prompt)
+                            }}
+                            className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-emerald-400 rounded-lg transition-colors"
+                            title="Copy"
+                            aria-label="Copy prompt"
                           >
-                            <h3 className="text-sm font-semibold text-white line-clamp-2">{prompt.title || 'Untitled'}</h3>
-                            {prompt.isTemplate && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 bg-teal-500/10 text-teal-400 rounded-md flex-shrink-0">
-                                Template
-                              </span>
-                            )}
-                            {/* TODO: Add improved prompt indicator when improvedPrompt field exists */}
+                            {copiedId === prompt.id ? <Check size={14} /> : <Copy size={14} />}
                           </button>
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                void handleCopy(prompt)
-                              }}
-                              className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-emerald-400 rounded-lg transition-colors"
-                              title="Copy"
-                              aria-label="Copy prompt"
-                            >
-                              {copiedId === prompt.id ? <Check size={14} /> : <Copy size={14} />}
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                void handleToggleFavorite(prompt)
-                              }}
-                              className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-rose-400 rounded-lg transition-colors"
-                              title={prompt.isFavorite ? 'Unfavorite' : 'Favorite'}
-                              aria-label={prompt.isFavorite ? 'Unfavorite prompt' : 'Favorite prompt'}
-                            >
-                              <Heart size={14} className={prompt.isFavorite ? 'fill-rose-400 text-rose-400' : ''} />
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                setForm({ mode: 'edit', prompt })
-                              }}
-                              className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-blue-400 rounded-lg transition-colors"
-                              title="Edit"
-                              aria-label="Edit prompt"
-                            >
-                              <Edit3 size={14} />
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                setDeleteDialog({ isOpen: true, promptId: prompt.id })
-                              }}
-                              className="p-1.5 hover:bg-red-900/20 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
-                              title="Delete"
-                              aria-label="Delete prompt"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              void handleToggleFavorite(prompt)
+                            }}
+                            className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-rose-400 rounded-lg transition-colors"
+                            title={prompt.isFavorite ? 'Unfavorite' : 'Favorite'}
+                            aria-label={prompt.isFavorite ? 'Unfavorite prompt' : 'Favorite prompt'}
+                          >
+                            <Heart size={14} className={prompt.isFavorite ? 'fill-rose-400 text-rose-400' : ''} />
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setForm({ mode: 'edit', prompt })
+                            }}
+                            className="p-1.5 hover:bg-slate-800 text-slate-500 hover:text-blue-400 rounded-lg transition-colors"
+                            title="Edit"
+                            aria-label="Edit prompt"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setDeleteDialog({ isOpen: true, promptId: prompt.id })
+                            }}
+                            className="p-1.5 hover:bg-red-900/20 text-slate-500 hover:text-red-400 rounded-lg transition-colors"
+                            title="Delete"
+                            aria-label="Delete prompt"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
 
                         <button
@@ -538,8 +537,28 @@ export default function Library() {
                   role="document"
                 >
                   <div className="flex items-start justify-between gap-4 flex-shrink-0">
-                    <div className="min-w-0">
-                      <h2 className="text-lg font-semibold text-white truncate">{selectedPrompt.title || 'Untitled'}</h2>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <h2 className="text-lg font-semibold text-white truncate">{selectedPrompt.title || 'Untitled'}</h2>
+                        <div className="flex items-center gap-1 text-glow-amber">
+                          {[1, 2, 3, 4, 5].map((value) => {
+                            const fill = getStarFill(selectedPrompt.rating || 0, value)
+
+                            if (fill === 'full') {
+                              return <Star key={value} size={14} fill="currentColor" />
+                            }
+
+                            if (fill === 'half') {
+                              return <StarHalf key={value} size={14} fill="currentColor" />
+                            }
+
+                            return <Star key={value} size={14} className="text-white/35" />
+                          })}
+                          <span className="ml-1 text-xs font-medium text-white/70">
+                            {selectedPrompt.rating ? selectedPrompt.rating.toFixed(1) : '0.0'}
+                          </span>
+                        </div>
+                      </div>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                         <span>{new Date(selectedPrompt.createdAt).toLocaleString()}</span>
                         {selectedPrompt.updatedAt !== selectedPrompt.createdAt && <span>Updated</span>}
@@ -549,7 +568,7 @@ export default function Library() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                       <button
                         type="button"
                         onClick={() => void handleCopy(selectedPrompt)}
@@ -613,7 +632,7 @@ export default function Library() {
                     return (
                       <div className={modalCover ? 'flex flex-col gap-4 md:flex-row md:items-stretch md:gap-6' : ''}>
                         {modalCover ? (
-                          <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 md:w-[28rem] md:flex-shrink-0">
+                          <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 md:w-[45%] md:min-w-96 md:max-w-[48rem] md:flex-shrink-0">
                             <div className="aspect-[16/9] md:aspect-auto md:h-full">
                               <img
                                 src={modalCover}
@@ -636,13 +655,13 @@ export default function Library() {
 
                         <div className="min-w-0 flex-1">
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div>
+                            <div className="md:col-span-2">
                               <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Prompt</p>
                               <p className="mt-2 whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-sm text-slate-200">
                                 {selectedPrompt.promptText}
                               </p>
                             </div>
-                            <div>
+                            <div className="md:col-span-2">
                               <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Negative prompt</p>
                               <p className="mt-2 whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-sm text-slate-400">
                                 {selectedPrompt.negativePrompt || 'No negative prompt set.'}
