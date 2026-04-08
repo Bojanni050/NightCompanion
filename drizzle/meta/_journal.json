@@ -169,6 +169,13 @@
       "when": 1775361000000,
       "tag": "0023_prompt_original_field",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1775362000000,
+      "tag": "0024_prompt_style_preset",
+      "breakpoints": true
     }
   ]
 }

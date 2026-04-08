@@ -18,6 +18,7 @@ export type PromptMutationInput = Omit<import('../lib/schema').NewPrompt, 'creat
   removeImage?: boolean
   images?: PromptImageMutationInput[] | null
   originalPrompt?: string
+  stylePreset?: string
 }
 
 export type Screen =

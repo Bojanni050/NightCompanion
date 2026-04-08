@@ -456,3 +456,9 @@
 - Findings: The renderer used `sonner` (`toast.*` + `<Toaster />`) across multiple screens/components, but the project standard is to use Mantine Notifications.
 - Conclusions: A full swap to Mantine keeps behaviour consistent while removing an unnecessary dependency.
 - Actions: Wired `MantineProvider` + `<Notifications />` in `src/main.tsx` (with Mantine CSS); replaced all `toast.*` calls with `notifications.show(...)` across the renderer (screens, hooks, and components); removed `sonner` from dependencies; fixed a few input accessibility lints by adding `aria-label`/`title`/`placeholder`; validated with `npm run build`.
+
+## 2026-04-08 (Persist style preset on prompts)
+
+- Findings: Prompts saved from Generator/Prompt Builder did not persist the selected NightCafe style preset, so the Library couldn’t display which preset was used.
+- Conclusions: Persisting `style_preset` alongside the prompt makes saved prompts more searchable and traceable without changing existing flows.
+- Actions: Added `style_preset` to `prompts` + `prompt_versions` (migration `drizzle/0024_prompt_style_preset.sql` and journal update); wired field through `electron/ipc/prompts.ts` and shared renderer types; updated Generator + embedded Prompt Builder save-to-library to send the preset; displayed the preset on Prompt Library cards and in the prompt details popup; validated with `npm run db:migrate` and `npm run build`.

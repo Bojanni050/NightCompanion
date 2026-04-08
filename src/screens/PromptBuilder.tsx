@@ -29,6 +29,7 @@ type PromptBuilderProps = {
   greylistWords?: string[]
   maxWords?: number
   creativity?: 'focused' | 'balanced' | 'wild'
+  stylePreset?: string
   styleProfiles?: Array<{ id: number; name: string; basePromptSnippet?: string; commonNegativePrompts?: string }>
   selectedStyleProfileId?: number | ''
   setSelectedStyleProfileId?: (value: number | '') => void
@@ -42,14 +43,16 @@ type PromptBuilderPersistedState = {
   generatedPrompt?: string
   generatedPromptViewTab?: 'final' | 'diff'
   generatedImprovementDiff?: { originalPrompt: string; improvedPrompt: string } | null
+  stylePreset?: string
 }
 
-export default function PromptBuilder({ 
-  embedded = false, 
-  greylistEnabled = true, 
-  greylistWords = [], 
-  maxWords = 70, 
+export default function PromptBuilder({
+  embedded = false,
+  greylistEnabled = true,
+  greylistWords = [],
+  maxWords = 70,
   creativity = 'balanced',
+  stylePreset = '',
   styleProfiles = [],
   selectedStyleProfileId = '',
   setSelectedStyleProfileId
@@ -403,6 +406,7 @@ export default function PromptBuilder({
       promptText: nextPromptText,
       originalPrompt: nextOriginalPrompt,
       negativePrompt: composedNegative,
+      stylePreset: stylePreset.trim(),
       model: '',
       suggestedModel: '',
       notes: 'Created with Prompt Builder',

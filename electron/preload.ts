@@ -18,6 +18,7 @@ type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
   removeImage?: boolean
   images?: PromptImageMutationInput[] | null
   originalPrompt?: string
+  stylePreset?: string
 }
 
 export type PromptFilters = {

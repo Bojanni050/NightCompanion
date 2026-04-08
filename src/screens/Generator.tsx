@@ -830,6 +830,7 @@ export default function Generator() {
       promptText: nextPromptText,
       originalPrompt: nextOriginalPrompt,
       negativePrompt: negativePrompt.trim(),
+      stylePreset: selectedPreset.trim(),
       model: recommendedModel.trim(),
       suggestedModel: recommendedModel.trim(),
       notes: 'Generated with Magic Random (AI)',
@@ -1131,6 +1132,7 @@ export default function Generator() {
                 greylistWords={greylistWords} 
                 maxWords={maxWords} 
                 creativity={magicRandomCreativity}
+                stylePreset={selectedPreset}
                 styleProfiles={styleProfiles}
                 selectedStyleProfileId={selectedStyleProfileId}
                 setSelectedStyleProfileId={setSelectedStyleProfileId}
