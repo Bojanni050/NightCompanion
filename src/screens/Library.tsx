@@ -533,11 +533,11 @@ export default function Library() {
             {selectedPrompt && (
               <ModalOverlay onClose={closePromptDetails}>
                 <div
-                  className="card w-full max-w-3xl p-6"
+                  className="card w-full max-w-[min(96vw,80rem)] max-h-[96vh] p-6 overflow-hidden flex flex-col"
                   onClick={(event) => event.stopPropagation()}
                   role="document"
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-4 flex-shrink-0">
                     <div className="min-w-0">
                       <h2 className="text-lg font-semibold text-white truncate">{selectedPrompt.title || 'Untitled'}</h2>
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
@@ -604,15 +604,16 @@ export default function Library() {
                     </div>
                   </div>
 
+                  <div className="mt-4 flex-1 overflow-y-auto pr-1">
                   {(() => {
                     const modalCover = Array.isArray(selectedPrompt.imagesJson) && selectedPrompt.imagesJson.length > 0
                       ? selectedPrompt.imagesJson[0].url
                       : selectedPrompt.imageUrl
 
                     return (
-                      <div className={modalCover ? 'mt-4 flex flex-col gap-4 md:flex-row md:items-start md:gap-6' : 'mt-4'}>
+                      <div className={modalCover ? 'flex flex-col gap-4 md:flex-row md:items-stretch md:gap-6' : ''}>
                         {modalCover ? (
-                          <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 md:w-72 md:flex-shrink-0">
+                          <div className="w-full overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60 md:w-[28rem] md:flex-shrink-0">
                             <div className="aspect-[16/9] md:aspect-auto md:h-full">
                               <img
                                 src={modalCover}
@@ -683,6 +684,7 @@ export default function Library() {
                       </div>
                     )
                   })()}
+                  </div>
 
                 </div>
               </ModalOverlay>
