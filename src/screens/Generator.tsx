@@ -90,8 +90,11 @@ export default function Generator() {
   const [advisorFastest, setAdvisorFastest] = useState('')
   const [supportsNegativePrompt, setSupportsNegativePrompt] = useState<boolean | null>(null)
   const [greylistEnabled, setGreylistEnabled] = useState(true)
-  const [greylistWords, setGreylistWords] = useState<string[]>(DEFAULT_GREYLIST)
+  const [greylistEntries, setGreylistEntries] = useState<Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>>(
+    DEFAULT_GREYLIST.map((word) => ({ word, weight: 1 }))
+  )
   const [greylistInput, setGreylistInput] = useState('')
+  const [greylistWeight, setGreylistWeight] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [greylistLoaded, setGreylistLoaded] = useState(false)
   const [uiStateLoaded, setUiStateLoaded] = useState(false)
   const uiStateSaveTimeoutRef = useRef<number | null>(null)
@@ -327,6 +330,8 @@ export default function Generator() {
 
   const normalizeGreylistWord = (value: string) => value.trim().toLowerCase()
 
+  const greylistWords = greylistEntries.map((entry) => entry.word)
+
   const handleAdviseModel = () => {
     void requestModelAdvice('ai', generatedPrompt)
   }
@@ -441,12 +446,12 @@ export default function Generator() {
       return
     }
 
-    setGreylistWords((prev) => [...prev, normalized])
+    setGreylistEntries((prev) => [...prev, { word: normalized, weight: greylistWeight }])
     setGreylistInput('')
   }
 
   const removeGreylistWord = (word: string) => {
-    setGreylistWords((prev) => prev.filter((item) => item !== word))
+    setGreylistEntries((prev) => prev.filter((item) => item.word !== word))
   }
 
   useEffect(() => {
@@ -620,14 +625,18 @@ export default function Generator() {
       try {
         const result = await window.electronAPI.greylist.get()
         if (ignore || result.error || !result.data) {
-          setGreylistWords(DEFAULT_GREYLIST)
+          setGreylistEntries(DEFAULT_GREYLIST.map((word) => ({ word, weight: 1 })))
           return
         }
 
-        setGreylistWords(result.data.words || DEFAULT_GREYLIST)
+        const loadedEntries = Array.isArray(result.data.entriesJson) && result.data.entriesJson.length > 0
+          ? result.data.entriesJson
+          : (result.data.words || DEFAULT_GREYLIST).map((word) => ({ word, weight: 1 as const }))
+
+        setGreylistEntries(loadedEntries)
       } catch (error) {
         console.error('Failed to load greylist:', error)
-        setGreylistWords(DEFAULT_GREYLIST)
+        setGreylistEntries(DEFAULT_GREYLIST.map((word) => ({ word, weight: 1 })))
       } finally {
         if (!ignore) setGreylistLoaded(true)
       }
@@ -647,7 +656,9 @@ export default function Generator() {
       if (ignore) return
       if (!greylistLoaded) return
       try {
-        await window.electronAPI.greylist.save({ words: greylistWords })
+        await window.electronAPI.greylist.save({
+          entriesJson: greylistEntries,
+        })
       } catch (error) {
         console.error('Failed to save greylist to database:', error)
       }
@@ -658,7 +669,7 @@ export default function Generator() {
     return () => {
       ignore = true
     }
-  }, [greylistLoaded, greylistWords])
+  }, [greylistLoaded, greylistEntries])
 
   const handleGenerate = async () => {
     setStatus(null)
@@ -675,6 +686,7 @@ export default function Generator() {
         maxWords,
         greylistEnabled,
         greylistWords,
+        greylistEntries,
         creativity: magicRandomCreativity,
         character: characterForContext
           ? { name: characterForContext.name, description: characterForContext.description }
@@ -873,10 +885,12 @@ export default function Generator() {
               <GreylistCard
                 greylistEnabled={greylistEnabled}
                 setGreylistEnabled={setGreylistEnabled}
-                greylistWords={greylistWords}
-                setGreylistWords={setGreylistWords}
+                greylistEntries={greylistEntries}
+                setGreylistEntries={setGreylistEntries}
                 greylistInput={greylistInput}
                 setGreylistInput={setGreylistInput}
+                greylistWeight={greylistWeight}
+                setGreylistWeight={setGreylistWeight}
                 addGreylistWord={addGreylistWord}
                 removeGreylistWord={removeGreylistWord}
               />
@@ -1018,10 +1032,12 @@ export default function Generator() {
                 <GreylistCard
                   greylistEnabled={greylistEnabled}
                   setGreylistEnabled={setGreylistEnabled}
-                  greylistWords={greylistWords}
-                  setGreylistWords={setGreylistWords}
+                  greylistEntries={greylistEntries}
+                  setGreylistEntries={setGreylistEntries}
                   greylistInput={greylistInput}
                   setGreylistInput={setGreylistInput}
+                  greylistWeight={greylistWeight}
+                  setGreylistWeight={setGreylistWeight}
                   addGreylistWord={addGreylistWord}
                   removeGreylistWord={removeGreylistWord}
                 />

@@ -15,6 +15,20 @@
 - Prompt records now also store a read-only `Suggested Model`, typically filled from Generator model advice when saving prompts from the Generator page.
 - The prompt edit form can add tags with AI and enforces a maximum of 15 tags per prompt.
 
+## Settings
+
+- Configure OpenRouter credentials
+- Configure AI request logging
+- Configure app storage location
+
+## Greywords
+
+- Manage the “Greywords” list from **Settings → Greywords**.
+- Each greyword has a **weight 1–5**:
+  - **1** = never use
+  - **5** = ~5% chance
+- Greywords are stored **persistently** (saved to the local database), so they remain across sessions.
+
 ## 2026-03-16
 
 - Onverwachte IPC-fouten worden nu centraal onderschept in preload en altijd naar de console gelogd.

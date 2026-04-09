@@ -21,6 +21,8 @@ type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
   stylePreset?: string
 }
 
+type GreylistEntry = { word: string; weight: 1 | 2 | 3 | 4 | 5 }
+
 export type PromptFilters = {
   search?: string
   tags?: string[]
@@ -370,7 +372,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invokeWithFallback('settings:savePromptBuilderUiState', state),
   },
   generator: {
-    magicRandom: (input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>> =>
+    magicRandom: (input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; greylistEntries?: GreylistEntry[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>> =>
       invokeWithFallback('generator:magicRandom', input),
     improvePrompt: (input?: { prompt?: string }): Promise<IpcResult<{ prompt: string; providerId: string; modelId: string }>> =>
       invokeWithFallback('generator:improvePrompt', input),
@@ -434,9 +436,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   greylist: {
     get: (): Promise<IpcResult<Greylist>> =>
       invokeWithFallback('greylist:get'),
-    save: (input: { words: string[] }): Promise<IpcResult<Greylist>> =>
+    save: (input: { words?: string[]; entriesJson?: GreylistEntry[] }): Promise<IpcResult<Greylist>> =>
       invokeWithFallback('greylist:save', input),
-    update: (input: { words: string[] }): Promise<IpcResult<Greylist>> =>
+    update: (input: { words?: string[]; entriesJson?: GreylistEntry[] }): Promise<IpcResult<Greylist>> =>
       invokeWithFallback('greylist:update', input),
   },
   gallery: {

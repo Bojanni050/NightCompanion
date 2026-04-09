@@ -1,10 +1,12 @@
 type GreylistCardProps = {
   greylistEnabled: boolean
   setGreylistEnabled: (value: boolean) => void
-  greylistWords: string[]
-  setGreylistWords: (value: string[]) => void
+  greylistEntries: Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>
+  setGreylistEntries: (value: Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>) => void
   greylistInput: string
   setGreylistInput: (value: string) => void
+  greylistWeight: 1 | 2 | 3 | 4 | 5
+  setGreylistWeight: (value: 1 | 2 | 3 | 4 | 5) => void
   addGreylistWord: () => void
   removeGreylistWord: (word: string) => void
 }
@@ -25,14 +27,18 @@ const GREYLIST_SUGGESTIONS = [
 export default function GreylistCard({
   greylistEnabled,
   setGreylistEnabled,
-  greylistWords,
-  setGreylistWords,
+  greylistEntries,
+  setGreylistEntries,
   greylistInput,
   setGreylistInput,
+  greylistWeight,
+  setGreylistWeight,
   addGreylistWord,
   removeGreylistWord,
 }: GreylistCardProps) {
   const normalizeGreylistWord = (value: string) => value.trim().toLowerCase()
+
+  const greylistWords = greylistEntries.map((entry) => entry.word)
 
   const greylistSuggestions = GREYLIST_SUGGESTIONS.filter((item) => {
     const normalizedInput = normalizeGreylistWord(greylistInput)
@@ -85,18 +91,53 @@ export default function GreylistCard({
         </button>
       </div>
 
+      <div className="mt-2 flex items-center justify-between gap-3">
+        <p className="text-xs text-slate-500">Weight: 1 = never use · 5 = 5% chance</p>
+        <select
+          value={greylistWeight}
+          onChange={(event) => setGreylistWeight(Number(event.target.value) as 1 | 2 | 3 | 4 | 5)}
+          className="input w-24"
+          aria-label="Greylist weight"
+          title="Greylist weight"
+        >
+          <option value={1}>1</option>
+          <option value={2}>2</option>
+          <option value={3}>3</option>
+          <option value={4}>4</option>
+          <option value={5}>5</option>
+        </select>
+      </div>
+
       <div className="mt-3 flex flex-wrap gap-2">
-        {greylistWords.length === 0 ? (
+        {greylistEntries.length === 0 ? (
           <p className="text-xs text-slate-500">No greylist words added.</p>
         ) : (
-          greylistWords.map((word) => (
-            <span key={word} className="tag-removable">
-              {word}
+          greylistEntries.map((entry) => (
+            <span key={entry.word} className="tag-removable">
+              {entry.word}
+              <select
+                value={entry.weight}
+                onChange={(event) => {
+                  const nextWeight = Number(event.target.value) as 1 | 2 | 3 | 4 | 5
+                  setGreylistEntries(greylistEntries.map((item) => (
+                    item.word === entry.word ? { ...item, weight: nextWeight } : item
+                  )))
+                }}
+                className="ml-2 rounded bg-slate-900/60 px-2 py-0.5 text-[11px] text-slate-200 border border-slate-700/50"
+                aria-label={`Weight for ${entry.word}`}
+                title={`Weight for ${entry.word}`}
+              >
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+              </select>
               <button
                 type="button"
-                onClick={() => removeGreylistWord(word)}
+                onClick={() => removeGreylistWord(entry.word)}
                 className="rounded px-1 text-slate-400 hover:bg-slate-700 hover:text-white"
-                aria-label={`Remove ${word}`}
+                aria-label={`Remove ${entry.word}`}
               >
                 x
               </button>

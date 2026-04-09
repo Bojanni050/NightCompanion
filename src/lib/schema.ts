@@ -2,15 +2,15 @@ import {
   pgTable,
   serial,
   text,
-  jsonb,
-  uuid,
+  timestamp,
   varchar,
   integer,
-  real,
   boolean,
-  timestamp,
   index,
   uniqueIndex,
+  uuid,
+  jsonb,
+  real,
 } from 'drizzle-orm/pg-core'
 
 // ─── Prompts ─────────────────────────────────────────────────────────────────
@@ -266,6 +266,7 @@ export const greylistTable = pgTable(
   {
     id: serial('id').primaryKey(),
     words: text('words').array().default([]).notNull(),
+    entriesJson: jsonb('entries_json').$type<Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>>().default([]).notNull(),
     userId: varchar('user_id', { length: 255 }).default('').notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),

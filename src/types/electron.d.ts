@@ -210,6 +210,8 @@ type ImprovePromptResult = {
   modelId: string
 }
 
+type GreylistEntry = { word: string; weight: 1 | 2 | 3 | 4 | 5 }
+
 declare global {
   interface Window {
     electronAPI: {
@@ -251,7 +253,7 @@ declare global {
         testOpenRouter(input?: Partial<OpenRouterSettings>): Promise<IpcResult<{ ok: boolean; modelCount: number }>>
       }
       generator: {
-        magicRandom(input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>>
+        magicRandom(input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; greylistEntries?: GreylistEntry[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>>
         improvePrompt(input?: { prompt?: string }): Promise<IpcResult<ImprovePromptResult>>
         generateNegativePrompt(input?: { prompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
         improveNegativePrompt(input?: { negativePrompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
@@ -288,8 +290,8 @@ declare global {
       }
       greylist: {
         get(): Promise<IpcResult<Greylist>>
-        save(input: { words: string[] }): Promise<IpcResult<Greylist>>
-        update(input: { words: string[] }): Promise<IpcResult<Greylist>>
+        save(input: { words?: string[]; entriesJson?: GreylistEntry[] }): Promise<IpcResult<Greylist>>
+        update(input: { words?: string[]; entriesJson?: GreylistEntry[] }): Promise<IpcResult<Greylist>>
       }
       gallery: {
         list(filters?: GalleryFilters): Promise<IpcResult<{ items: GalleryItem[]; totalCount: number }>>

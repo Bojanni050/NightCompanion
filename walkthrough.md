@@ -492,3 +492,9 @@
 - Findings: The prompt details popup was missing the star rating near the title, and the prompt/negative prompt fields were laid out side-by-side, which reduced readability.
 - Conclusions: Showing rating next to the title mirrors the lightbox context, and stacking Negative Prompt beneath a full-width Prompt makes long text easier to read.
 - Actions: Updated `src/screens/Library.tsx` to render the star rating next to the title in the popup header and make the Prompt span both columns with Negative Prompt beneath; validated with `npm run build`.
+
+## 2026-04-09 (Settings: Greywords tab + weighted greylist)
+
+- Findings: Greywords needed a dedicated Settings location and had to be confirmed as permanent (not session-only).
+- Conclusions: Storing greywords in the database and exposing a Settings tab for editing weights keeps behaviour consistent across sessions and makes the feature discoverable.
+- Actions: Added a Settings “Greywords” tab in `src/screens/Settings.tsx` to view/edit greywords and their weight (1–5); upgraded greylist persistence to store weighted entries (`entries_json`) via IPC (`electron/ipc/greylist.ts`) and updated generator flow to pass weighted entries to `generator:magicRandom`; added migration `drizzle/0025_greylist_weights.sql` + journal entry; updated preload/types accordingly; validated with `npm run build`.

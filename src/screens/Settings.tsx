@@ -16,6 +16,7 @@ type HfSyncInfo = {
 }
 
 export default function Settings() {
+  const [tab, setTab] = useState<'general' | 'greywords'>('general')
   const [loading, setLoading] = useState(true)
   const [aiApiRequestLoggingEnabled, setAiApiRequestLoggingEnabled] = useState(false)
   const [nativeWindowFrameEnabled, setNativeWindowFrameEnabled] = useState(false)
@@ -28,6 +29,11 @@ export default function Settings() {
   const [isRefreshingHf, setIsRefreshingHf] = useState(false)
   const [hfSyncMessage, setHfSyncMessage] = useState<string | null>(null)
   const [hfSyncInfo, setHfSyncInfo] = useState<HfSyncInfo | null>(null)
+
+  const [greylistEntries, setGreylistEntries] = useState<Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>>([])
+  const [greylistInput, setGreylistInput] = useState('')
+  const [greylistWeight, setGreylistWeight] = useState<1 | 2 | 3 | 4 | 5>(1)
+  const [greylistLoaded, setGreylistLoaded] = useState(false)
 
   async function handleUsageCurrencyChange(next: 'usd' | 'eur') {
     setUsageCurrency(next)
@@ -107,6 +113,70 @@ export default function Settings() {
       active = false
     }
   }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadGreylist() {
+      try {
+        const result = await window.electronAPI.greylist.get()
+        if (ignore || result.error || !result.data) {
+          setGreylistEntries([])
+          return
+        }
+
+        const loadedEntries = Array.isArray(result.data.entriesJson) && result.data.entriesJson.length > 0
+          ? result.data.entriesJson
+          : (result.data.words || []).map((word) => ({ word, weight: 1 as const }))
+
+        setGreylistEntries(loadedEntries)
+      } finally {
+        if (!ignore) setGreylistLoaded(true)
+      }
+    }
+
+    void loadGreylist()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function saveGreylist() {
+      if (ignore) return
+      if (!greylistLoaded) return
+      await window.electronAPI.greylist.save({
+        entriesJson: greylistEntries,
+      })
+    }
+
+    void saveGreylist()
+
+    return () => {
+      ignore = true
+    }
+  }, [greylistEntries, greylistLoaded])
+
+  const normalizeGreylistWord = (value: string) => value.trim().toLowerCase()
+
+  const addGreylistWord = () => {
+    const normalized = normalizeGreylistWord(greylistInput)
+    if (!normalized) return
+    if (greylistEntries.some((entry) => entry.word === normalized)) {
+      setGreylistInput('')
+      return
+    }
+
+    setGreylistEntries((prev) => [...prev, { word: normalized, weight: greylistWeight }].sort((a, b) => a.word.localeCompare(b.word)))
+    setGreylistInput('')
+  }
+
+  const removeGreylistWord = (word: string) => {
+    setGreylistEntries((prev) => prev.filter((entry) => entry.word !== word))
+  }
 
   async function handleToggle() {
     const nextValue = !aiApiRequestLoggingEnabled
@@ -207,7 +277,7 @@ export default function Settings() {
   })()
 
   return (
-    <div className="no-drag-region h-full overflow-y-auto px-8 pt-8 pb-10">
+    <div className="overflow-y-auto px-8 pt-8 pb-10 h-full no-drag-region">
       <PageContainer className="space-y-6">
         <div>
           <div className="flex items-center gap-2.5 mb-1">
@@ -215,18 +285,36 @@ export default function Settings() {
             <h1 className="text-2xl font-bold text-white">Settings</h1>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800/50 space-y-4">
+          <div className="inline-flex p-1 mt-4 rounded-xl border border-slate-700/50 bg-slate-900/40">
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${tab === 'general' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              onClick={() => setTab('general')}
+            >
+              General
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 rounded-lg text-sm transition-colors ${tab === 'greywords' ? 'bg-glow-purple text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}
+              onClick={() => setTab('greywords')}
+            >
+              Greywords
+            </button>
+          </div>
+
+          {tab === 'general' && (
+            <div className="pt-6 mt-6 space-y-4 border-t border-slate-800/50">
             <div>
               <p className="text-sm font-semibold text-white">Usage</p>
               <p className="text-xs text-slate-500">Tokens and cost estimation display preferences</p>
             </div>
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex gap-4 justify-between items-center">
               <div>
                 <p className="text-sm font-semibold text-white">Currency</p>
                 <p className="text-xs text-slate-500">USD is native for OpenRouter pricing; EUR uses a manual exchange rate</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex gap-2 items-center">
                 <button
                   type="button"
                   disabled={loading}
@@ -251,7 +339,7 @@ export default function Settings() {
             </div>
 
             {usageCurrency === 'eur' && (
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex gap-4 justify-between items-center">
                 <div>
                   <p className="text-sm font-semibold text-white">EUR rate</p>
                   <p className="text-xs text-slate-500">1 USD = ? EUR</p>
@@ -265,12 +353,12 @@ export default function Settings() {
                   onChange={(event) => {
                     void handleEurRateChange(event.target.value)
                   }}
-                  className="w-28 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  className="px-3 py-2 w-28 text-sm rounded-xl border border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                 />
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex gap-4 justify-between items-center">
               <div>
                 <p className="text-sm font-semibold text-white">Store prompt/response for usage</p>
                 <p className="text-xs text-slate-500">Opt-in: store text to explain which prompt an event belonged to</p>
@@ -295,13 +383,100 @@ export default function Settings() {
               </button>
             </div>
           </div>
-          <p className="text-sm text-slate-500">Application preferences and diagnostics</p>
+          )}
+
+          {tab === 'greywords' && (
+            <div className="pt-6 mt-6 space-y-4 border-t border-slate-800/50">
+              <div>
+                <p className="text-sm font-semibold text-white">Greywords</p>
+                <p className="text-xs text-slate-500">Words the AI should avoid or use with a low probability.</p>
+              </div>
+
+              <div className="p-6 card">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+                  <input
+                    type="text"
+                    value={greylistInput}
+                    onChange={(event) => setGreylistInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter') return
+                      event.preventDefault()
+                      addGreylistWord()
+                    }}
+                    className="input"
+                    placeholder="Add greyword"
+                    aria-label="Add greyword"
+                  />
+                  <button type="button" onClick={addGreylistWord} className="border btn-ghost border-slate-700/50">
+                    Add
+                  </button>
+                </div>
+
+                <div className="flex gap-3 justify-between items-center mt-2">
+                  <p className="text-xs text-slate-500">Weight: 1 = never use · 5 = 5% chance</p>
+                  <select
+                    value={greylistWeight}
+                    onChange={(event) => setGreylistWeight(Number(event.target.value) as 1 | 2 | 3 | 4 | 5)}
+                    className="w-24 input"
+                    aria-label="Greyword weight"
+                    title="Greyword weight"
+                  >
+                    <option value={1}>1</option>
+                    <option value={2}>2</option>
+                    <option value={3}>3</option>
+                    <option value={4}>4</option>
+                    <option value={5}>5</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {greylistEntries.length === 0 ? (
+                    <p className="text-xs text-slate-500">No greywords stored yet.</p>
+                  ) : (
+                    greylistEntries.map((entry) => (
+                      <span key={entry.word} className="tag-removable">
+                        {entry.word}
+                        <select
+                          value={entry.weight}
+                          onChange={(event) => {
+                            const nextWeight = Number(event.target.value) as 1 | 2 | 3 | 4 | 5
+                            setGreylistEntries(greylistEntries.map((item) => (
+                              item.word === entry.word ? { ...item, weight: nextWeight } : item
+                            )))
+                          }}
+                          className="ml-2 rounded bg-slate-900/60 px-2 py-0.5 text-[11px] text-slate-200 border border-slate-700/50"
+                          aria-label={`Weight for ${entry.word}`}
+                          title={`Weight for ${entry.word}`}
+                        >
+                          <option value={1}>1</option>
+                          <option value={2}>2</option>
+                          <option value={3}>3</option>
+                          <option value={4}>4</option>
+                          <option value={5}>5</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => removeGreylistWord(entry.word)}
+                          className="px-1 rounded text-slate-400 hover:bg-slate-700 hover:text-white"
+                          aria-label={`Remove ${entry.word}`}
+                        >
+                          x
+                        </button>
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <p className="text-sm font-semibold text-white">Application preferences and diagnostics</p>
         </div>
 
-        <section className="card p-6">
-          <h2 className="text-base font-semibold text-white mb-4">Diagnostics</h2>
+        <section className="p-6 card">
+          <h2 className="mb-4 text-base font-semibold text-white">Diagnostics</h2>
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex gap-4 justify-between items-center">
             <div>
               <p className="text-sm font-semibold text-white">Native Windows title bar</p>
               <p className="text-xs text-slate-500">Gebruik de standaard Windows titelbalk in plaats van de custom frameless balk</p>
@@ -326,7 +501,7 @@ export default function Settings() {
             </button>
           </div>
 
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex gap-4 justify-between items-center">
             <div>
               <p className="text-sm font-semibold text-white">AI API request logging</p>
               <p className="text-xs text-slate-500">Log AI request/response payloads to a local JSONL file for debugging</p>
@@ -351,23 +526,23 @@ export default function Settings() {
             </button>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800/50 space-y-3">
+          <div className="pt-6 mt-6 space-y-3 border-t border-slate-800/50">
             <div>
               <p className="text-sm font-semibold text-white">NightCompanion folder location</p>
               <p className="text-xs text-slate-500">Default: C:\Users\&lt;user&gt;\AppData\Local\NightCompanion</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="text"
                 value={nightCompanionFolderPath}
                 onChange={(event) => setNightCompanionFolderPath(event.target.value)}
                 placeholder="Select folder path"
-                className="flex-1 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                className="flex-1 px-3 py-2 text-sm rounded-xl border border-slate-800 bg-slate-900 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
               <button
                 type="button"
                 onClick={() => void handleBrowseNightCompanionFolder()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500"
+                className="inline-flex gap-2 justify-center items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
                 Browse
@@ -376,7 +551,7 @@ export default function Settings() {
                 type="button"
                 disabled={savingNightCompanionFolderPath || loading}
                 onClick={() => void handleSaveNightCompanionFolder()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex gap-2 justify-center items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Save
               </button>
@@ -384,7 +559,7 @@ export default function Settings() {
                 type="button"
                 disabled={savingNightCompanionFolderPath || loading}
                 onClick={() => void handleResetNightCompanionFolder()}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex gap-2 justify-center items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Reset default
               </button>
@@ -394,8 +569,8 @@ export default function Settings() {
             )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800/50 space-y-3">
-            <div className="flex items-center justify-between gap-4">
+          <div className="pt-6 mt-6 space-y-3 border-t border-slate-800/50">
+            <div className="flex gap-4 justify-between items-center">
               <div>
                 <p className="text-sm font-semibold text-white">NightCafe modelcards (Hugging Face)</p>
                 <p className="text-xs text-slate-500">Refresh extra model metadata: summary, likes, downloads, and update date</p>
@@ -412,7 +587,7 @@ export default function Settings() {
                   if (!isRefreshingHf) void handleRefreshNightCafeHuggingFace()
                 }}
                 disabled={isRefreshingHf}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="inline-flex gap-2 items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isRefreshingHf ? 'animate-spin' : ''}`} />
                 Refresh modelcards
@@ -423,7 +598,7 @@ export default function Settings() {
             )}
           </div>
 
-          <div className="mt-6 pt-6 border-t border-slate-800/50 space-y-3">
+          <div className="pt-6 mt-6 space-y-3 border-t border-slate-800/50">
             <div>
               <p className="text-sm font-semibold text-white">Danger zone</p>
               <p className="text-xs text-slate-500">Reset counters and local state</p>

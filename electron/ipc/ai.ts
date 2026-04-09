@@ -850,7 +850,7 @@ export function registerAiIpc({
     }
   })
 
-  ipcMain.handle('generator:magicRandom', async (_, input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }) => {
+  ipcMain.handle('generator:magicRandom', async (_, input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; greylistEntries?: Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
     let requestModel = ''
@@ -877,8 +877,40 @@ export function registerAiIpc({
       const greylistWords = (input?.greylistWords ?? [])
         .map((word) => word.trim().toLowerCase())
         .filter((word) => word.length > 0)
+
+      const normalizedEntries = (input?.greylistEntries ?? [])
+        .map((entry) => ({
+          word: entry.word.trim().toLowerCase(),
+          weight: Math.max(1, Math.min(5, entry.weight)) as 1 | 2 | 3 | 4 | 5,
+        }))
+        .filter((entry) => entry.word.length > 0)
+
+      const weightedByWord = new Map<string, 1 | 2 | 3 | 4 | 5>()
+      for (const entry of normalizedEntries) weightedByWord.set(entry.word, entry.weight)
+
       const uniqueGreylistWords = Array.from(new Set(greylistWords)).slice(0, 30)
-      const hasGreylist = greylistEnabled && uniqueGreylistWords.length > 0
+      const hasGreylist = greylistEnabled && (uniqueGreylistWords.length > 0 || weightedByWord.size > 0)
+
+      const weightedInstruction = (() => {
+        if (!greylistEnabled) return ''
+
+        const entries = Array.from(weightedByWord.entries())
+          .map(([word, weight]) => ({ word, weight }))
+          .sort((a, b) => a.word.localeCompare(b.word))
+          .slice(0, 30)
+
+        if (entries.length === 0) return ''
+
+        const weightToChance = (weight: 1 | 2 | 3 | 4 | 5) => {
+          if (weight === 1) return '0% (never use)'
+          if (weight === 2) return '1%'
+          if (weight === 3) return '2%'
+          if (weight === 4) return '3%'
+          return '5%'
+        }
+
+        return `Greylist weights (keep usage very low): ${entries.map((e) => `${e.word}=${weightToChance(e.weight)}`).join(', ')}.`
+      })()
 
       const creativity = input?.creativity || 'balanced'
       const character = input?.character;
@@ -899,6 +931,7 @@ export function registerAiIpc({
         hasGreylist
           ? `Avoid these words when writing the prompt (or keep their probability very low): ${uniqueGreylistWords.join(', ')}.`
           : '',
+        weightedInstruction,
         'Return only the final prompt text.',
       ].filter(Boolean)
 
