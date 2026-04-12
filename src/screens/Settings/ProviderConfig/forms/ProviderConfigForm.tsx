@@ -329,13 +329,20 @@ export function ProviderConfigForm({
   const handleModelChange = useCallback(async (genId: string, improveId: string, visionId: string, generalId: string) => {
     const meta = providerMeta
 
-    await persistProviderMeta({
+    setSelectedModelGen(genId)
+    setSelectedModelImprove(improveId)
+    setSelectedModelVision(visionId)
+    setSelectedModelGeneral(generalId)
+
+    const nextMeta = {
       ...meta,
       model_gen: genId,
       model_improve: improveId,
       model_vision: visionId,
       model_general: generalId,
-    })
+    }
+
+    await persistProviderMeta(nextMeta)
 
     if (meta.is_active_gen) syncTaskModel('generation', provider.id, genId)
     if (meta.is_active_improve) syncTaskModel('improvement', provider.id, improveId)

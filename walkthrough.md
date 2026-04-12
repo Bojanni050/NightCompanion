@@ -498,3 +498,9 @@
 - Findings: Greywords needed a dedicated Settings location and had to be confirmed as permanent (not session-only).
 - Conclusions: Storing greywords in the database and exposing a Settings tab for editing weights keeps behaviour consistent across sessions and makes the feature discoverable.
 - Actions: Added a Settings “Greywords” tab in `src/screens/Settings.tsx` to view/edit greywords and their weight (1–5); upgraded greylist persistence to store weighted entries (`entries_json`) via IPC (`electron/ipc/greylist.ts`) and updated generator flow to pass weighted entries to `generator:magicRandom`; added migration `drizzle/0025_greylist_weights.sql` + journal entry; updated preload/types accordingly; validated with `npm run build`.
+
+## 2026-04-13 (Fix provider model selection reverting)
+
+- Findings: On the “Configure your Providers” wizard, model selections appeared to not stick and would revert immediately.
+- Conclusions: The selection handler persisted provider meta but did not update local React state, so controlled selectors rendered the previous values.
+- Actions: Updated `src/screens/Settings/ProviderConfig/forms/ProviderConfigForm.tsx` `handleModelChange` to also update selected-model state before persisting; validated with `npm run build`.
