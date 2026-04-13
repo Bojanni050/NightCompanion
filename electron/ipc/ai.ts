@@ -662,12 +662,20 @@ export function registerAiIpc({
 
         if (providerId === 'openrouter') {
           const settings = await getOpenRouterSettings()
-          if (!settings.apiKey) return { error: 'OpenRouter API key is missing.' }
+          const apiKey = settings.apiKey.trim()
+          if (!apiKey) return { error: 'OpenRouter API key is missing.' }
+
+          console.info('[ai:testChatCompletion] OpenRouter test requested', {
+            providerId,
+            modelId,
+            role: input.role,
+            hasApiKey: true,
+          })
 
           const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
-              Authorization: `Bearer ${settings.apiKey}`,
+              Authorization: `Bearer ${apiKey}`,
               'Content-Type': 'application/json',
               ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
               ...(settings.appName ? { 'X-Title': settings.appName } : {}),
