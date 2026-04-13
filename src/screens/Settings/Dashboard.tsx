@@ -1,5 +1,6 @@
-import type { Dispatch, SetStateAction } from 'react'
-import { BookOpen, Eye, Settings, Sparkles, Wand2 } from 'lucide-react'
+import { useState, type Dispatch, type SetStateAction } from 'react'
+import { BookOpen, Eye, Loader2, Settings, Sparkles, Wand2 } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
 import ModelSelector from '../../components/ModelSelector'
 import type { ApiKeyInfo, LocalEndpoint, ModelOption } from './types'
 
@@ -112,6 +113,45 @@ export function Dashboard({
   void setDynamicModels
   void getToken
 
+  const [testingRole, setTestingRole] = useState<DashboardRole | null>(null)
+
+  async function handleTest(role: DashboardRole) {
+    const routing = roleRouting[role]
+    if (!routing.providerId) {
+      notifications.show({ message: 'Select a provider first', color: 'red' })
+      return
+    }
+    if (!routing.modelId) {
+      notifications.show({ message: 'Select a model first', color: 'red' })
+      return
+    }
+
+    setTestingRole(role)
+    try {
+      const result = await window.electronAPI.ai.testChatCompletion({
+        providerId: routing.providerId,
+        modelId: routing.modelId,
+        role,
+      })
+
+      if (result.error || !result.data?.ok) {
+        throw new Error(result.error || 'Test request failed')
+      }
+
+      notifications.show({
+        message: `Test successful: ${String(result.data.content || '').slice(0, 120)}`,
+        color: 'green',
+      })
+    } catch (error) {
+      notifications.show({
+        message: error instanceof Error ? error.message : 'Test request failed',
+        color: 'red',
+      })
+    } finally {
+      setTestingRole(null)
+    }
+  }
+
   function getRoleModelOptions(role: DashboardRole, providerId: string, selectedModelId: string): ModelOption[] {
     const dynamicProviderModels = dynamicModels[providerId]
     if (dynamicProviderModels && dynamicProviderModels.length > 0) {
@@ -216,6 +256,18 @@ export function Dashboard({
                       sortMode="cheapest"
                       className="w-full"
                     />
+
+                    <div className="flex justify-end pt-2">
+                      <button
+                        type="button"
+                        onClick={() => handleTest(role)}
+                        disabled={testingRole === role || !routing.providerId || !routing.modelId}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800/90 text-night-100 border border-slate-700 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {testingRole === role ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        Test
+                      </button>
+                    </div>
                   </div>
                 </div>
               </section>

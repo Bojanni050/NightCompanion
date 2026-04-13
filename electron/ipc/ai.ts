@@ -646,6 +646,89 @@ export function registerAiIpc({
   getOpenRouterSettings: () => Promise<OpenRouterSettings>
   getAiApiRequestLoggingEnabled: () => Promise<boolean>
 }) {
+  ipcMain.handle(
+    'ai:testChatCompletion',
+    async (
+      _,
+      input: { providerId: string; modelId: string; role: 'generation' | 'improvement' | 'vision' | 'general' }
+    ) => {
+      try {
+        const providerId = String(input?.providerId || '')
+        const modelId = String(input?.modelId || '')
+        if (!providerId) return { error: 'No provider selected.' }
+        if (!modelId) return { error: 'No model selected.' }
+
+        const userPrompt = `Test request for ${input.role}. Reply with "OK".`
+
+        if (providerId === 'openrouter') {
+          const settings = await getOpenRouterSettings()
+          if (!settings.apiKey) return { error: 'OpenRouter API key is missing.' }
+
+          const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${settings.apiKey}`,
+              'Content-Type': 'application/json',
+              ...(settings.siteUrl ? { 'HTTP-Referer': settings.siteUrl } : {}),
+              ...(settings.appName ? { 'X-Title': settings.appName } : {}),
+            },
+            body: JSON.stringify({
+              model: modelId,
+              temperature: 0.2,
+              max_tokens: 128,
+              messages: [{ role: 'user', content: userPrompt }],
+            }),
+          })
+
+          if (!response.ok) {
+            const errText = await response.text()
+            return { error: `Test request failed (${response.status}): ${errText.slice(0, 300)}` }
+          }
+
+          const payload = (await response.json()) as unknown
+          const content = extractChatCompletionContent(payload)
+          if (!content) return { error: 'No content returned from OpenRouter.' }
+          return { data: { ok: true, content } }
+        }
+
+        const stored = await readStoredSettings()
+        const localEndpointsRaw = stored.localEndpoints
+        const localEndpoints = Array.isArray(localEndpointsRaw)
+          ? (localEndpointsRaw as Array<Record<string, unknown>>)
+          : []
+
+        const endpoint = localEndpoints.find((item) => String(item.provider || '') === providerId)
+        const baseUrl = endpoint && typeof endpoint.baseUrl === 'string' ? endpoint.baseUrl : ''
+        if (!baseUrl) {
+          return { error: `Local provider "${providerId}" is not configured.` }
+        }
+
+        const response = await fetch(`${normalizeBaseUrl(baseUrl)}/chat/completions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getLocalAuthHeader(endpoint) },
+          body: JSON.stringify({
+            model: modelId,
+            temperature: 0.2,
+            max_tokens: 128,
+            messages: [{ role: 'user', content: userPrompt }],
+          }),
+        })
+
+        if (!response.ok) {
+          const errText = await response.text()
+          return { error: `Test request failed (${response.status}): ${errText.slice(0, 300)}` }
+        }
+
+        const payload = (await response.json()) as unknown
+        const content = extractChatCompletionContent(payload)
+        if (!content) return { error: 'No content returned from local provider.' }
+        return { data: { ok: true, content } }
+      } catch (error) {
+        return { error: String(error) }
+      }
+    }
+  )
+
   ipcMain.handle('generator:adviseModel', async (_, input?: { prompt?: string; mode?: AdvisorMode; budgetMode?: BudgetMode }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
