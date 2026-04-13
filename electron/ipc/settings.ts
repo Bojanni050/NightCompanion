@@ -1,6 +1,6 @@
 import { app, dialog, ipcMain } from 'electron'
 import path from 'path'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, mkdir, rename, rm } from 'fs/promises'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import * as schema from '../../src/lib/schema'
 import { openRouterModels } from '../../src/lib/schema'
@@ -331,6 +331,20 @@ function getSettingsFilePath() {
   return path.join(app.getPath('userData'), 'settings.json')
 }
 
+let settingsWriteChain: Promise<void> = Promise.resolve()
+
+function salvageJsonObject(raw: string): unknown {
+  const trimmed = raw.trim()
+  const start = trimmed.indexOf('{')
+  const end = trimmed.lastIndexOf('}')
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('Invalid settings JSON')
+  }
+
+  const candidate = trimmed.slice(start, end + 1)
+  return JSON.parse(candidate) as unknown
+}
+
 function normalizeOpenRouterSettings(input?: Partial<OpenRouterSettings>): OpenRouterSettings {
   return {
     apiKey: input?.apiKey?.trim() ?? '',
@@ -357,7 +371,12 @@ function normalizeProviderMeta(input: Partial<ProviderMetaStore> | undefined, fa
 async function readStoredSettings(): Promise<StoredSettings> {
   try {
     const raw = await readFile(getSettingsFilePath(), 'utf-8')
-    const parsed = JSON.parse(raw) as unknown
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw) as unknown
+    } catch {
+      parsed = salvageJsonObject(raw)
+    }
     const normalized = normalizeStoredSettings(parsed)
 
     if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
@@ -383,9 +402,22 @@ async function writeStoredSettings(settings: {
   generatorUiState?: GeneratorUiStateStore
   promptBuilderUiState?: PromptBuilderUiStateStore
 }) {
-  const settingsPath = getSettingsFilePath()
-  await mkdir(path.dirname(settingsPath), { recursive: true })
-  await writeFile(settingsPath, JSON.stringify(settings, null, 2), 'utf-8')
+  settingsWriteChain = settingsWriteChain.then(async () => {
+    const settingsPath = getSettingsFilePath()
+    await mkdir(path.dirname(settingsPath), { recursive: true })
+
+    const tmpPath = `${settingsPath}.tmp`
+    await writeFile(tmpPath, JSON.stringify(settings, null, 2), 'utf-8')
+
+    try {
+      await rename(tmpPath, settingsPath)
+    } catch {
+      await rm(settingsPath, { force: true })
+      await rename(tmpPath, settingsPath)
+    }
+  })
+
+  await settingsWriteChain
 }
 
 export async function getOpenRouterSettings() {

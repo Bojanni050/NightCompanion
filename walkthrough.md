@@ -522,3 +522,9 @@
 - Findings: Wizard model preferences and the dashboard routing could drift because the dashboard kept a previously valid model selection even when it differed from provider preferences.
 - Conclusions: When a provider is selected for a role, the dashboard routing should follow that provider's role-specific preferred model to stay consistent with the wizard.
 - Actions: Updated `src/screens/AIConfig.tsx` role routing normalisation to always sync to the provider's preferred model (or a safe fallback) and fixed hook dependencies; validated with `npm run build`.
+
+## 2026-04-13 (Fix settings.json JSON parse crash)
+
+- Findings: After saving the OpenRouter API key, the app could crash with `SyntaxError: Unexpected non-whitespace character after JSON`, indicating `settings.json` had trailing junk / partial writes.
+- Conclusions: Settings persistence must be atomic and readers should salvage valid JSON where possible to prevent hard crashes.
+- Actions: Updated `electron/ipc/settings.ts` to serialize and atomically write `settings.json` via temp file + rename and to salvage JSON on read; hardened `electron/ipc/ai.ts` and `electron/services/storagePaths.ts` to salvage JSON instead of crashing; validated with `npm run build`.

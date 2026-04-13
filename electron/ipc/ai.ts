@@ -593,14 +593,31 @@ function getSettingsFilePath() {
   return path.join(app.getPath('userData'), 'settings.json')
 }
 
+function salvageJsonObject(raw: string): unknown {
+  const trimmed = raw.trim()
+  const start = trimmed.indexOf('{')
+  const end = trimmed.lastIndexOf('}')
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('Invalid settings JSON')
+  }
+
+  const candidate = trimmed.slice(start, end + 1)
+  return JSON.parse(candidate) as unknown
+}
+
 async function readStoredSettings(): Promise<{ openRouter?: Partial<OpenRouterSettings>; aiConfig?: { dashboardRoleRouting?: unknown; storeAiPromptResponseForUsage?: boolean; usageCurrency?: 'usd' | 'eur'; eurRate?: number }; localEndpoints?: unknown }> {
   try {
     const raw = await readFile(getSettingsFilePath(), 'utf-8')
-    return JSON.parse(raw) as { openRouter?: Partial<OpenRouterSettings>; aiConfig?: { dashboardRoleRouting?: unknown; storeAiPromptResponseForUsage?: boolean; usageCurrency?: 'usd' | 'eur'; eurRate?: number }; localEndpoints?: unknown }
+    try {
+      return JSON.parse(raw) as { openRouter?: Partial<OpenRouterSettings>; aiConfig?: { dashboardRoleRouting?: unknown; storeAiPromptResponseForUsage?: boolean; usageCurrency?: 'usd' | 'eur'; eurRate?: number }; localEndpoints?: unknown }
+    } catch {
+      return salvageJsonObject(raw) as { openRouter?: Partial<OpenRouterSettings>; aiConfig?: { dashboardRoleRouting?: unknown; storeAiPromptResponseForUsage?: boolean; usageCurrency?: 'usd' | 'eur'; eurRate?: number }; localEndpoints?: unknown }
+    }
   } catch (error) {
     const err = error as NodeJS.ErrnoException
     if (err.code === 'ENOENT') return {}
-    throw error
+    console.warn('[ai] Failed to read settings.json; falling back to defaults:', error)
+    return {}
   }
 }
 

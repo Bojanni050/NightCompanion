@@ -24,7 +24,18 @@ export function getLegacyNightCompanionFolderPath() {
 export function getConfiguredNightCompanionFolderPath() {
   try {
     const raw = readFileSync(getSettingsFilePath(), 'utf-8')
-    const parsed = JSON.parse(raw) as StoredSettings
+    let parsed: StoredSettings
+    try {
+      parsed = JSON.parse(raw) as StoredSettings
+    } catch {
+      const trimmed = raw.trim()
+      const start = trimmed.indexOf('{')
+      const end = trimmed.lastIndexOf('}')
+      if (start === -1 || end === -1 || end <= start) {
+        throw new Error('Invalid settings JSON')
+      }
+      parsed = JSON.parse(trimmed.slice(start, end + 1)) as StoredSettings
+    }
     const configured = parsed.aiConfig?.nightCompanionFolderPath
 
     if (typeof configured === 'string' && configured.trim()) {
