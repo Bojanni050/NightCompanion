@@ -336,13 +336,62 @@ let settingsWriteChain: Promise<void> = Promise.resolve()
 function salvageJsonObject(raw: string): unknown {
   const trimmed = raw.trim()
   const start = trimmed.indexOf('{')
-  const end = trimmed.lastIndexOf('}')
-  if (start === -1 || end === -1 || end <= start) {
+  if (start === -1) {
     throw new Error('Invalid settings JSON')
   }
 
-  const candidate = trimmed.slice(start, end + 1)
-  return JSON.parse(candidate) as unknown
+  let depth = 0
+  let inString = false
+  let escapeNext = false
+
+  for (let i = start; i < trimmed.length; i += 1) {
+    const ch = trimmed[i]
+
+    if (inString) {
+      if (escapeNext) {
+        escapeNext = false
+        continue
+      }
+      if (ch === '\\') {
+        escapeNext = true
+        continue
+      }
+      if (ch === '"') {
+        inString = false
+      }
+      continue
+    }
+
+    if (ch === '"') {
+      inString = true
+      continue
+    }
+
+    if (ch === '{') depth += 1
+    if (ch === '}') depth -= 1
+
+    if (depth === 0 && i > start) {
+      const candidate = trimmed.slice(start, i + 1)
+      return JSON.parse(candidate) as unknown
+    }
+  }
+
+  throw new Error('Invalid settings JSON')
+}
+
+async function atomicWriteSettingsFile(contents: string) {
+  const settingsPath = getSettingsFilePath()
+  await mkdir(path.dirname(settingsPath), { recursive: true })
+
+  const tmpPath = `${settingsPath}.tmp`
+  await writeFile(tmpPath, contents, 'utf-8')
+
+  try {
+    await rename(tmpPath, settingsPath)
+  } catch {
+    await rm(settingsPath, { force: true })
+    await rename(tmpPath, settingsPath)
+  }
 }
 
 function normalizeOpenRouterSettings(input?: Partial<OpenRouterSettings>): OpenRouterSettings {
@@ -375,14 +424,20 @@ async function readStoredSettings(): Promise<StoredSettings> {
     try {
       parsed = JSON.parse(raw) as unknown
     } catch {
-      parsed = salvageJsonObject(raw)
+      try {
+        parsed = salvageJsonObject(raw)
+      } catch (error) {
+        console.warn('[settings] Failed to parse settings.json; falling back to defaults:', error)
+        return {}
+      }
     }
     const normalized = normalizeStoredSettings(parsed)
 
     if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
-      const settingsPath = getSettingsFilePath()
-      await mkdir(path.dirname(settingsPath), { recursive: true })
-      await writeFile(settingsPath, JSON.stringify(normalized, null, 2), 'utf-8')
+      settingsWriteChain = settingsWriteChain.then(async () => {
+        await atomicWriteSettingsFile(JSON.stringify(normalized, null, 2))
+      })
+      await settingsWriteChain
       console.info('[settings] settings.json normalized and rewritten to disk')
     }
 
@@ -390,7 +445,8 @@ async function readStoredSettings(): Promise<StoredSettings> {
   } catch (error) {
     const err = error as NodeJS.ErrnoException
     if (err.code === 'ENOENT') return {}
-    throw error
+    console.warn('[settings] Failed to read settings.json; falling back to defaults:', error)
+    return {}
   }
 }
 
@@ -403,18 +459,7 @@ async function writeStoredSettings(settings: {
   promptBuilderUiState?: PromptBuilderUiStateStore
 }) {
   settingsWriteChain = settingsWriteChain.then(async () => {
-    const settingsPath = getSettingsFilePath()
-    await mkdir(path.dirname(settingsPath), { recursive: true })
-
-    const tmpPath = `${settingsPath}.tmp`
-    await writeFile(tmpPath, JSON.stringify(settings, null, 2), 'utf-8')
-
-    try {
-      await rename(tmpPath, settingsPath)
-    } catch {
-      await rm(settingsPath, { force: true })
-      await rename(tmpPath, settingsPath)
-    }
+    await atomicWriteSettingsFile(JSON.stringify(settings, null, 2))
   })
 
   await settingsWriteChain
