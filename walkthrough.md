@@ -504,3 +504,9 @@
 - Findings: On the “Configure your Providers” wizard, model selections appeared to not stick and would revert immediately.
 - Conclusions: The selection handler persisted provider meta but did not update local React state, so controlled selectors rendered the previous values.
 - Actions: Updated `src/screens/Settings/ProviderConfig/forms/ProviderConfigForm.tsx` `handleModelChange` to also update selected-model state before persisting; validated with `npm run build`.
+
+## 2026-04-13 (AI overview reflects provider activation)
+
+- Findings: After activating Vision / Research & Reasoning for OpenRouter in the provider wizard, the AI overview cards did not reflect the activation state.
+- Conclusions: The dashboard header badges were not driven by the per-role active provider state.
+- Actions: Updated `src/screens/Settings/Dashboard.tsx` to show Active/Inactive per role based on `activeGen`/`activeImprove`/`activeVision`/`activeResearch`; validated with `npm run build`.

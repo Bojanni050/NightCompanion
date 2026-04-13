@@ -95,6 +95,10 @@ function matchesRoleCapability(role: DashboardRole, model: ModelOption): boolean
 }
 
 export function Dashboard({
+  activeGen,
+  activeImprove,
+  activeVision,
+  activeResearch,
   onConfigure,
   configuredCount,
   dynamicModels,
@@ -147,6 +151,13 @@ export function Dashboard({
             const meta = ROLE_META[role]
             const routing = roleRouting[role]
             const modelOptions = getRoleModelOptions(role, routing.providerId, routing.modelId)
+            const isRoleActive = role === 'generation'
+              ? Boolean(activeGen)
+              : role === 'improvement'
+                ? Boolean(activeImprove)
+                : role === 'vision'
+                  ? Boolean(activeVision)
+                  : Boolean(activeResearch)
 
             return (
               <section key={role} className={`rounded-2xl border p-5 ${meta.cardClass}`}>
@@ -155,8 +166,17 @@ export function Dashboard({
                     {meta.icon}
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] px-2 py-0.5 rounded-md border border-teal-500/40 bg-teal-500/10 text-teal-300 font-semibold uppercase tracking-wide">Active</span>
-                    <div className="text-[11px] text-teal-300 mt-1">● 364ms</div>
+                    {isRoleActive ? (
+                      <>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md border border-teal-500/40 bg-teal-500/10 text-teal-300 font-semibold uppercase tracking-wide">Active</span>
+                        <div className="text-[11px] text-teal-300 mt-1">● Active</div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md border border-slate-500/40 bg-slate-500/10 text-slate-300 font-semibold uppercase tracking-wide">Inactive</span>
+                        <div className="text-[11px] text-slate-400 mt-1">● Inactive</div>
+                      </>
+                    )}
                   </div>
                 </div>
 
