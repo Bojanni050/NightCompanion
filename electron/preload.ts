@@ -395,6 +395,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     adviseModel: (input?: { prompt?: string; mode?: 'rule' | 'ai'; budgetMode?: 'cheap' | 'balanced' | 'premium' }): Promise<IpcResult<ModelAdvisorResult>> =>
       invokeWithFallback('generator:adviseModel', input),
   },
+  ai: {
+    testChatCompletion: (input: { providerId: string; modelId: string; role: 'generation' | 'improvement' | 'vision' | 'general' }): Promise<IpcResult<{ ok: boolean; content: string }>> =>
+      invokeWithFallback('ai:testChatCompletion', input),
+  },
   usage: {
     getSummary: (): Promise<IpcResult<UsageSummary>> =>
       invokeWithFallback('usage:getSummary'),

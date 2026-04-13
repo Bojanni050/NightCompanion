@@ -266,6 +266,9 @@ declare global {
         fillAllFields(input?: { subject?: string; style?: string; lighting?: string; mood?: string; artist?: string; technical?: string }): Promise<IpcResult<{ fields: Record<string, string> }>>
         adviseModel(input?: { prompt?: string; mode?: 'rule' | 'ai'; budgetMode?: 'cheap' | 'balanced' | 'premium' }): Promise<IpcResult<ModelAdvisorResult>>
       }
+      ai: {
+        testChatCompletion(input: { providerId: string; modelId: string; role: 'generation' | 'improvement' | 'vision' | 'general' }): Promise<IpcResult<{ ok: boolean; content: string }>>
+      }
       usage: {
         getSummary(): Promise<IpcResult<UsageSummary>>
         getBreakdown(input?: { days?: number; topModelsLimit?: number }): Promise<IpcResult<UsageBreakdown>>
