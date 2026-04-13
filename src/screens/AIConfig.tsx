@@ -132,6 +132,22 @@ function getSourceProviderId(source?: ApiKeyInfo | LocalEndpoint): string {
   return getLocalProviderId(source)
 }
 
+function getSourceModelId(source: ApiKeyInfo | LocalEndpoint | undefined, role: DashboardRole): string {
+  if (!source) return ''
+
+  if ('apiKeyMasked' in source) {
+    if (role === 'generation') return source.model_gen || source.model_name || ''
+    if (role === 'improvement') return source.model_improve || source.model_name || ''
+    if (role === 'vision') return source.model_vision || source.model_name || ''
+    return source.model_general || source.model_name || ''
+  }
+
+  if (role === 'generation') return source.model_gen || source.model_name || ''
+  if (role === 'improvement') return source.model_improve || source.model_name || ''
+  if (role === 'vision') return source.model_vision || source.model_name || ''
+  return source.model_general || source.model_name || ''
+}
+
 function formatPricePerMillion(priceText: string | null | undefined): string | null {
   if (!priceText)
     return null
@@ -518,22 +534,28 @@ export function AIConfig() {
         const current = next[role]
         const isProviderValid = providerOptions.some((option) => option.id === current.providerId)
 
-        const preferredProvider = role === 'generation'
-          ? getSourceProviderId(activeGen)
+        const preferredSource = role === 'generation'
+          ? activeGen
           : role === 'improvement'
-            ? getSourceProviderId(activeImprove)
+            ? activeImprove
             : role === 'vision'
-              ? getSourceProviderId(activeVision)
-              : ''
+              ? activeVision
+              : activeResearch
+
+        const preferredProvider = getSourceProviderId(preferredSource)
 
         const providerId = isProviderValid
           ? current.providerId
           : preferredProvider || fallbackProviderId
 
         const models = modelsByProvider[providerId] || []
+
+        const preferredModel = getSourceModelId(preferredSource, role)
+        const fallbackModel = models[0] || ''
+
         const modelId = models.includes(current.modelId)
           ? current.modelId
-          : models[0] || ''
+          : (models.includes(preferredModel) ? preferredModel : fallbackModel)
 
         if (providerId !== current.providerId || modelId !== current.modelId) {
           next[role] = {

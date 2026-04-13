@@ -510,3 +510,9 @@
 - Findings: After activating Vision / Research & Reasoning for OpenRouter in the provider wizard, the AI overview cards did not reflect the activation state.
 - Conclusions: The dashboard header badges were not driven by the per-role active provider state.
 - Actions: Updated `src/screens/Settings/Dashboard.tsx` to show Active/Inactive per role based on `activeGen`/`activeImprove`/`activeVision`/`activeResearch`; validated with `npm run build`.
+
+## 2026-04-13 (Carry wizard model selections into AI dashboard)
+
+- Findings: Model preferences chosen in the provider wizard (Vision / Research & Reasoning etc.) were saved to provider meta but not reflected in the AI dashboard model selectors.
+- Conclusions: The AI dashboard uses a separate `roleRouting` state; it must prefer the active provider's role-specific model when the current routed model is missing/invalid.
+- Actions: Updated `src/screens/AIConfig.tsx` to derive preferred model IDs from the active source per role and use them when normalising `roleRouting`; validated with `npm run build`.
