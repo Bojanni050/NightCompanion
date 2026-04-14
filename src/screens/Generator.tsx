@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { notifications } from '@mantine/notifications'
 import PromptBuilder from './PromptBuilder'
 import { PageContainer } from '../components/PageContainer'
 import QuickstartPanel from '../components/generator/QuickstartPanel'
@@ -917,52 +918,71 @@ export default function Generator() {
   }
 
   const handleSaveToLibrary = async () => {
-    if (!generatedPrompt || !savedTitle.trim()) return
-
-    const nextPromptText = promptImprovement.improvementDiff?.improvedPrompt ?? generatedPrompt
-    const nextOriginalPrompt = promptImprovement.improvementDiff?.originalPrompt ?? nextPromptText
-
-    // Check for duplicates
-    const existingPromptsResult = await window.electronAPI.prompts.list()
-    if (existingPromptsResult.error || !existingPromptsResult.data) {
-      setStatus('Error: Failed to check for duplicates.')
+    const finalPromptText = (promptImprovement.improvementDiff?.improvedPrompt ?? generatedPrompt).trim()
+    if (!finalPromptText) {
+      setStatus('Generate or paste a prompt before saving to library.')
       return
     }
 
-    const duplicate = existingPromptsResult.data.find(
-      prompt => 
-        prompt.promptText.trim() === nextPromptText.trim() && 
-        prompt.title.trim() === savedTitle.trim()
-    )
+    const titleToSave = savedTitle.trim() || buildDefaultTitle(finalPromptText)
+    if (!titleToSave) {
+      setStatus('Add a title before saving to library.')
+      return
+    }
 
-    if (duplicate) {
-      await window.electronAPI.dialog.showMessageBox({
-        type: 'warning',
-        title: 'Duplicate Prompt',
-        message: 'A prompt with this title and content already exists in your library.',
-        buttons: ['OK']
+    const nextOriginalPrompt = (promptImprovement.improvementDiff?.originalPrompt ?? finalPromptText).trim()
+
+    try {
+      const existingPromptsResult = await window.electronAPI.prompts.list()
+      if (existingPromptsResult.error || !existingPromptsResult.data) {
+        setStatus('Error: Failed to check for duplicates.')
+        return
+      }
+
+      const duplicate = existingPromptsResult.data.find((prompt) => (
+        prompt.promptText.trim() === finalPromptText
+        && prompt.title.trim().toLowerCase() === titleToSave.toLowerCase()
+      ))
+
+      if (duplicate) {
+        await window.electronAPI.dialog.showMessageBox({
+          type: 'warning',
+          title: 'Duplicate Prompt',
+          message: 'A prompt with this title and content already exists in your library.',
+          buttons: ['OK'],
+        })
+        notifications.show({ message: 'Duplicate prompt already exists in your library.', color: 'yellow' })
+        return
+      }
+
+      const result = await window.electronAPI.prompts.create({
+        title: titleToSave,
+        promptText: finalPromptText,
+        originalPrompt: nextOriginalPrompt,
+        negativePrompt: negativePrompt.trim(),
+        stylePreset: selectedPreset.trim(),
+        model: recommendedModel.trim(),
+        suggestedModel: recommendedModel.trim(),
+        notes: 'Generated with Magic Random (AI)',
+        tags: ['ai-random'],
       })
-      return
+
+      if (result.error) {
+        setStatus(`Error: ${result.error}`)
+        notifications.show({ message: `Failed to save prompt: ${result.error}`, color: 'red' })
+        return
+      }
+
+      setSavedTitle('')
+      setStatus('Saved to Prompt Library!')
+      notifications.show({ message: 'Saved to Prompt Library!', color: 'green' })
+    } catch (error) {
+      setStatus(error instanceof Error ? `Error: ${error.message}` : 'Error: Failed to save to Prompt Library.')
+      notifications.show({
+        message: error instanceof Error ? `Failed to save prompt: ${error.message}` : 'Failed to save prompt.',
+        color: 'red',
+      })
     }
-
-    const result = await window.electronAPI.prompts.create({
-      title: savedTitle.trim(),
-      promptText: nextPromptText,
-      originalPrompt: nextOriginalPrompt,
-      negativePrompt: negativePrompt.trim(),
-      stylePreset: selectedPreset.trim(),
-      model: recommendedModel.trim(),
-      suggestedModel: recommendedModel.trim(),
-      notes: 'Generated with Magic Random (AI)',
-      tags: ['ai-random'],
-    })
-
-    if (result.error) {
-      setStatus(`Error: ${result.error}`)
-      return
-    }
-
-    setStatus('Saved to Prompt Library.')
   }
 
   return (
@@ -1091,7 +1111,6 @@ export default function Generator() {
               setSavedTitle={handleSavedTitleChange}
               generatedPrompt={generatedPrompt}
               negativePrompt={negativePrompt}
-              recommendedModel={recommendedModel}
               generatingTitle={generatingTitle}
               setGeneratingTitle={setGeneratingTitle}
               handleGenerateTitle={handleGenerateTitle}

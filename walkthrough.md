@@ -582,3 +582,15 @@
 - Findings: AI role routing selections could be overwritten during dashboard normalization when provider/model availability changed, causing apparent reset after exit/restart.
 - Conclusions: Normalization should preserve previously saved provider/model for each role unless fields are empty, instead of force-falling back.
 - Actions: Updated `src/screens/AIConfig.tsx` normalization logic to keep existing `providerId`/`modelId` when present and only use preferred/fallback values for empty fields; also removed stale unsupported props passed to `Dashboard` to satisfy type checks; validated with `npm run build`.
+
+## 2026-04-14 (Fix Generator “Save to Library” reliability)
+
+- Findings: Save on Generator could fail silently (no try/catch path for IPC failures) and required a manual title to be entered before the button could be used.
+- Conclusions: Save flow should be resilient, provide clear status on failures, and allow saving with an automatic fallback title when a prompt exists.
+- Actions: Updated `src/screens/Generator.tsx` save handler to validate prompt text, auto-derive title with `buildDefaultTitle(...)` when needed, normalize duplicate checks, and handle thrown IPC errors with explicit status; updated `src/components/generator/TitleSaveSection.tsx` to enable save whenever prompt text exists (title optional due fallback); validated with `npm run build`.
+
+## 2026-04-14 (Add Generator save feedback toasts)
+
+- Findings: Generator save feedback was only status-text based and easy to miss during workflow.
+- Conclusions: Save outcomes should also trigger clear toast notifications for success, duplicates, and errors.
+- Actions: Updated `src/screens/Generator.tsx` to show notification toasts for duplicate warning, save success, and save failures in `handleSaveToLibrary`; validated with `npm run build`.

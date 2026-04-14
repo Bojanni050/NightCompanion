@@ -1,6 +1,6 @@
 # ⚠️ Archivo generado automáticamente
 # Fuente: Ai_Rules.md
-# Fecha: 2026-04-08 02:26:42
+# Fecha: 2026-04-14 00:50:36
 # No editar directamente - los cambios se sobrescribirán
 # 
 # Para actualizar estas reglas, edita Ai_Rules.md y ejecuta:
@@ -24,100 +24,75 @@ Changes here are automatically synchronized to:
 
 ## 📋 General Rules
 
-# Memstate MCP - Memory Storage
+## Memory
 
-This project uses Memstate MCP for persistent, versioned memory across sessions.
+⚠️ **CRITICAL: READ THIS FIRST - MANDATORY MEMORY PROTOCOL** ⚠️
 
-## REQUIRED: Start and end every task with memory
+You are an AI assistant with access to Hindsight - a persistent memory system that maintains context and continuity across all conversations.
 
-**BEFORE starting any task**, load existing context so you don't redo past work or revert intentional decisions:
-```
-memstate_get(project_id="<your_project>")
-```
+## 🔴 MANDATORY STARTUP SEQUENCE - DO NOT SKIP 🔴
 
-**AFTER completing any task**, save what you did so the next session has context:
-```
-memstate_remember(project_id="<your_project>", content="## Task Summary\n- What was done\n- Key decisions made\n- Files modified", source="agent")
-```
+**BEFORE RESPONDING TO ANY USER MESSAGE, EXECUTE THIS FIRST:**
 
-These two calls are mandatory. Skipping them means the next session starts blind.
+### STEP 1 (REQUIRED): Search for Relevant Context
 
-## Tool reference
+EXECUTE THIS TOOL FIRST:
 
-| Tool | When to use |
-|------|-------------|
-| memstate_get | **Start of every task.** Browse project tree or fetch content at a keypath. |
-| memstate_remember | **End of every task.** Save markdown summaries, notes, decisions. |
-| memstate_search | Find memories by meaning when you don't know the exact keypath. |
-| memstate_set | Store a single key=value fact (e.g. config.port). Not for summaries. |
-| memstate_history | View version history of a keypath. |
-| memstate_delete | Soft-delete a keypath (history preserved). |
+Hindsight:recall
 
-## Project naming
-Use a short snake_case name matching your repo or topic (e.g. my_app, api_service). All related memories should share the same project_id.
+**Search for:**
+- Previous discussions about the current topic
+- User preferences and communication patterns
+- Similar topics discussed before
+- Past decisions and reasoning
 
-# Memory Protocol
+**How to search effectively:**
+- Write complete semantic queries, NOT keyword fragments
+- ✅ GOOD: "user's preferences for communication style and past decisions about MCP setup"
+- ❌ BAD: "user MCP"
 
-Bij elke nieuwe conversatie:
-1. Zoek eerst bestaande herinneringen via supermemory `search` tool voordat je antwoord geeft
-2. Gebruik de `context` tool om het gebruikersprofiel te laden
-3. Sla nieuwe relevante feiten, beslissingen en voorkeuren op via `addMemory` aan het einde van elk gesprek
+**Additional search triggers:**
+- User mentions "previously", "before", "last time", or "we discussed"
+- User references past conversations or topics
+- User asks about preferences, patterns, or past decisions
+- Starting discussion on any topic that might have history
 
-## Wat opslaan:
-- Technische beslissingen en architectuurkeuzes
-- Gebruikersvoorkeuren (taal, frameworks, code stijl)
-- Projectcontext en voortgang
-- Problemen en oplossingen
+## 🔴 MANDATORY SHUTDOWN SEQUENCE - DO NOT SKIP 🔴
 
-## Wat NIET opslaan:
-- Triviale vragen zonder projectwaarde
-- Informatie die al opgeslagen is
+**AFTER FULLY RESPONDING TO THE USER, STORE THE CONVERSATION:**
 
-## Cortex
+### FINAL STEP (REQUIRED): Store Conversation Memory
 
-Cortex Memory Rules — MANDATORY
+EXECUTE THIS TOOL:
 
-At Conversation Start (ALWAYS)
+Hindsight:retain
 
-- ALWAYS call mcp_cortex_force_recall with the topic of the user's question
-- This returns ALL corrections, decisions, conventions, and bug fixes
-- Plus topic-specific search results
+**What to store:**
+- Key facts the user shared (personal, technical, decisions)
+- Important context from this conversation
+- New preferences or changes mentioned
+- Project updates or decisions made
 
-DO NOT skip this step. It is mandatory.
-After EVERY Response (ALWAYS)
+**Format:**
+Store a concise but complete summary. Include what the user asked/shared and what was decided or answered.
 
-- ALWAYS call mcp_cortex_auto_learn with the text of your response
+**Quality check before storing:**
+- Does this add new information not already in memory?
+- Would this help provide better assistance in future conversations?
+- Are we learning anything new about the user?
 
-- Cortex will automatically extract and store any decisions, corrections, conventions, or bug fixes
-- This is how Cortex learns passively — zero manual effort required
+**Exclude:**
+- Repetitive info already stored
+- Trivial small talk without substance
 
-DO NOT skip this step. It is mandatory.
-
-- Example: mcp_cortex_auto_learn(text: "We decided to use PostgreSQL instead of MongoDB because...")
-
-When Decisions Are Made (Manual Override)
-
-- ALSO call mcp_cortex_store_memory for high-importance items:
-  - Example: mcp_cortex_store_memory(text: "We decided to use PostgreSQL instead of MongoDB because...", type: "DECISION")
-  - A critical architectural decision (type: DECISION)
-  - A mistake that must never be repeated (type: CORRECTION)
-  - A project-wide coding convention (type: CONVENTION)
-  - A tricky bug that was hard to find (type: BUG_FIX)
-
-Before Suggesting Code
-
-- Call mcp_cortex_verify_code to check:
-  - Are import packages real (exist in package.json)?
-  - Are imported functions actually exported?
-  - Are env variables defined in .env?
-
-Before Referencing Files
-
-- Call mcp_cortex_verify_files to check if file paths are real.
-
-All the important architectural decisions, UI patterns, and implementation details from coding sessions are to be stored in Cortex for future reference and consistency across the codebase.
 ---
 
+## 🟢 PROTOCOL SUMMARY
+1. **START**: Hindsight:recall (Always - search for relevant context)
+2. RESPOND: Address the user
+3. **END**: Hindsight:retain (Always - store new information)
+
+**If you skip any of these steps, you are not following the requirements.**
 
 ## NightCompanion
 
@@ -250,14 +225,7 @@ After every significant change, add at the end so dates are from oldest to newes
 5. Regularly check the Context7 tool for updates or changes that may affect your coding work, and adjust your approach accordingly.
 6. Use the Context7 tool to review your code before finalizing it, ensuring that it aligns with the project's standards and requirements as outlined in the tool.
 
-## Memory
 
-- When asked to remember something, use all abailable momery options to remember it.
-- When asked to recall something, use all abailable momery options to recall it.
-- When asked to forget something, use all abailable momery options to forget it.
-- Provide a summary of what was remembered, recalled, or forgotten.
-- Proactively use memory tools to maintain context across sessions.
-- Proactively store important information in memory to avoid repetition.
 
 
 ✨ **Tip**: Sync these changes by running "AI Rules: Sync All Rules" from the command palette.

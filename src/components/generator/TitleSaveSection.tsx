@@ -5,11 +5,11 @@ type TitleSaveSectionProps = {
   setSavedTitle: (value: string) => void
   generatedPrompt: string
   negativePrompt: string
-  recommendedModel: string
   generatingTitle: boolean
   setGeneratingTitle: (value: boolean) => void
   handleGenerateTitle: () => void
   handleSaveToLibrary: () => void
+
   loading: boolean
   improving: boolean
   generatingNegative: boolean
@@ -20,10 +20,10 @@ export default function TitleSaveSection({
   savedTitle,
   setSavedTitle,
   generatedPrompt,
-  recommendedModel,
   generatingTitle,
   handleGenerateTitle,
   handleSaveToLibrary,
+
   loading,
   improving,
   generatingNegative,
@@ -49,7 +49,7 @@ export default function TitleSaveSection({
         </button>
         <button
           onClick={handleSaveToLibrary}
-          disabled={!generatedPrompt || !savedTitle.trim() || generatingNegative || improvingNegative}
+          disabled={!generatedPrompt.trim() || generatingNegative || improvingNegative}
           className="btn-save-library-secondary"
         >
           <Save className="w-3.5 h-3.5" /> Save to Library
