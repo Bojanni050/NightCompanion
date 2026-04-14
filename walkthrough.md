@@ -594,3 +594,9 @@
 - Findings: Generator save feedback was only status-text based and easy to miss during workflow.
 - Conclusions: Save outcomes should also trigger clear toast notifications for success, duplicates, and errors.
 - Actions: Updated `src/screens/Generator.tsx` to show notification toasts for duplicate warning, save success, and save failures in `handleSaveToLibrary`; validated with `npm run build`.
+
+## 2026-04-14 (Model Advisor: split conclusion vs thinking)
+
+- Findings: AI advice text could mix reasoning and conclusion, making it hard to quickly see the recommended model while still reviewing detailed thinking.
+- Conclusions: Keep the final suggestion visible in the main panel and move reasoning into a collapsible, cleaned-up "thinking process" section.
+- Actions: Updated `src/components/generator/ModelAdvisorCard.tsx` to keep `recommendedModel` prominent, filter conclusion-like lines out of reasoning text, normalize reasoning lines for readability, and render them inside a collapsed `details` block labeled "AI thinking process"; validated with `npm run build`.

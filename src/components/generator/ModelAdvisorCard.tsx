@@ -27,6 +27,21 @@ type ModelAdvisorCardProps = {
   improvingNegative: boolean
 }
 
+function buildThinkingLines(reason: string): string[] {
+  const normalized = reason
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  return normalized
+    .filter((line) => {
+      const lower = line.toLowerCase()
+      return !(lower.includes('recommended model') || lower.includes('suggested model') || lower.includes('conclusion'))
+    })
+    .map((line) => line.replace(/^[-*•]\s*/, ''))
+}
+
 export default function ModelAdvisorCard({
   generatedPrompt,
   recommendedModel,
@@ -36,6 +51,7 @@ export default function ModelAdvisorCard({
   advisorFastest,
   supportsNegativePrompt,
   budgetMode,
+  setBudgetMode,
   advisingAi,
   handleAdviseModel,
   loading,
@@ -43,6 +59,8 @@ export default function ModelAdvisorCard({
   generatingNegative,
   improvingNegative,
 }: ModelAdvisorCardProps) {
+  const thinkingLines = buildThinkingLines(recommendedModelReason)
+
   return (
     <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
       <div className="flex items-center justify-between gap-3">
@@ -72,10 +90,25 @@ export default function ModelAdvisorCard({
       </div>
 
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="text-sm text-slate-500">Beste kwaliteit</span>
+        <span className="text-sm text-slate-500">Suggested model</span>
         <span className="text-2xl font-semibold text-white flex items-center gap-2">{recommendedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
       </div>
-      <p className="mt-1 text-sm text-slate-400">{recommendedModelReason || 'Nog geen modeladvies beschikbaar. Genereer eerst een prompt.'}</p>
+      {!recommendedModel && (
+        <p className="mt-1 text-sm text-slate-400">No model advice yet. Generate a prompt and request AI advice.</p>
+      )}
+
+      {thinkingLines.length > 0 && (
+        <details className="mt-3 rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2">
+          <summary className="cursor-pointer select-none text-xs font-medium text-slate-300">AI thinking process</summary>
+          <div className="mt-2 space-y-2">
+            {thinkingLines.map((line, index) => (
+              <p key={`${index}-${line}`} className="text-xs leading-5 text-slate-400">
+                {line}
+              </p>
+            ))}
+          </div>
+        </details>
+      )}
 
       {/* Model mode indicator */}
       {recommendedModelMode && (
