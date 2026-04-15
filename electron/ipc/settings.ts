@@ -1,9 +1,11 @@
 import { app, dialog, ipcMain } from 'electron'
 import path from 'path'
-import { readFile, writeFile, mkdir, rename, rm } from 'fs/promises'
+import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
+import { fileURLToPath } from 'url'
 import { drizzle } from 'drizzle-orm/postgres-js'
+import { desc } from 'drizzle-orm'
 import * as schema from '../../src/lib/schema'
-import { openRouterModels } from '../../src/lib/schema'
+import { openRouterModels, promptVersions, prompts } from '../../src/lib/schema'
 import { getConfiguredNightCompanionFolderPath, getDefaultNightCompanionFolderPath } from '../services/storagePaths'
 
 type Database = ReturnType<typeof drizzle<typeof schema>>
@@ -102,6 +104,25 @@ type OpenRouterModel = {
   completionPrice: string | null
   requestPrice: string | null
   imagePrice: string | null
+}
+
+type PromptImageJsonItem = {
+  id?: string
+  url?: string
+  note?: string
+  model?: string
+  seed?: string
+  createdAt?: string
+}
+
+type PromptsExportSummary = {
+  exportDirPath: string
+  promptsFilePath: string
+  promptsCount: number
+  promptVersionsCount: number
+  imagesCopied: number
+  imagesMissing: number
+  imagesSkipped: number
 }
 
 type StoredSettings = {
@@ -673,6 +694,49 @@ async function testOpenRouterConnection(settings: OpenRouterSettings) {
   }
 }
 
+function resolveExportableFilePath(rawUrl: string): string | null {
+  const normalized = rawUrl.trim()
+  if (!normalized) return null
+
+  if (normalized.startsWith('file://')) {
+    try {
+      const filePath = fileURLToPath(new URL(normalized))
+      return path.resolve(filePath)
+    } catch {
+      return null
+    }
+  }
+
+  if (path.isAbsolute(normalized)) {
+    return path.resolve(normalized)
+  }
+
+  return null
+}
+
+function normalizePromptImageUrls(imageUrl: string, imagesJson: unknown): string[] {
+  const urls: string[] = []
+  const firstImage = typeof imageUrl === 'string' ? imageUrl.trim() : ''
+  if (firstImage) urls.push(firstImage)
+
+  if (Array.isArray(imagesJson)) {
+    for (const item of imagesJson) {
+      const maybeItem = item as PromptImageJsonItem
+      if (!maybeItem || typeof maybeItem !== 'object') continue
+      const maybeUrl = typeof maybeItem.url === 'string' ? maybeItem.url.trim() : ''
+      if (maybeUrl) urls.push(maybeUrl)
+    }
+  }
+
+  return urls
+}
+
+function buildExportTimestamp() {
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+}
+
 export function registerSettingsIpc({
   db,
   onNativeWindowFrameChanged,
@@ -926,6 +990,123 @@ export function registerSettingsIpc({
       }
 
       return { data: result.filePaths[0] }
+    } catch (error) {
+      return { error: String(error) }
+    }
+  })
+
+  ipcMain.handle('settings:exportPromptsAndImages', async () => {
+    try {
+      const defaultPath = await getNightCompanionFolderPath()
+      const selection = await dialog.showOpenDialog({
+        title: 'Select export folder for prompts and images',
+        defaultPath,
+        properties: ['openDirectory', 'createDirectory'],
+      })
+
+      if (selection.canceled || selection.filePaths.length === 0) {
+        return { data: null as PromptsExportSummary | null }
+      }
+
+      const selectedDir = selection.filePaths[0]
+      const exportDirPath = path.join(selectedDir, `nightcompanion-export-${buildExportTimestamp()}`)
+      const imagesDirPath = path.join(exportDirPath, 'images')
+      const promptsFilePath = path.join(exportDirPath, 'prompts-export.json')
+
+      await mkdir(imagesDirPath, { recursive: true })
+
+      const promptRows = await db.select().from(prompts).orderBy(desc(prompts.createdAt))
+      const versionRows = await db.select().from(promptVersions).orderBy(desc(promptVersions.createdAt))
+
+      const imageUrlToRelativePath = new Map<string, string>()
+      const usedFileNames = new Set<string>()
+      let imagesCopied = 0
+      let imagesMissing = 0
+      let imagesSkipped = 0
+
+      const allUrls = new Set<string>()
+      for (const row of promptRows) {
+        for (const url of normalizePromptImageUrls(row.imageUrl, row.imagesJson)) allUrls.add(url)
+      }
+      for (const row of versionRows) {
+        for (const url of normalizePromptImageUrls(row.imageUrl, row.imagesJson)) allUrls.add(url)
+      }
+
+      const sanitizeFileNamePart = (value: string): string => value.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80)
+      let imageCounter = 0
+      for (const sourceUrl of allUrls) {
+        const sourcePath = resolveExportableFilePath(sourceUrl)
+        if (!sourcePath) {
+          imagesSkipped += 1
+          continue
+        }
+
+        try {
+          const stats = await stat(sourcePath)
+          if (!stats.isFile()) {
+            imagesMissing += 1
+            continue
+          }
+
+          const extension = path.extname(sourcePath) || '.bin'
+          const baseName = sanitizeFileNamePart(path.basename(sourcePath, extension)) || 'image'
+          let fileName = `${String(imageCounter + 1).padStart(4, '0')}-${baseName}${extension}`
+          while (usedFileNames.has(fileName)) {
+            imageCounter += 1
+            fileName = `${String(imageCounter + 1).padStart(4, '0')}-${baseName}${extension}`
+          }
+          usedFileNames.add(fileName)
+          imageCounter += 1
+
+          const destinationPath = path.join(imagesDirPath, fileName)
+          await copyFile(sourcePath, destinationPath)
+          imageUrlToRelativePath.set(sourceUrl, `images/${fileName}`)
+          imagesCopied += 1
+        } catch {
+          imagesMissing += 1
+        }
+      }
+
+      const exportPayload = {
+        exportedAt: new Date().toISOString(),
+        summary: {
+          promptsCount: promptRows.length,
+          promptVersionsCount: versionRows.length,
+          imagesCopied,
+          imagesMissing,
+          imagesSkipped,
+        },
+        prompts: promptRows.map((row) => ({
+          ...row,
+          exportImages: normalizePromptImageUrls(row.imageUrl, row.imagesJson)
+            .map((url) => ({
+              sourceUrl: url,
+              exportedPath: imageUrlToRelativePath.get(url) ?? null,
+            })),
+        })),
+        promptVersions: versionRows.map((row) => ({
+          ...row,
+          exportImages: normalizePromptImageUrls(row.imageUrl, row.imagesJson)
+            .map((url) => ({
+              sourceUrl: url,
+              exportedPath: imageUrlToRelativePath.get(url) ?? null,
+            })),
+        })),
+      }
+
+      await writeFile(promptsFilePath, JSON.stringify(exportPayload, null, 2), 'utf-8')
+
+      return {
+        data: {
+          exportDirPath,
+          promptsFilePath,
+          promptsCount: promptRows.length,
+          promptVersionsCount: versionRows.length,
+          imagesCopied,
+          imagesMissing,
+          imagesSkipped,
+        } as PromptsExportSummary,
+      }
     } catch (error) {
       return { error: String(error) }
     }

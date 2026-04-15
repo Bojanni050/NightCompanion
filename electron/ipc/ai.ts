@@ -619,12 +619,28 @@ async function getAdvisorRouteSelection() {
 }
 
 function normalizeGeneratedTitle(value: string) {
-  return value
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/^["'`]+|["'`]+$/g, '')
-    .slice(0, TITLE_MAX_LENGTH)
-    .trim()
+  const stripOuterQuotes = (input: string): string => {
+    let start = 0
+    let end = input.length
+
+    while (start < end) {
+      const ch = input[start]
+      if (ch !== '"' && ch !== "'" && ch !== '`') break
+      start += 1
+    }
+
+    while (end > start) {
+      const ch = input[end - 1]
+      if (ch !== '"' && ch !== "'" && ch !== '`') break
+      end -= 1
+    }
+
+    return input.slice(start, end)
+  }
+
+  const collapsed = value.replace(/\s+/g, ' ').trim()
+  const stripped = stripOuterQuotes(collapsed)
+  return stripped.slice(0, TITLE_MAX_LENGTH).trim()
 }
 
 function normalizeAiText(value: string) {

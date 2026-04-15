@@ -72,6 +72,15 @@ type OpenRouterModel = {
   requestPrice: string | null
   imagePrice: string | null
 }
+type PromptsExportSummary = {
+  exportDirPath: string
+  promptsFilePath: string
+  promptsCount: number
+  promptVersionsCount: number
+  imagesCopied: number
+  imagesMissing: number
+  imagesSkipped: number
+}
 type NightcafeModelOption = {
   modelName: string
   modelType: string
@@ -248,6 +257,7 @@ declare global {
         saveNightCompanionFolderPath(input: string): Promise<IpcResult<string>>
         resetNightCompanionFolderPath(): Promise<IpcResult<string>>
         selectNightCompanionFolderPath(): Promise<IpcResult<string | null>>
+        exportPromptsAndImages(): Promise<IpcResult<PromptsExportSummary | null>>
         getLocalEndpoints(): Promise<IpcResult<LocalEndpointStore[]>>
         saveLocalEndpoints(input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>>
         saveOpenRouter(input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>>

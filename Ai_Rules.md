@@ -214,6 +214,7 @@ After every significant change, add at the end so dates are from oldest to newes
 4. Ensure that you are following the guidelines and best practices outlined in the Context7 tool to maintain consistency and quality in your code.
 5. Regularly check the Context7 tool for updates or changes that may affect your coding work, and adjust your approach accordingly.
 6. Use the Context7 tool to review your code before finalizing it, ensuring that it aligns with the project's standards and requirements as outlined in the tool.
+7. Show how you use and what you learned form Context7
 
 
 

@@ -672,3 +672,15 @@
 - Findings: Improved prompts konden soms mid-zin eindigen wanneer de verbeterde output boven de 110% word-limit kwam en daarna hard werd afgekapt.
 - Conclusions: Laat de model-instructie expliciet eindigen met een volledige zin én zorg dat de client-side word-limit truncatie altijd op een zin-einde eindigt (of een punt toevoegt).
 - Actions: Updated `electron/ipc/ai.ts` `IMPROVE_INSTRUCTION` met “end with a complete sentence and a final full stop”. Updated `src/screens/Generator.tsx` truncatiepad voor improved prompt zodat het resultaat op zin-einde afsluit. Validated with `npm run build`.
+
+## 2026-04-15 (Security: ReDoS-safe title normalisatie)
+
+- Findings: `normalizeGeneratedTitle` gebruikte een regex die door backtracking potentieel super-lineair kan worden op kwaadaardige input.
+- Conclusions: Vervang de regex door een lineaire, character-based strip van omringende quotes om ReDoS/DoS te voorkomen.
+- Actions: Updated `electron/ipc/ai.ts` `normalizeGeneratedTitle` om outer-quote stripping zonder regex uit te voeren; validated with `npm run build`.
+
+## 2026-04-15 (Settings: exportfunctie voor prompts en afbeeldingen)
+
+- Findings: Er was geen centrale exportoptie in Settings om prompts en bijbehorende lokale afbeeldingen in één keer te backuppen.
+- Conclusions: Een Settings-exportactie via IPC met folderpicker, JSON-export en image-copy geeft een veilige, bruikbare backup zonder nieuwe dependencies.
+- Actions: Added `settings:exportPromptsAndImages` in `electron/ipc/settings.ts` (select folder, export `prompts` + `prompt_versions` naar `prompts-export.json`, kopie van lokale `file://`/absolute image paths naar `images/` met samenvatting). Exposed via `electron/preload.ts` en `src/types/electron.d.ts`. Added UI in `src/screens/Settings.tsx` met knop “Export prompts + images” en statusmelding; validated with `npm run build`.

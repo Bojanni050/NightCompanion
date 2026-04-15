@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FolderOpen, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
+import { Download, FolderOpen, RefreshCw, Settings as SettingsIcon } from 'lucide-react'
 import { notifications } from '@mantine/notifications'
 
 import { PageContainer } from '../components/PageContainer'
@@ -26,6 +26,8 @@ export default function Settings() {
   const [nightCompanionFolderPath, setNightCompanionFolderPath] = useState('')
   const [savingNightCompanionFolderPath, setSavingNightCompanionFolderPath] = useState(false)
   const [nightCompanionFolderMessage, setNightCompanionFolderMessage] = useState<string | null>(null)
+  const [exportingLibrary, setExportingLibrary] = useState(false)
+  const [exportLibraryMessage, setExportLibraryMessage] = useState<string | null>(null)
   const [isRefreshingHf, setIsRefreshingHf] = useState(false)
   const [hfSyncMessage, setHfSyncMessage] = useState<string | null>(null)
   const [hfSyncInfo, setHfSyncInfo] = useState<HfSyncInfo | null>(null)
@@ -308,6 +310,31 @@ export default function Settings() {
     setNightCompanionFolderPath(result.data)
     setNightCompanionFolderMessage('NightCompanion folder teruggezet naar standaardlocatie.')
     setSavingNightCompanionFolderPath(false)
+  }
+
+  async function handleExportPromptsAndImages() {
+    setExportingLibrary(true)
+    setExportLibraryMessage(null)
+
+    const result = await window.electronAPI.settings.exportPromptsAndImages()
+
+    if (result.error) {
+      setExportLibraryMessage(result.error)
+      notifications.show({ message: result.error, color: 'red' })
+      setExportingLibrary(false)
+      return
+    }
+
+    if (!result.data) {
+      setExportLibraryMessage('Export cancelled.')
+      setExportingLibrary(false)
+      return
+    }
+
+    const message = `Export klaar: ${result.data.promptsCount} prompts, ${result.data.promptVersionsCount} versies, ${result.data.imagesCopied} afbeeldingen gekopieerd naar ${result.data.exportDirPath}`
+    setExportLibraryMessage(message)
+    notifications.show({ message: 'Prompts en afbeeldingen geëxporteerd.', color: 'green' })
+    setExportingLibrary(false)
   }
 
   const formattedLastSyncedAt = (() => {
@@ -608,6 +635,27 @@ export default function Settings() {
             </div>
             {nightCompanionFolderMessage && (
               <p className="text-xs text-slate-400">{nightCompanionFolderMessage}</p>
+            )}
+          </div>
+
+          <div className="pt-6 mt-6 space-y-3 border-t border-slate-800/50">
+            <div>
+              <p className="text-sm font-semibold text-white">Export library</p>
+              <p className="text-xs text-slate-500">Exporteer prompts (incl. versies) en lokale afbeeldingen naar een map.</p>
+            </div>
+            <button
+              type="button"
+              disabled={loading || exportingLibrary}
+              onClick={() => {
+                if (!loading && !exportingLibrary) void handleExportPromptsAndImages()
+              }}
+              className="inline-flex gap-2 items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Download className={`w-3.5 h-3.5 ${exportingLibrary ? 'animate-pulse' : ''}`} />
+              {exportingLibrary ? 'Exporting...' : 'Export prompts + images'}
+            </button>
+            {exportLibraryMessage && (
+              <p className="text-xs text-slate-400 break-words">{exportLibraryMessage}</p>
             )}
           </div>
 
