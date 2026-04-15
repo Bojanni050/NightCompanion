@@ -106,15 +106,16 @@ type NightcafeHuggingFaceSyncInfo = {
 type GeneratedTagsResult = {
   tags: string[]
 }
+type BudgetPick = { modelName: string; reasons: string[] }
 type ModelAdvisorRecommendation = { modelName: string; explanation: string }
 type ModelAdvisorResult = {
   mode: 'rule' | 'ai'
   recommendation: ModelAdvisorRecommendation
   alternatives: ModelAdvisorRecommendation[]
   matchedSignals: string[]
-  cheapPick?: string
-  balancedPick?: string
-  premiumPick?: string
+  cheapPick: BudgetPick
+  balancedPick: BudgetPick
+  premiumPick: BudgetPick
 }
 type GalleryFilters = { search?: string; collectionId?: string | null; minRating?: number; page?: number }
 type CharacterImage = { id: string; url: string; isMain: boolean; createdAt: string }

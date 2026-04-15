@@ -612,3 +612,21 @@
 - Findings: The advisor still exposed an explicit "thinking process" section, while the desired UI should only show the chosen model and concise reasons.
 - Conclusions: Remove any thinking-process framing and render only a readable reasons list beneath the chosen model.
 - Actions: Updated `src/components/generator/ModelAdvisorCard.tsx` to replace the collapsible "AI thinking process" block with a direct "Reason(s)" list and keep the chosen-model display/fallback logic; validated with `npm run build`.
+
+## 2026-04-14 (AI Advisory Panel: show three model picks with reasons)
+
+- Findings: The AI advisory panel only showed one model recommendation without displaying the cheap/balanced/premium options or their reasons.
+- Conclusions: Display all three model picks (cheap, balanced, premium) with up to three reasons each, showing why each model was selected for its category.
+- Actions: Updated `electron/ipc/ai.ts` with `BudgetPick` type and enhanced `computeBudgetPicks` to return model name plus up to 3 reasons per pick. Updated `src/types/electron.d.ts` with new `BudgetPick` type. Updated `Generator.tsx` to pass full budget pick objects. Rewrote `ModelAdvisorCard.tsx` to display three model pick cards (cheap/balanced/premium) in a grid with colored borders (emerald/amber/purple), each showing the model name and reasons list, plus a "Why [model] for [budget]?" section for the currently selected budget mode; validated with `npm run build`.
+
+## 2026-04-15 (Rule-based Model Advisor: richer hints + deterministic ties)
+
+- Findings: Rule-based model advisor returned the same model too often because AI-generated prompts use richer terms ("golden hour", "ethereal", "bokeh") that rarely matched the previous hint lists, resulting in 0-hit default weights.
+- Conclusions: Expand hint vocab for realism/typography/art and add deterministic tie-breaking while keeping the existing scoring logic unchanged.
+- Actions: Updated `electron/ipc/ai.ts` REALISM_HINTS / TYPOGRAPHY_HINTS / ART_HINTS to include richer prompt language, and added a tiebreaker sort by modelName for near-equal scores in `getRuleBasedRecommendation` (finalScore) and `computeBudgetPicks` (score); validated with `npm run build`.
+
+## 2026-04-15 (Model Advisor AI-modus: shuffle modellijst + scherpere instructie)
+
+- Findings: AI-modus gaf altijd hetzelfde model terug door vaste DB-volgorde van de modellijst en een te vage LLM-instructie.
+- Conclusions: Shuffle + slice naar 60 modellen doorbreekt de volgorde-bias; expliciete score-interpretatie en anti-herhaling instructie sturen het LLM naar prompt-specifieke keuzes.
+- Actions: shuffleArray helper toegevoegd; compactModels geshuffle en verkleind naar 60; advisorInstruction verscherpt met score-uitleg, budget-mapping en anti-default instructie in `electron/ipc/ai.ts`; validated with `npm run build`.

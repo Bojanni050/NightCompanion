@@ -1,4 +1,4 @@
-﻿import { ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import { app } from 'electron'
 import path from 'path'
 import { appendFile, mkdir, readFile } from 'fs/promises'
@@ -76,6 +76,11 @@ type AdvisorRecommendation = {
   explanation: string
 }
 
+type BudgetPick = {
+  modelName: string
+  reasons: string[]
+}
+
 type AdvisorResult = {
   mode: AdvisorMode
   recommendation: AdvisorRecommendation
@@ -83,9 +88,9 @@ type AdvisorResult = {
   matchedSignals: string[]
   bestValue?: AdvisorRecommendation
   fastest?: AdvisorRecommendation
-  cheapPick?: string
-  balancedPick?: string
-  premiumPick?: string
+  cheapPick: BudgetPick
+  balancedPick: BudgetPick
+  premiumPick: BudgetPick
 }
 
 type ScoredAdvisorModel = {
@@ -310,18 +315,39 @@ function findFastest(scored: ScoredAdvisorModel[]): ScoredAdvisorModel | null {
 }
 
 const REALISM_HINTS = [
-  'realistic', 'photorealistic', 'photo', 'photography', 'portrait', 'cinematic', 'documentary',
-  'natural light', 'true to life', 'hyperreal', 'lifestyle', 'headshot',
+  'realistic', 'photorealistic', 'photo', 'photography', 'portrait', 'cinematic',
+  'documentary', 'natural light', 'true to life', 'hyperreal', 'lifestyle', 'headshot',
+  'golden hour', 'soft light', 'bokeh', 'depth of field', 'shallow focus',
+  'lens flare', 'film grain', 'raw photo', 'dslr', 'canon', 'nikon', 'sigma',
+  'street photography', 'editorial', 'fashion photography', 'product photography',
+  'aerial', 'drone shot', 'macro', 'close-up', 'medium shot', 'wide shot',
+  'motion blur', 'long exposure', 'high contrast', 'hdr',
+  'gritty', 'moody lighting', 'dramatic lighting', 'studio lighting', 'rim light',
+  'atmospheric', 'foggy', 'misty', 'haze', 'volumetric light',
 ]
 
 const TYPOGRAPHY_HINTS = [
-  'text', 'title', 'logo', 'lettering', 'typography', 'poster', 'cover', 'font', 'headline',
-  'caption', 'signage', 'wordmark', 'brand',
+  'text', 'title', 'logo', 'lettering', 'typography', 'poster', 'cover', 'font',
+  'headline', 'caption', 'signage', 'wordmark', 'brand',
+  'label', 'badge', 'stamp', 'banner', 'inscription', 'graffiti', 'neon sign',
+  'handwritten', 'calligraphy', 'serif', 'sans-serif', 'bold type', 'engraving',
 ]
 
 const ART_HINTS = [
-  'illustration', 'digital art', 'concept art', 'painting', 'anime', 'fantasy', 'surreal',
-  'watercolour', 'watercolor', 'oil painting', 'stylized', 'stylised', 'line art', 'comic',
+  'illustration', 'digital art', 'concept art', 'painting', 'anime', 'fantasy',
+  'surreal', 'watercolour', 'watercolor', 'oil painting', 'stylized', 'stylised',
+  'line art', 'comic',
+  'ethereal', 'dreamlike', 'otherworldly', 'abstract', 'impressionist',
+  'expressionist', 'cubist', 'baroque', 'renaissance', 'art nouveau', 'art deco',
+  'ukiyo-e', 'manga', 'cel shading', 'pixel art', 'low poly', 'voxel',
+  'cyberpunk', 'steampunk', 'retrofuturism', 'vaporwave', 'synthwave',
+  'biopunk', 'solarpunk', 'dark fantasy', 'gothic', 'horror', 'psychedelic',
+  'glitch art', 'neon', 'vibrant', 'pastel', 'muted tones',
+  'monochromatic', 'duotone', 'ink wash', 'charcoal', 'pencil sketch',
+  'storybook', 'flat design', 'vector art',
+  'hyperdetailed', 'intricate', 'ornate', 'maximalist', 'minimalist',
+  'epic', 'majestic', 'serene', 'melancholic', 'whimsical', 'playful',
+  'soft', 'warm', 'cool tones', 'cinematic composition', 'rule of thirds',
 ]
 
 const FAST_MODEL_HINTS = ['turbo', 'lightning', 'lite', 'schnell', 'fast', 'quick', 'speed']
@@ -417,7 +443,11 @@ function getRuleBasedRecommendation(prompt: string, models: AdvisorModelRecord[]
         },
       }
     })
-    .sort((a, b) => b.finalScore - a.finalScore)
+    .sort((a, b) => {
+      const diff = b.finalScore - a.finalScore
+      if (Math.abs(diff) > 0.001) return diff
+      return a.model.modelName.localeCompare(b.model.modelName)
+    })
 
   const best = scored[0]
   const alternatives = scored.slice(1, 4)
@@ -431,6 +461,9 @@ function getRuleBasedRecommendation(prompt: string, models: AdvisorModelRecord[]
       },
       alternatives: [],
       matchedSignals,
+      cheapPick: { modelName: '', reasons: [] },
+      balancedPick: { modelName: '', reasons: [] },
+      premiumPick: { modelName: '', reasons: [] },
     }
   }
 
@@ -474,11 +507,12 @@ function getRuleBasedRecommendation(prompt: string, models: AdvisorModelRecord[]
     matchedSignals,
     bestValue,
     fastest,
+    ...computeBudgetPicks(prompt, models),
   }
 }
 
-function computeBudgetPicks(prompt: string, models: AdvisorModelRecord[]): { cheapPick: string; balancedPick: string; premiumPick: string } {
-  const scoreFor = (bm: BudgetMode) => {
+function computeBudgetPicks(prompt: string, models: AdvisorModelRecord[]): { cheapPick: BudgetPick; balancedPick: BudgetPick; premiumPick: BudgetPick } {
+  const scoreFor = (bm: BudgetMode): BudgetPick => {
     const normalizedPrompt = prompt.trim().toLowerCase()
     const realismHits = countMatches(normalizedPrompt, REALISM_HINTS)
     const typographyHits = countMatches(normalizedPrompt, TYPOGRAPHY_HINTS)
@@ -489,7 +523,7 @@ function computeBudgetPicks(prompt: string, models: AdvisorModelRecord[]): { che
       typography: 0.2 + typographyHits * 0.3,
       prompting: 0.1,
     })
-    const sorted = models
+    const scored = models
       .filter((model) => model.mediaType === 'image')
       .map((model) => {
         const art = parseScore(model.artScore)
@@ -499,10 +533,28 @@ function computeBudgetPicks(prompt: string, models: AdvisorModelRecord[]): { che
         const costTier = parseCostTier(model.costTier)
         const quality = art * weights.art + realism * weights.realism + typography * weights.typography + prompting * weights.prompting
         const penalty = bm === 'cheap' ? (costTier - 1) * 0.6 : bm === 'balanced' ? (costTier - 1) * 0.2 : 0
-        return { modelName: model.modelName, score: quality - penalty }
+        return { model, score: quality - penalty, art, realism, typography, prompting, costTier }
       })
-      .sort((a, b) => b.score - a.score)
-    return sorted[0]?.modelName ?? ''
+      .sort((a, b) => {
+        const diff = b.score - a.score
+        if (Math.abs(diff) > 0.001) return diff
+        return a.model.modelName.localeCompare(b.model.modelName)
+      })
+
+    const top = scored[0]
+    if (!top) return { modelName: '', reasons: [] }
+
+    const reasons: string[] = []
+    if (top.art >= 4) reasons.push('Excellent artistic rendering')
+    if (top.realism >= 4) reasons.push('Strong realism score')
+    if (top.typography >= 4) reasons.push('High typography score')
+    if (top.prompting >= 4) reasons.push('Prompt-responsive model')
+    if (bm === 'cheap' && top.costTier <= 2) reasons.push('Cost-effective')
+    if (bm === 'balanced' && top.costTier === 3) reasons.push('Mid-range cost with good quality')
+    if (bm === 'premium') reasons.push('Premium tier model')
+    if (reasons.length === 0) reasons.push(`Best overall fit (cost tier ${top.costTier})`)
+
+    return { modelName: top.model.modelName, reasons: reasons.slice(0, 3) }
   }
   return { cheapPick: scoreFor('cheap'), balancedPick: scoreFor('balanced'), premiumPick: scoreFor('premium') }
 }
@@ -770,6 +822,15 @@ export function registerAiIpc({
     }
   )
 
+  function shuffleArray<T>(arr: T[]): T[] {
+    const copy = [...arr]
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[copy[i], copy[j]] = [copy[j], copy[i]]
+    }
+    return copy
+  }
+
   ipcMain.handle('generator:adviseModel', async (_, input?: { prompt?: string; mode?: AdvisorMode; budgetMode?: BudgetMode }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
@@ -822,9 +883,9 @@ export function registerAiIpc({
       requestProvider = providerId
       requestModel = modelId
 
-      const compactModels = models
-        .filter((model) => model.mediaType === 'image')
-        .slice(0, 120)
+      const compactModels = shuffleArray(
+        models.filter((model) => model.mediaType === 'image')
+      ).slice(0, 60)
         .map((model) => ({
           modelName: model.modelName,
           description: model.description,
@@ -836,14 +897,18 @@ export function registerAiIpc({
         }))
 
       const advisorInstruction = [
-        'You are a NightCafe model advisor.',
+        'You are a NightCafe AI art model advisor.',
         LANGUAGE_INSTRUCTION,
-        'Based on the user prompt and provided model metadata, recommend the best single model.',
-        'Use the scores and description to justify fit for style, realism, typography, and cost sensitivity.',
-        `User budget preference: ${budgetMode} — factor this into your recommendation.`,
-        'Return strict JSON only with this shape:',
-        '{"recommendedModel":"string","reasoning":"string","alternatives":[{"modelName":"string","why":"string"}]}',
-        'Keep alternatives to max 3.',
+        'The user will give you a creative prompt and a list of available models with scores.',
+        'Your task: recommend the SINGLE BEST model for this specific prompt.',
+        'Scores are 1-10. artScore = artistic/illustrative quality, realismScore = photorealism, typographyScore = text rendering, costTier = 1 (cheap) to 5 (expensive).',
+        `User budget preference: ${budgetMode}. cheap = prefer costTier 1-2, balanced = costTier 1-3, premium = any costTier.`,
+        'IMPORTANT: Do NOT default to the highest-scoring model. Match the model to what the prompt actually needs.',
+        'If the prompt is photorealistic, prioritise realismScore. If artistic/stylized, prioritise artScore. If it contains text, prioritise typographyScore.',
+        'Avoid recommending the same popular model every time — consider the full list.',
+        'Return strict JSON only, no markdown, no explanation outside JSON:',
+        '{"recommendedModel":"<exact modelName from list>","reasoning":"<2-3 sentences why this model fits THIS prompt>","alternatives":[{"modelName":"<exact name>","why":"<one sentence>"}]}',
+        'Keep alternatives to max 3. Use exact modelName values from the provided list.',
       ].join(' ')
 
       const userContent = [

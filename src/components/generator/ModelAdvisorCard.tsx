@@ -1,6 +1,11 @@
-import { Minus, Wand2 } from 'lucide-react'
+import { Wand2 } from 'lucide-react'
 
 type BudgetMode = 'cheap' | 'balanced' | 'premium'
+
+type BudgetPick = {
+  modelName: string
+  reasons: string[]
+}
 
 type ModelAdvisorCardProps = {
   generatedPrompt: string
@@ -25,6 +30,9 @@ type ModelAdvisorCardProps = {
   improving: boolean
   generatingNegative: boolean
   improvingNegative: boolean
+  advisorCheapPick: BudgetPick
+  advisorBalancedPick: BudgetPick
+  advisorPremiumPick: BudgetPick
 }
 
 function buildThinkingLines(reason: string): string[] {
@@ -60,6 +68,36 @@ function extractSuggestedModelFromReason(reason: string): string {
   return ''
 }
 
+function BudgetPickCard({ pick, label, accentClass }: { pick: BudgetPick; label: string; accentClass: string }) {
+  if (!pick.modelName) {
+    return (
+      <div className="rounded-lg border border-slate-700/40 bg-slate-800/30 p-3">
+        <p className="text-xs font-medium text-slate-400">{label}</p>
+        <p className="mt-1 text-sm text-slate-500">No recommendation yet</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`rounded-lg border ${accentClass} bg-slate-800/30 p-3`}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-slate-400">{label}</p>
+        <span className="text-sm font-semibold text-white">{pick.modelName}</span>
+      </div>
+      {pick.reasons.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {pick.reasons.map((reason, index) => (
+            <li key={`${index}-${reason}`} className="flex items-start gap-2 text-xs text-slate-400">
+              <span className="text-slate-500 mt-0.5">•</span>
+              <span>{reason}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export default function ModelAdvisorCard({
   generatedPrompt,
   recommendedModel,
@@ -76,15 +114,20 @@ export default function ModelAdvisorCard({
   improving,
   generatingNegative,
   improvingNegative,
+  advisorCheapPick,
+  advisorBalancedPick,
+  advisorPremiumPick,
 }: ModelAdvisorCardProps) {
   const thinkingLines = buildThinkingLines(recommendedModelReason)
   const parsedSuggestedModel = extractSuggestedModelFromReason(recommendedModelReason)
   const displaySuggestedModel = recommendedModel || parsedSuggestedModel
 
+  const currentPick = budgetMode === 'cheap' ? advisorCheapPick : budgetMode === 'balanced' ? advisorBalancedPick : advisorPremiumPick
+
   return (
     <div className="mt-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-glow-amber">Suggested Model</p>
+        <p className="text-sm font-semibold text-glow-amber">AI Model Advisor</p>
         <button
           type="button"
           onClick={handleAdviseModel}
@@ -109,32 +152,47 @@ export default function ModelAdvisorCard({
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="text-sm text-slate-500">Suggested model</span>
-        <span className="text-2xl font-semibold text-white flex items-center gap-2">{displaySuggestedModel || <Minus className="w-6 h-6 text-slate-500" />}</span>
+      <div className="mt-4 grid grid-cols-3 gap-3">
+        <BudgetPickCard
+          pick={advisorCheapPick}
+          label="Cheap"
+          accentClass="border-emerald-500/30"
+        />
+        <BudgetPickCard
+          pick={advisorBalancedPick}
+          label="Balanced"
+          accentClass="border-amber-500/30"
+        />
+        <BudgetPickCard
+          pick={advisorPremiumPick}
+          label="Premium"
+          accentClass="border-purple-500/30"
+        />
       </div>
-      {!displaySuggestedModel && (
-        <p className="mt-1 text-sm text-slate-400">No model advice yet. Generate a prompt and request AI advice.</p>
-      )}
 
-      {thinkingLines.length > 0 && (
+      {currentPick.modelName && (
         <div className="mt-3 rounded-lg border border-slate-700/60 bg-slate-900/60 px-3 py-2">
-          <p className="text-xs font-medium text-slate-300">Reason(s)</p>
+          <p className="text-xs font-medium text-slate-300">
+            Why {currentPick.modelName} for {budgetMode}?
+          </p>
           <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-5 text-slate-400">
-            {thinkingLines.map((line, index) => (
-              <li key={`${index}-${line}`}>{line}</li>
+            {currentPick.reasons.slice(0, 3).map((reason, index) => (
+              <li key={`${index}-${reason}`}>{reason}</li>
             ))}
           </ul>
         </div>
       )}
 
-      {/* Model mode indicator */}
+      {!currentPick.modelName && (
+        <p className="mt-3 text-sm text-slate-400">No model advice yet. Generate a prompt and request AI advice.</p>
+      )}
+
       {recommendedModelMode && (
         <div className="mt-3 flex items-center gap-2">
           <span className="text-xs text-slate-500">Advies via:</span>
           <span className={`text-xs font-medium px-2 py-1 rounded ${
-            recommendedModelMode === 'ai' 
-              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' 
+            recommendedModelMode === 'ai'
+              ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
               : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
           }`}>
             {recommendedModelMode === 'ai' ? 'AI' : 'Rule'}
@@ -142,13 +200,12 @@ export default function ModelAdvisorCard({
         </div>
       )}
 
-      {/* Negative prompt support badge */}
       {supportsNegativePrompt !== null && (
         <div className="mt-3 flex items-center gap-2">
           <span className="text-xs text-slate-500">Negative prompt:</span>
           <span className={`text-xs font-medium px-2 py-1 rounded ${
-            supportsNegativePrompt 
-              ? 'bg-green-500/20 text-green-300 border border-green-500/30' 
+            supportsNegativePrompt
+              ? 'bg-green-500/20 text-green-300 border border-green-500/30'
               : 'bg-red-500/20 text-red-300 border border-red-500/30'
           }`}>
             {supportsNegativePrompt ? 'Supported' : 'Not supported'}
@@ -156,7 +213,6 @@ export default function ModelAdvisorCard({
         </div>
       )}
 
-      {/* Alternative models */}
       {(advisorBestValue || advisorFastest) && (
         <div className="mt-3 space-y-2">
           {advisorBestValue && (

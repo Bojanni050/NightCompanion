@@ -26,6 +26,7 @@ type NegativePromptViewTab = 'final' | 'diff'
 type CreativityLevel = 'focused' | 'balanced' | 'wild'
 type BudgetMode = 'cheap' | 'balanced' | 'premium'
 
+type BudgetPick = { modelName: string; reasons: string[] }
 type GeneratorPersistedState = {
   tab?: 'generator' | 'builder'
   selectedPreset?: string
@@ -50,9 +51,9 @@ type GeneratorPersistedState = {
   recommendedModel?: string
   recommendedModelReason?: string
   recommendedModelMode?: 'rule' | 'ai' | null
-  advisorCheapPick?: string
-  advisorBalancedPick?: string
-  advisorPremiumPick?: string
+  advisorCheapPick?: BudgetPick
+  advisorBalancedPick?: BudgetPick
+  advisorPremiumPick?: BudgetPick
   supportsNegativePrompt?: boolean | null
   budgetMode?: BudgetMode
   autoTitleEnabled?: boolean
@@ -96,9 +97,9 @@ export default function Generator() {
   const [recommendedModel, setRecommendedModel] = useState('')
   const [recommendedModelReason, setRecommendedModelReason] = useState('')
   const [recommendedModelMode, setRecommendedModelMode] = useState<'rule' | 'ai' | null>(null)
-  const [advisorCheapPick, setAdvisorCheapPick] = useState('')
-  const [advisorBalancedPick, setAdvisorBalancedPick] = useState('')
-  const [advisorPremiumPick, setAdvisorPremiumPick] = useState('')
+  const [advisorCheapPick, setAdvisorCheapPick] = useState<BudgetPick>({ modelName: '', reasons: [] })
+  const [advisorBalancedPick, setAdvisorBalancedPick] = useState<BudgetPick>({ modelName: '', reasons: [] })
+  const [advisorPremiumPick, setAdvisorPremiumPick] = useState<BudgetPick>({ modelName: '', reasons: [] })
   const [supportsNegativePrompt, setSupportsNegativePrompt] = useState<boolean | null>(null)
   const [greylistEnabled, setGreylistEnabled] = useState(true)
   const [greylistEntries, setGreylistEntries] = useState<Array<{ word: string; weight: 1 | 2 | 3 | 4 | 5 }>>(
@@ -366,9 +367,9 @@ export default function Generator() {
       setRecommendedModel(result.data.recommendation.modelName)
       setRecommendedModelReason(result.data.recommendation.explanation || '')
       setRecommendedModelMode(mode)
-      setAdvisorCheapPick(result.data.cheapPick || '')
-      setAdvisorBalancedPick(result.data.balancedPick || '')
-      setAdvisorPremiumPick(result.data.premiumPick || '')
+      setAdvisorCheapPick(result.data.cheapPick || { modelName: '', reasons: [] })
+      setAdvisorBalancedPick(result.data.balancedPick || { modelName: '', reasons: [] })
+      setAdvisorPremiumPick(result.data.premiumPick || { modelName: '', reasons: [] })
       await fetchModelSupport(result.data.recommendation.modelName)
     } catch (error) {
       console.groupCollapsed('[Get AI Advice] error')
