@@ -115,9 +115,11 @@ type PromptImageJsonItem = {
   createdAt?: string
 }
 
-type PromptsExportSummary = {
+type LibraryExportSummary = {
   exportDirPath: string
-  promptsFilePath: string
+  exportFilePath: string
+  includedPrompts: boolean
+  includedImages: boolean
   promptsCount: number
   promptVersionsCount: number
   imagesCopied: number
@@ -995,8 +997,15 @@ export function registerSettingsIpc({
     }
   })
 
-  ipcMain.handle('settings:exportPromptsAndImages', async () => {
+  ipcMain.handle('settings:exportPromptsAndImages', async (_, input?: { includePrompts?: boolean; includeImages?: boolean }) => {
     try {
+      const includePrompts = input?.includePrompts !== false
+      const includeImages = input?.includeImages !== false
+
+      if (!includePrompts && !includeImages) {
+        throw new Error('Nothing to export. Select prompts and/or images.')
+      }
+
       const defaultPath = await getNightCompanionFolderPath()
       const selection = await dialog.showOpenDialog({
         title: 'Select export folder for prompts and images',
@@ -1005,15 +1014,18 @@ export function registerSettingsIpc({
       })
 
       if (selection.canceled || selection.filePaths.length === 0) {
-        return { data: null as PromptsExportSummary | null }
+        return { data: null as LibraryExportSummary | null }
       }
 
       const selectedDir = selection.filePaths[0]
       const exportDirPath = path.join(selectedDir, `nightcompanion-export-${buildExportTimestamp()}`)
       const imagesDirPath = path.join(exportDirPath, 'images')
-      const promptsFilePath = path.join(exportDirPath, 'prompts-export.json')
+      const exportFilePath = path.join(exportDirPath, includePrompts ? 'prompts-export.json' : 'images-export.json')
 
-      await mkdir(imagesDirPath, { recursive: true })
+      await mkdir(exportDirPath, { recursive: true })
+      if (includeImages) {
+        await mkdir(imagesDirPath, { recursive: true })
+      }
 
       const promptRows = await db.select().from(prompts).orderBy(desc(prompts.createdAt))
       const versionRows = await db.select().from(promptVersions).orderBy(desc(promptVersions.createdAt))
@@ -1032,43 +1044,56 @@ export function registerSettingsIpc({
         for (const url of normalizePromptImageUrls(row.imageUrl, row.imagesJson)) allUrls.add(url)
       }
 
-      const sanitizeFileNamePart = (value: string): string => value.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80)
-      let imageCounter = 0
-      for (const sourceUrl of allUrls) {
-        const sourcePath = resolveExportableFilePath(sourceUrl)
-        if (!sourcePath) {
-          imagesSkipped += 1
-          continue
-        }
-
-        try {
-          const stats = await stat(sourcePath)
-          if (!stats.isFile()) {
-            imagesMissing += 1
+      if (includeImages) {
+        const sanitizeFileNamePart = (value: string): string => value.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80)
+        let imageCounter = 0
+        for (const sourceUrl of allUrls) {
+          const sourcePath = resolveExportableFilePath(sourceUrl)
+          if (!sourcePath) {
+            imagesSkipped += 1
             continue
           }
 
-          const extension = path.extname(sourcePath) || '.bin'
-          const baseName = sanitizeFileNamePart(path.basename(sourcePath, extension)) || 'image'
-          let fileName = `${String(imageCounter + 1).padStart(4, '0')}-${baseName}${extension}`
-          while (usedFileNames.has(fileName)) {
-            imageCounter += 1
-            fileName = `${String(imageCounter + 1).padStart(4, '0')}-${baseName}${extension}`
-          }
-          usedFileNames.add(fileName)
-          imageCounter += 1
+          try {
+            const stats = await stat(sourcePath)
+            if (!stats.isFile()) {
+              imagesMissing += 1
+              continue
+            }
 
-          const destinationPath = path.join(imagesDirPath, fileName)
-          await copyFile(sourcePath, destinationPath)
-          imageUrlToRelativePath.set(sourceUrl, `images/${fileName}`)
-          imagesCopied += 1
-        } catch {
-          imagesMissing += 1
+            const extension = path.extname(sourcePath) || '.bin'
+            const baseName = sanitizeFileNamePart(path.basename(sourcePath, extension)) || 'image'
+            let fileName = `${String(imageCounter + 1).padStart(4, '0')}-${baseName}${extension}`
+            while (usedFileNames.has(fileName)) {
+              imageCounter += 1
+              fileName = `${String(imageCounter + 1).padStart(4, '0')}-${baseName}${extension}`
+            }
+            usedFileNames.add(fileName)
+            imageCounter += 1
+
+            const destinationPath = path.join(imagesDirPath, fileName)
+            await copyFile(sourcePath, destinationPath)
+            imageUrlToRelativePath.set(sourceUrl, `images/${fileName}`)
+            imagesCopied += 1
+          } catch {
+            imagesMissing += 1
+          }
         }
+      } else {
+        imagesSkipped = allUrls.size
       }
 
-      const exportPayload = {
+      const exportImages = Array.from(allUrls)
+        .map((url) => ({
+          sourceUrl: url,
+          exportedPath: imageUrlToRelativePath.get(url) ?? null,
+        }))
+        .sort((a, b) => a.sourceUrl.localeCompare(b.sourceUrl))
+
+      const exportPayload = includePrompts ? {
         exportedAt: new Date().toISOString(),
+        includedPrompts: includePrompts,
+        includedImages: includeImages,
         summary: {
           promptsCount: promptRows.length,
           promptVersionsCount: versionRows.length,
@@ -1092,20 +1117,34 @@ export function registerSettingsIpc({
               exportedPath: imageUrlToRelativePath.get(url) ?? null,
             })),
         })),
-      }
-
-      await writeFile(promptsFilePath, JSON.stringify(exportPayload, null, 2), 'utf-8')
-
-      return {
-        data: {
-          exportDirPath,
-          promptsFilePath,
+      } : {
+        exportedAt: new Date().toISOString(),
+        includedPrompts: includePrompts,
+        includedImages: includeImages,
+        summary: {
           promptsCount: promptRows.length,
           promptVersionsCount: versionRows.length,
           imagesCopied,
           imagesMissing,
           imagesSkipped,
-        } as PromptsExportSummary,
+        },
+        images: exportImages,
+      }
+
+      await writeFile(exportFilePath, JSON.stringify(exportPayload, null, 2), 'utf-8')
+
+      return {
+        data: {
+          exportDirPath,
+          exportFilePath,
+          includedPrompts: includePrompts,
+          includedImages: includeImages,
+          promptsCount: promptRows.length,
+          promptVersionsCount: versionRows.length,
+          imagesCopied,
+          imagesMissing,
+          imagesSkipped,
+        } as LibraryExportSummary,
       }
     } catch (error) {
       return { error: String(error) }

@@ -94,9 +94,11 @@ export type OpenRouterModel = {
   imagePrice: string | null
 }
 
-export type PromptsExportSummary = {
+export type LibraryExportSummary = {
   exportDirPath: string
-  promptsFilePath: string
+  exportFilePath: string
+  includedPrompts: boolean
+  includedImages: boolean
   promptsCount: number
   promptVersionsCount: number
   imagesCopied: number
@@ -362,8 +364,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       invokeWithFallback('settings:resetNightCompanionFolderPath'),
     selectNightCompanionFolderPath: (): Promise<IpcResult<string | null>> =>
       invokeWithFallback('settings:selectNightCompanionFolderPath'),
-    exportPromptsAndImages: (): Promise<IpcResult<PromptsExportSummary | null>> =>
-      invokeWithFallback('settings:exportPromptsAndImages'),
+    exportPromptsAndImages: (input?: { includePrompts?: boolean; includeImages?: boolean }): Promise<IpcResult<LibraryExportSummary | null>> =>
+      invokeWithFallback('settings:exportPromptsAndImages', input),
     getLocalEndpoints: (): Promise<IpcResult<LocalEndpointStore[]>> =>
       invokeWithFallback('settings:getLocalEndpoints'),
     saveLocalEndpoints: (input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>> =>

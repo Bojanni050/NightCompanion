@@ -72,9 +72,11 @@ type OpenRouterModel = {
   requestPrice: string | null
   imagePrice: string | null
 }
-type PromptsExportSummary = {
+type LibraryExportSummary = {
   exportDirPath: string
-  promptsFilePath: string
+  exportFilePath: string
+  includedPrompts: boolean
+  includedImages: boolean
   promptsCount: number
   promptVersionsCount: number
   imagesCopied: number
@@ -257,7 +259,7 @@ declare global {
         saveNightCompanionFolderPath(input: string): Promise<IpcResult<string>>
         resetNightCompanionFolderPath(): Promise<IpcResult<string>>
         selectNightCompanionFolderPath(): Promise<IpcResult<string | null>>
-        exportPromptsAndImages(): Promise<IpcResult<PromptsExportSummary | null>>
+        exportPromptsAndImages(input?: { includePrompts?: boolean; includeImages?: boolean }): Promise<IpcResult<LibraryExportSummary | null>>
         getLocalEndpoints(): Promise<IpcResult<LocalEndpointStore[]>>
         saveLocalEndpoints(input: LocalEndpointStore[]): Promise<IpcResult<LocalEndpointStore[]>>
         saveOpenRouter(input: Partial<OpenRouterSettings>): Promise<IpcResult<OpenRouterSettings>>

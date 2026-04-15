@@ -312,15 +312,18 @@ export default function Settings() {
     setSavingNightCompanionFolderPath(false)
   }
 
-  async function handleExportPromptsAndImages() {
+  async function handleExportPromptsAndImages(input?: { includePrompts?: boolean; includeImages?: boolean }) {
     setExportingLibrary(true)
     setExportLibraryMessage(null)
 
-    const result = await window.electronAPI.settings.exportPromptsAndImages()
+    const result = await window.electronAPI.settings.exportPromptsAndImages(input)
 
     if (result.error) {
-      setExportLibraryMessage(result.error)
-      notifications.show({ message: result.error, color: 'red' })
+      const message = result.error.includes('No handler registered for')
+        ? 'Export is not available yet in this running app instance. Please restart NightCompanion and try again.'
+        : result.error
+      setExportLibraryMessage(message)
+      notifications.show({ message, color: 'red' })
       setExportingLibrary(false)
       return
     }
@@ -331,7 +334,7 @@ export default function Settings() {
       return
     }
 
-    const message = `Export klaar: ${result.data.promptsCount} prompts, ${result.data.promptVersionsCount} versies, ${result.data.imagesCopied} afbeeldingen gekopieerd naar ${result.data.exportDirPath}`
+    const message = `Export klaar: ${result.data.promptsCount} prompts, ${result.data.promptVersionsCount} versies, ${result.data.imagesCopied} afbeeldingen gekopieerd. Bestand: ${result.data.exportFilePath}`
     setExportLibraryMessage(message)
     notifications.show({ message: 'Prompts en afbeeldingen geëxporteerd.', color: 'green' })
     setExportingLibrary(false)
@@ -643,17 +646,41 @@ export default function Settings() {
               <p className="text-sm font-semibold text-white">Export library</p>
               <p className="text-xs text-slate-500">Exporteer prompts (incl. versies) en lokale afbeeldingen naar een map.</p>
             </div>
-            <button
-              type="button"
-              disabled={loading || exportingLibrary}
-              onClick={() => {
-                if (!loading && !exportingLibrary) void handleExportPromptsAndImages()
-              }}
-              className="inline-flex gap-2 items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Download className={`w-3.5 h-3.5 ${exportingLibrary ? 'animate-pulse' : ''}`} />
-              {exportingLibrary ? 'Exporting...' : 'Export prompts + images'}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              <button
+                type="button"
+                disabled={loading || exportingLibrary}
+                onClick={() => {
+                  if (!loading && !exportingLibrary) void handleExportPromptsAndImages({ includePrompts: true, includeImages: true })
+                }}
+                className="inline-flex gap-2 items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Download className={`w-3.5 h-3.5 ${exportingLibrary ? 'animate-pulse' : ''}`} />
+                {exportingLibrary ? 'Exporting...' : 'Export prompts + images'}
+              </button>
+              <button
+                type="button"
+                disabled={loading || exportingLibrary}
+                onClick={() => {
+                  if (!loading && !exportingLibrary) void handleExportPromptsAndImages({ includePrompts: true, includeImages: false })
+                }}
+                className="inline-flex gap-2 items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Download className={`w-3.5 h-3.5 ${exportingLibrary ? 'animate-pulse' : ''}`} />
+                Export prompts only
+              </button>
+              <button
+                type="button"
+                disabled={loading || exportingLibrary}
+                onClick={() => {
+                  if (!loading && !exportingLibrary) void handleExportPromptsAndImages({ includePrompts: false, includeImages: true })
+                }}
+                className="inline-flex gap-2 items-center px-3 py-2 text-xs font-semibold rounded-xl border border-slate-700 bg-slate-800 text-slate-100 hover:border-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Download className={`w-3.5 h-3.5 ${exportingLibrary ? 'animate-pulse' : ''}`} />
+                Export images only
+              </button>
+            </div>
             {exportLibraryMessage && (
               <p className="text-xs text-slate-400 break-words">{exportLibraryMessage}</p>
             )}
