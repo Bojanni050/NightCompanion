@@ -14,13 +14,17 @@ type QuickstartPanelProps = {
   setQuickStartIdea: (value: string) => void
   quickStartCreativity: CreativityLevel
   setQuickStartCreativity: (value: CreativityLevel) => void
-  quickStartCharacterId: string | null
-  setQuickStartCharacterId: (value: string | null) => void
+  quickstartCharacterId: string | null
+  setQuickstartCharacterId: (value: string | null) => void
+  magicRandomCharacterId: string | null
+  setMagicRandomCharacterId: (value: string | null) => void
   quickStartCharacterList: Array<{ id: string; name: string; description: string }>
   magicRandomCreativity: CreativityLevel
   setMagicRandomCreativity: (value: CreativityLevel) => void
-  selectedPreset: string
-  setSelectedPreset: (value: string) => void
+  quickstartPreset: string
+  setQuickstartPreset: (value: string) => void
+  magicRandomPreset: string
+  setMagicRandomPreset: (value: string) => void
   presetOptions: PresetOption[]
   maxWords: number
   setMaxWords: (value: number) => void
@@ -47,13 +51,17 @@ export default function QuickstartPanel({
   setQuickStartIdea,
   quickStartCreativity,
   setQuickStartCreativity,
-  quickStartCharacterId,
-  setQuickStartCharacterId,
+  quickstartCharacterId,
+  setQuickstartCharacterId,
+  magicRandomCharacterId,
+  setMagicRandomCharacterId,
   quickStartCharacterList,
   magicRandomCreativity,
   setMagicRandomCreativity,
-  selectedPreset,
-  setSelectedPreset,
+  quickstartPreset,
+  setQuickstartPreset,
+  magicRandomPreset,
+  setMagicRandomPreset,
   presetOptions,
   maxWords,
   setMaxWords,
@@ -65,7 +73,8 @@ export default function QuickstartPanel({
   generationAiModel,
   hasGenerationAiConfigured,
 }: QuickstartPanelProps) {
-  const [showCharacterPicker, setShowCharacterPicker] = useState(false)
+  const [showQuickstartCharacterPicker, setShowQuickstartCharacterPicker] = useState(false)
+  const [showMagicRandomCharacterPicker, setShowMagicRandomCharacterPicker] = useState(false)
 
   return (
     <div className="grid grid-cols-1 items-stretch gap-5 lg:grid-cols-2">
@@ -86,21 +95,21 @@ export default function QuickstartPanel({
           <div className="relative flex-shrink-0">
             <button
               type="button"
-              onClick={() => setShowCharacterPicker((v) => !v)}
-              className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-teal-500/60 text-teal-300' : 'border-slate-700/50'}`}
+              onClick={() => setShowQuickstartCharacterPicker((v) => !v)}
+              className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickstartCharacterId ? 'border-teal-500/60 text-teal-300' : 'border-slate-700/50'}`}
             >
               <User className="w-3.5 h-3.5" />
-              {quickStartCharacterId
-                ? (quickStartCharacterList.find((c) => c.id === quickStartCharacterId)?.name ?? 'Character')
+              {quickstartCharacterId
+                ? (quickStartCharacterList.find((c) => c.id === quickstartCharacterId)?.name ?? 'Character')
                 : 'Add Character'}
             </button>
-            {showCharacterPicker && (
+            {showQuickstartCharacterPicker && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
+                <div className="fixed inset-0 z-10" onClick={() => setShowQuickstartCharacterPicker(false)} />
                 <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-slate-700/50 bg-slate-900 p-1 shadow-xl">
                   <button
                     type="button"
-                    onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
+                    onClick={() => { setQuickstartCharacterId(null); setShowQuickstartCharacterPicker(false) }}
                     className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 rounded-lg"
                   >
                     No character
@@ -109,8 +118,8 @@ export default function QuickstartPanel({
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-teal-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}
+                      onClick={() => { setQuickstartCharacterId(c.id); setShowQuickstartCharacterPicker(false) }}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickstartCharacterId === c.id ? 'bg-teal-600 text-white' : 'text-slate-300 hover:bg-slate-800'}`}
                     >
                       {c.name}
                     </button>
@@ -162,8 +171,8 @@ export default function QuickstartPanel({
               <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
               <select
                 className="input mt-2"
-                value={selectedPreset}
-                onChange={(e) => setSelectedPreset(e.target.value)}
+                value={quickstartPreset}
+                onChange={(e) => setQuickstartPreset(e.target.value)}
                 aria-label="NightCafe preset"
               >
                 <option value="">None</option>
@@ -210,7 +219,7 @@ export default function QuickstartPanel({
           </button>
         </div>
 
-        <div className="absolute left-5 bottom-5">
+        <div className="absolute left-5 bottom-5 pointer-events-none">
           <div className="flex items-center gap-2">
             <span
               className={`h-2.5 w-2.5 rounded-full ${hasGenerationAiConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}
@@ -244,21 +253,21 @@ export default function QuickstartPanel({
           <div className="relative flex-shrink-0">
             <button
               type="button"
-              onClick={() => setShowCharacterPicker((v) => !v)}
-              className={`btn-ghost border text-xs flex items-center gap-1.5 ${quickStartCharacterId ? 'border-glow-amber/60 text-glow-amber' : 'border-slate-700/50'}`}
+              onClick={() => setShowMagicRandomCharacterPicker((v) => !v)}
+              className={`btn-ghost border text-xs flex items-center gap-1.5 ${magicRandomCharacterId ? 'border-glow-amber/60 text-glow-amber' : 'border-slate-700/50'}`}
             >
               <User className="w-3.5 h-3.5" />
-              {quickStartCharacterId
-                ? (quickStartCharacterList.find((c) => c.id === quickStartCharacterId)?.name ?? 'Character')
+              {magicRandomCharacterId
+                ? (quickStartCharacterList.find((c) => c.id === magicRandomCharacterId)?.name ?? 'Character')
                 : 'Add Character'}
             </button>
-            {showCharacterPicker && (
+            {showMagicRandomCharacterPicker && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setShowCharacterPicker(false)} />
+                <div className="fixed inset-0 z-10" onClick={() => setShowMagicRandomCharacterPicker(false)} />
                 <div className="absolute right-0 top-full mt-1 z-20 min-w-[180px] rounded-xl border border-slate-700/50 bg-slate-900 p-1 shadow-xl">
                   <button
                     type="button"
-                    onClick={() => { setQuickStartCharacterId(null); setShowCharacterPicker(false) }}
+                    onClick={() => { setMagicRandomCharacterId(null); setShowMagicRandomCharacterPicker(false) }}
                     className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800 rounded-lg"
                   >
                     No character
@@ -267,8 +276,8 @@ export default function QuickstartPanel({
                     <button
                       key={c.id}
                       type="button"
-                      onClick={() => { setQuickStartCharacterId(c.id); setShowCharacterPicker(false) }}
-                      className={`w-full text-left px-3 py-2 text-xs rounded-lg ${quickStartCharacterId === c.id ? 'bg-glow-amber text-white' : 'text-slate-300 hover:bg-slate-800'}`}
+                      onClick={() => { setMagicRandomCharacterId(c.id); setShowMagicRandomCharacterPicker(false) }}
+                      className={`w-full text-left px-3 py-2 text-xs rounded-lg ${magicRandomCharacterId === c.id ? 'bg-glow-amber text-white' : 'text-slate-300 hover:bg-slate-800'}`}
                     >
                       {c.name}
                     </button>
@@ -314,8 +323,8 @@ export default function QuickstartPanel({
               <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
               <select
                 className="input mt-2"
-                value={selectedPreset}
-                onChange={(e) => setSelectedPreset(e.target.value)}
+                value={magicRandomPreset}
+                onChange={(e) => setMagicRandomPreset(e.target.value)}
                 aria-label="NightCafe preset"
               >
                 <option value="">None</option>
@@ -361,7 +370,7 @@ export default function QuickstartPanel({
           </button>
         </div>
 
-        <div className="absolute left-5 bottom-5">
+        <div className="absolute left-5 bottom-5 pointer-events-none">
           <div className="flex items-center gap-2">
             <span
               className={`h-2.5 w-2.5 rounded-full ${hasGenerationAiConfigured ? 'bg-emerald-500' : 'bg-red-500'}`}

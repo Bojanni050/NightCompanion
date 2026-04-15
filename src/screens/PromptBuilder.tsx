@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import PromptPreview from '../components/PromptPreview'
 import PromptDiffView from '../components/PromptDiffView'
 import { notifications } from '@mantine/notifications'
@@ -33,6 +33,7 @@ type PromptBuilderProps = {
   styleProfiles?: Array<{ id: number; name: string; basePromptSnippet?: string; commonNegativePrompts?: string }>
   selectedStyleProfileId?: number | ''
   setSelectedStyleProfileId?: (value: number | '') => void
+  clearNonce?: number
 }
 
 type PromptBuilderPersistedState = {
@@ -55,7 +56,8 @@ export default function PromptBuilder({
   stylePreset = '',
   styleProfiles = [],
   selectedStyleProfileId = '',
-  setSelectedStyleProfileId
+  setSelectedStyleProfileId,
+  clearNonce,
 }: PromptBuilderProps) {
   const [parts, setParts] = useState<Part[]>(DEFAULT_PARTS)
   const [separator, setSeparator] = useState<', ' | '. ' | ' | '>( ', ')
@@ -69,6 +71,7 @@ export default function PromptBuilder({
   const generatedPromptImprovement = usePromptImprovement()
   const [uiStateLoaded, setUiStateLoaded] = useState(false)
   const uiStateSaveTimeoutRef = useRef<number | null>(null)
+  const lastClearNonceRef = useRef<number | null>(null)
 
   useEffect(() => {
     let ignore = false
@@ -421,12 +424,28 @@ export default function PromptBuilder({
     }
   }
 
-  const handleClear = () => {
+  const handleClear = useCallback(() => {
     setParts(DEFAULT_PARTS)
     setSavedTitle('')
+    setSaveMsg(null)
     setGeneratedPrompt('')
     generatedPromptImprovement.clearDiff()
-  }
+  }, [generatedPromptImprovement])
+
+  useEffect(() => {
+    if (typeof clearNonce !== 'number') return
+
+    const last = lastClearNonceRef.current
+    if (last === null) {
+      lastClearNonceRef.current = clearNonce
+      return
+    }
+
+    if (clearNonce === last) return
+
+    lastClearNonceRef.current = clearNonce
+    handleClear()
+  }, [clearNonce, handleClear])
 
   return (
     <div className={`${embedded ? 'flex min-h-[560px] flex-col lg:flex-row' : 'no-drag-region flex h-full flex-col lg:flex-row'}`}>

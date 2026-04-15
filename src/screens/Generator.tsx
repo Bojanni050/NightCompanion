@@ -30,6 +30,9 @@ type BudgetPick = { modelName: string; reasons: string[] }
 type GeneratorPersistedState = {
   tab?: 'generator' | 'builder'
   selectedPreset?: string
+  quickstartPreset?: string
+  magicRandomPreset?: string
+  builderPreset?: string
   maxWords?: number
   generatedPrompt?: string
   negativePrompt?: string
@@ -48,6 +51,8 @@ type GeneratorPersistedState = {
   quickStartCreativity?: CreativityLevel
   magicRandomCreativity?: CreativityLevel
   quickStartCharacterId?: string | null
+  quickstartCharacterId?: string | null
+  magicRandomCharacterId?: string | null
   recommendedModel?: string
   recommendedModelReason?: string
   recommendedModelMode?: 'rule' | 'ai' | null
@@ -77,7 +82,9 @@ function splitWords(value: string): string[] {
 export default function Generator() {
   const [tab, setTab] = useState<'generator' | 'builder'>('generator')
   const [presetOptions, setPresetOptions] = useState<PresetOption[]>([])
-  const [selectedPreset, setSelectedPreset] = useState('')
+  const [quickstartPreset, setQuickstartPreset] = useState('')
+  const [magicRandomPreset, setMagicRandomPreset] = useState('')
+  const [builderPreset, setBuilderPreset] = useState('')
   const [styleProfiles, setStyleProfiles] = useState<Array<{ id: number; name: string; basePromptSnippet?: string; commonNegativePrompts?: string }>>([])
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<number | ''>('')
   const [maxWords, setMaxWords] = useState(DEFAULT_MAX_WORDS)
@@ -118,7 +125,8 @@ export default function Generator() {
   const [quickStartIdea, setQuickStartIdea] = useState('')
   const [quickStartCreativity, setQuickStartCreativity] = useState<CreativityLevel>('balanced')
   const [magicRandomCreativity, setMagicRandomCreativity] = useState<CreativityLevel>('balanced')
-  const [quickStartCharacterId, setQuickStartCharacterId] = useState<string | null>(null)
+  const [quickstartCharacterId, setQuickstartCharacterId] = useState<string | null>(null)
+  const [magicRandomCharacterId, setMagicRandomCharacterId] = useState<string | null>(null)
   const [quickStartCharacterList, setQuickStartCharacterList] = useState<Array<{ id: string; name: string; description: string }>>([]) 
   const [budgetMode, setBudgetMode] = useState<BudgetMode>('balanced')
   const [expandingIdea, setExpandingIdea] = useState(false)
@@ -128,10 +136,39 @@ export default function Generator() {
   const [openRouterApiKeyPresent, setOpenRouterApiKeyPresent] = useState(false)
   const [improvementAiModel, setImprovementAiModel] = useState<string | null>(null)
   const [hasImprovementAiConfigured, setHasImprovementAiConfigured] = useState(false)
+  const [promptBuilderClearNonce, setPromptBuilderClearNonce] = useState(0)
+  const [generatedPromptPreset, setGeneratedPromptPreset] = useState('')
 
   const handleSavedTitleChange = (value: string) => {
     lastAutoTitlePromptRef.current = null
     setSavedTitle(value)
+  }
+
+  const handleClearQuickstart = () => {
+    setStatus(null)
+    setQuickStartIdea('')
+    setQuickStartCreativity('balanced')
+    setQuickstartCharacterId(null)
+    setGeneratedPrompt('')
+    setGeneratedPromptPreset('')
+    setNegativePrompt('')
+    promptImprovement.clearDiff()
+    setNegativeImprovementDiff(null)
+    setNegativePromptViewTab('final')
+    setSavedTitle('')
+    setRecommendedModel('')
+    setRecommendedModelReason('')
+    setRecommendedModelMode(null)
+    setAdvisorCheapPick({ modelName: '', reasons: [] })
+    setAdvisorBalancedPick({ modelName: '', reasons: [] })
+    setAdvisorPremiumPick({ modelName: '', reasons: [] })
+    setSupportsNegativePrompt(null)
+    setBudgetMode('balanced')
+  }
+
+  const handleClearPromptBuilder = () => {
+    setSelectedStyleProfileId('')
+    setPromptBuilderClearNonce((value) => value + 1)
   }
 
   const maybeAutoGenerateTitle = async (nextPrompt: string, previousPrompt: string) => {
@@ -152,10 +189,20 @@ export default function Generator() {
     }
   }
 
-  const selectedPresetPrompt = presetOptions.find((preset) => preset.presetName === selectedPreset)?.presetPrompt?.trim() || ''
-  const selectedPresetContext = selectedPresetPrompt
-    ? `${selectedPreset}. Preset prompt guidance: ${selectedPresetPrompt}`
-    : selectedPreset
+  const getPresetPrompt = (presetName: string): string =>
+    presetOptions.find((preset) => preset.presetName === presetName)?.presetPrompt?.trim() || ''
+
+  const buildPresetContext = (presetName: string): { presetName: string; presetPrompt: string; presetContext: string } => {
+    const trimmedName = presetName.trim()
+    if (!trimmedName) return { presetName: '', presetPrompt: '', presetContext: '' }
+
+    const presetPrompt = getPresetPrompt(trimmedName)
+    const presetContext = presetPrompt
+      ? `${trimmedName}. Preset prompt guidance: ${presetPrompt}`
+      : trimmedName
+
+    return { presetName: trimmedName, presetPrompt, presetContext }
+  }
 
   useEffect(() => {
     let ignore = false
@@ -272,14 +319,15 @@ export default function Generator() {
     setExpandingIdea(true)
 
     try {
-      const characterForContext = quickStartCharacterId
-        ? quickStartCharacterList.find((c) => c.id === quickStartCharacterId)
+      const { presetContext, presetPrompt } = buildPresetContext(quickstartPreset)
+      const characterForContext = quickstartCharacterId
+        ? quickStartCharacterList.find((c) => c.id === quickstartCharacterId)
         : null
 
       const result = await window.electronAPI.generator.quickExpand({
         idea,
-        presetName: selectedPresetContext || undefined,
-        presetPrompt: selectedPresetPrompt || undefined,
+        presetName: presetContext || undefined,
+        presetPrompt: presetPrompt || undefined,
         creativity: quickStartCreativity,
         character: characterForContext
           ? { name: characterForContext.name, description: characterForContext.description }
@@ -303,6 +351,7 @@ export default function Generator() {
 
       const nextPrompt = result.data.prompt
       setGeneratedPrompt(nextPrompt)
+      setGeneratedPromptPreset(quickstartPreset)
       if (!autoTitleEnabled) {
         setSavedTitle(buildDefaultTitle(nextPrompt))
       }
@@ -554,12 +603,16 @@ export default function Generator() {
 
     const applyPersisted = (parsed: GeneratorPersistedState) => {
       setTab(parsed.tab === 'builder' ? 'builder' : 'generator')
-      setSelectedPreset(parsed.selectedPreset ?? '')
+      const legacyPreset = parsed.selectedPreset ?? ''
+      setQuickstartPreset(parsed.quickstartPreset ?? legacyPreset)
+      setMagicRandomPreset(parsed.magicRandomPreset ?? legacyPreset)
+      setBuilderPreset(parsed.builderPreset ?? legacyPreset)
       const persistedMaxWords = Number.isFinite(parsed.maxWords)
         ? Math.max(1, Math.min(MAX_ALLOWED_WORDS, Math.floor(parsed.maxWords as number)))
         : DEFAULT_MAX_WORDS
       setMaxWords(persistedMaxWords)
       setGeneratedPrompt(parsed.generatedPrompt ?? '')
+      setGeneratedPromptPreset('')
       setNegativePrompt(parsed.negativePrompt ?? '')
       setNegativeImprovementDiff(parsed.negativeImprovementDiff ?? null)
       setSavedTitle(parsed.savedTitle ?? '')
@@ -567,14 +620,16 @@ export default function Generator() {
       setRecommendedModel(parsed.recommendedModel ?? '')
       setRecommendedModelReason(parsed.recommendedModelReason ?? '')
       setRecommendedModelMode(parsed.recommendedModelMode ?? null)
-      setAdvisorCheapPick(parsed.advisorCheapPick ?? '')
-      setAdvisorBalancedPick(parsed.advisorBalancedPick ?? '')
-      setAdvisorPremiumPick(parsed.advisorPremiumPick ?? '')
+      setAdvisorCheapPick(parsed.advisorCheapPick ?? { modelName: '', reasons: [] })
+      setAdvisorBalancedPick(parsed.advisorBalancedPick ?? { modelName: '', reasons: [] })
+      setAdvisorPremiumPick(parsed.advisorPremiumPick ?? { modelName: '', reasons: [] })
       setSupportsNegativePrompt(typeof parsed.supportsNegativePrompt === 'boolean' ? parsed.supportsNegativePrompt : null)
       setQuickStartIdea(parsed.quickStartIdea ?? '')
       setQuickStartCreativity(parsed.quickStartCreativity ?? 'balanced')
       setMagicRandomCreativity(parsed.magicRandomCreativity ?? 'balanced')
-      setQuickStartCharacterId(parsed.quickStartCharacterId ?? null)
+      const legacyCharacterId = parsed.quickStartCharacterId ?? null
+      setQuickstartCharacterId(parsed.quickstartCharacterId ?? legacyCharacterId)
+      setMagicRandomCharacterId(parsed.magicRandomCharacterId ?? legacyCharacterId)
       setBudgetMode(parsed.budgetMode === 'cheap' ? 'cheap' : parsed.budgetMode === 'premium' ? 'premium' : 'balanced')
       setAutoTitleEnabled(parsed.autoTitleEnabled !== false)
 
@@ -624,7 +679,10 @@ export default function Generator() {
 
     const buildNextState = (): GeneratorPersistedState => ({
       tab,
-      selectedPreset,
+      selectedPreset: magicRandomPreset,
+      quickstartPreset,
+      magicRandomPreset,
+      builderPreset,
       maxWords,
       generatedPrompt,
       negativePrompt,
@@ -643,7 +701,8 @@ export default function Generator() {
       quickStartIdea,
       quickStartCreativity,
       magicRandomCreativity,
-      quickStartCharacterId,
+      quickstartCharacterId,
+      magicRandomCharacterId,
       budgetMode,
       autoTitleEnabled,
     })
@@ -668,7 +727,9 @@ export default function Generator() {
   }, [
     uiStateLoaded,
     tab,
-    selectedPreset,
+    quickstartPreset,
+    magicRandomPreset,
+    builderPreset,
     maxWords,
     generatedPrompt,
     negativePrompt,
@@ -687,7 +748,8 @@ export default function Generator() {
     quickStartIdea,
     quickStartCreativity,
     magicRandomCreativity,
-    quickStartCharacterId,
+    quickstartCharacterId,
+    magicRandomCharacterId,
     budgetMode,
     autoTitleEnabled,
   ])
@@ -775,13 +837,14 @@ export default function Generator() {
     setLoading(true)
 
     try {
-      const characterForContext = quickStartCharacterId
-        ? quickStartCharacterList.find((c) => c.id === quickStartCharacterId)
+      const { presetContext, presetPrompt } = buildPresetContext(magicRandomPreset)
+      const characterForContext = magicRandomCharacterId
+        ? quickStartCharacterList.find((c) => c.id === magicRandomCharacterId)
         : null
 
       const result = await window.electronAPI.generator.magicRandom({
-        presetName: selectedPresetContext || undefined,
-        presetPrompt: selectedPresetPrompt || undefined,
+        presetName: presetContext || undefined,
+        presetPrompt: presetPrompt || undefined,
         maxWords,
         greylistEnabled,
         greylistWords,
@@ -811,6 +874,7 @@ export default function Generator() {
       const previousPrompt = generatedPrompt
 
       setGeneratedPrompt(nextPrompt)
+      setGeneratedPromptPreset(magicRandomPreset)
       promptImprovement.clearDiff()
       setNegativeImprovementDiff(null)
       setNegativePromptViewTab('final')
@@ -967,7 +1031,7 @@ export default function Generator() {
         promptText: finalPromptText,
         originalPrompt: nextOriginalPrompt,
         negativePrompt: negativePrompt.trim(),
-        stylePreset: selectedPreset.trim(),
+        stylePreset: (generatedPromptPreset || magicRandomPreset || quickstartPreset).trim(),
         model: recommendedModel.trim(),
         suggestedModel: recommendedModel.trim(),
         notes: 'Generated with Magic Random (AI)',
@@ -1031,22 +1095,40 @@ export default function Generator() {
                 syncStatusText={greylistSyncStatusText}
                 syncStatusClassName={greylistSyncStatusClassName}
               />
-              <div className="card p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h2 className="text-sm font-semibold text-white">Auto title</h2>
-                    <p className="text-xs text-slate-500 mt-1">Generate a title automatically after generating or improving a prompt.</p>
+              <div className="space-y-5">
+                <div className="card p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-white">Auto title</h2>
+                      <p className="text-xs text-slate-500 mt-1">Generate a title automatically after generating or improving a prompt.</p>
+                    </div>
+                    <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${autoTitleEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
+                      <input
+                        type="checkbox"
+                        checked={autoTitleEnabled}
+                        onChange={(e) => setAutoTitleEnabled(e.target.checked)}
+                        className="mr-1 h-3.5 w-3.5 accent-green-500"
+                        aria-label="Enable automatic title generation"
+                      />
+                      {autoTitleEnabled ? 'On' : 'Off'}
+                    </label>
                   </div>
-                  <label className={`inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-colors ${autoTitleEnabled ? 'border-green-500/60 bg-green-500/20 text-green-300' : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
-                    <input
-                      type="checkbox"
-                      checked={autoTitleEnabled}
-                      onChange={(e) => setAutoTitleEnabled(e.target.checked)}
-                      className="mr-1 h-3.5 w-3.5 accent-green-500"
-                      aria-label="Enable automatic title generation"
-                    />
-                    {autoTitleEnabled ? 'On' : 'Off'}
-                  </label>
+                </div>
+
+                <div className="card p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-white">Clear</h2>
+                      <p className="text-xs text-slate-500 mt-1">Reset Quickstart fields on this tab.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearQuickstart}
+                      className="btn-ghost text-xs"
+                    >
+                      Clear all
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1058,13 +1140,17 @@ export default function Generator() {
                 setQuickStartIdea={setQuickStartIdea}
                 quickStartCreativity={quickStartCreativity}
                 setQuickStartCreativity={setQuickStartCreativity}
-                quickStartCharacterId={quickStartCharacterId}
-                setQuickStartCharacterId={setQuickStartCharacterId}
+                quickstartCharacterId={quickstartCharacterId}
+                setQuickstartCharacterId={setQuickstartCharacterId}
+                magicRandomCharacterId={magicRandomCharacterId}
+                setMagicRandomCharacterId={setMagicRandomCharacterId}
                 quickStartCharacterList={quickStartCharacterList}
                 magicRandomCreativity={magicRandomCreativity}
                 setMagicRandomCreativity={setMagicRandomCreativity}
-                selectedPreset={selectedPreset}
-                setSelectedPreset={setSelectedPreset}
+                quickstartPreset={quickstartPreset}
+                setQuickstartPreset={setQuickstartPreset}
+                magicRandomPreset={magicRandomPreset}
+                setMagicRandomPreset={setMagicRandomPreset}
                 presetOptions={presetOptions}
                 maxWords={maxWords}
                 setMaxWords={setMaxWords}
@@ -1198,15 +1284,16 @@ export default function Generator() {
               </div>
               
               {/* RIGHT: Settings Panel */}
-              <div className="card p-5 mb-4 flex flex-col h-full">
-                <div className="grid grid-cols-1 gap-4">
+              <div className="mb-4 flex flex-col gap-4">
+                <div className="card p-5 flex flex-col">
+                  <div className="grid grid-cols-1 gap-4">
                   {/* Preset and Style Profile Row */}
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <p className="text-xs font-semibold text-slate-200 uppercase tracking-wide">Preset</p>
                       <select
-                        value={selectedPreset}
-                        onChange={(e) => setSelectedPreset(e.target.value)}
+                        value={builderPreset}
+                        onChange={(e) => setBuilderPreset(e.target.value)}
                         className="input mt-2 w-full text-xs"
                         aria-label="NightCafe preset"
                       >
@@ -1277,16 +1364,34 @@ export default function Generator() {
                     </label>
                   </div>
                 </div>
+                </div>
+
+                <div className="card p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-sm font-semibold text-white">Clear</h2>
+                      <p className="text-xs text-slate-500 mt-1">Reset Prompt Builder fields on this tab.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearPromptBuilder}
+                      className="btn-ghost text-xs"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="mt-1 card border-slate-800/50">
               <PromptBuilder 
                 embedded 
+                clearNonce={promptBuilderClearNonce}
                 greylistEnabled={greylistEnabled} 
                 greylistWords={greylistWords} 
                 maxWords={maxWords} 
                 creativity={magicRandomCreativity}
-                stylePreset={selectedPreset}
+                stylePreset={builderPreset}
                 styleProfiles={styleProfiles}
                 selectedStyleProfileId={selectedStyleProfileId}
                 setSelectedStyleProfileId={setSelectedStyleProfileId}

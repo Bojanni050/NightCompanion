@@ -630,3 +630,33 @@
 - Findings: AI-modus gaf altijd hetzelfde model terug door vaste DB-volgorde van de modellijst en een te vage LLM-instructie.
 - Conclusions: Shuffle + slice naar 60 modellen doorbreekt de volgorde-bias; expliciete score-interpretatie en anti-herhaling instructie sturen het LLM naar prompt-specifieke keuzes.
 - Actions: shuffleArray helper toegevoegd; compactModels geshuffle en verkleind naar 60; advisorInstruction verscherpt met score-uitleg, budget-mapping en anti-default instructie in `electron/ipc/ai.ts`; validated with `npm run build`.
+
+## 2026-04-15 (Per-screen React error boundaries)
+
+- Findings: Een renderfout in een individueel scherm moet op schermniveau opgevangen worden zodat de rest van de app bruikbaar blijft.
+- Conclusions: Een class-based `ScreenErrorBoundary` met generieke fallback en retry-knop per screen geeft gecontroleerde foutafhandeling zonder screen- of IPC-logica aan te passen.
+- Actions: `src/components/ScreenErrorBoundary.tsx` bijgewerkt naar gevraagde `Props`-vorm, `componentDidCatch` logging via `console.error`, generieke fallback-UI met schermnaam en knop “Probeer opnieuw” (`setState({ hasError: false })`); bevestigd dat `src/App.tsx` alle gevraagde screens wrapped (Dashboard, Generator, Library, Characters, StyleProfiles, Gallery, Usage, Settings, AIConfig); validated with `npm run build`.
+
+## 2026-04-15 (Generator.tsx refactor: sub-componenten + usePromptImprovement)
+
+- Findings: `Generator.tsx` was te groot; improve-logica was gedupliceerd.
+- Conclusions: Extractie vermindert agent-drift risico en verwijdert duplicatie.
+- Actions: Bevestigd dat `QuickstartPanel.tsx`, `ModelAdvisorCard.tsx`, `TitleSaveSection.tsx` en `GreylistCard.tsx` zijn geëxtraheerd onder `src/components/generator/`; `usePromptImprovement` staat als shared hook in `src/hooks/usePromptImprovement.ts` en wordt gebruikt door zowel `Generator.tsx` als `PromptBuilder.tsx`; `Generator.tsx` fungeert als orkestratielaag zonder gedragswijziging; validated with `npm run build`.
+
+## 2026-04-15 (Generator + Prompt Builder: clear-all knoppen per tab)
+
+- Findings: Er was geen snelle manier om alle velden per tab leeg te maken (Quickstart vs Prompt Builder) zonder side-effects op de andere tab.
+- Conclusions: Een per-tab “Clear all” knop die alleen tab-specifieke velden reset maakt itereren sneller en voorkomt onbedoelde resets elders.
+- Actions: Added “Clear all” onder de Auto title toggle in Quickstart (reset quickstart input/output, diffs, title en model advice). Added “Clear all” in de Prompt Builder tab settings (reset style profile selectie en triggert embedded PromptBuilder clear via `clearNonce` prop). Updated `src/screens/Generator.tsx` en `src/screens/PromptBuilder.tsx`; validated with `npm run build`.
+
+## 2026-04-15 (Quickstart: presets losgekoppeld + Magic Quickstart knop klikbaar)
+
+- Findings: Preset dropdowns in Magic Quickstart en Magic Random zaten gekoppeld en de Magic Quickstart knop leek soms niet actief/klikbaar.
+- Conclusions: Losse preset state per sectie voorkomt ongewenste sync; pointer-events op de status-indicator voorkomt click-blocking door overlay.
+- Actions: Updated `src/components/generator/QuickstartPanel.tsx` om aparte presets te gebruiken voor Quickstart vs Magic Random en `pointer-events-none` toe te passen op de status-indicator overlays. Updated `src/screens/Generator.tsx` om `quickstartPreset`, `magicRandomPreset` en `builderPreset` apart te beheren en door te geven; validated with `npm run build`.
+
+## 2026-04-15 (Quickstart: character dropdowns losgekoppeld)
+
+- Findings: “Add character” selectie in Magic Quickstart en Magic Random deelde dezelfde state waardoor beide secties altijd synchroon waren.
+- Conclusions: Losse character state per sectie voorkomt ongewenste sync en houdt context-specifieke keuzes intact.
+- Actions: Updated `src/components/generator/QuickstartPanel.tsx` om aparte character pickers te gebruiken voor Quickstart vs Magic Random. Updated `src/screens/Generator.tsx` om `quickstartCharacterId` en `magicRandomCharacterId` apart te beheren en legacy `quickStartCharacterId` te migreren; validated with `npm run build`.
