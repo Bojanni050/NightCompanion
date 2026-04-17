@@ -376,6 +376,28 @@ function getSettingsFilePath() {
 
 let settingsWriteChain: Promise<void> = Promise.resolve()
 
+function buildCorruptSettingsBackupPath() {
+  const settingsPath = getSettingsFilePath()
+  const now = new Date()
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+  return `${settingsPath}.corrupt.${stamp}`
+}
+
+async function backupCorruptSettingsFile(rawContents: string) {
+  const settingsPath = getSettingsFilePath()
+  const backupPath = buildCorruptSettingsBackupPath()
+
+  try {
+    await rename(settingsPath, backupPath)
+    return backupPath
+  } catch {
+    await writeFile(backupPath, rawContents, 'utf-8')
+    await rm(settingsPath, { force: true })
+    return backupPath
+  }
+}
+
 function salvageJsonObject(raw: string): unknown {
   const trimmed = raw.trim()
   const start = trimmed.indexOf('{')
@@ -481,20 +503,28 @@ function normalizeProviderMeta(input: Partial<ProviderMetaStore> | undefined, fa
 async function readStoredSettings(): Promise<StoredSettings> {
   try {
     const raw = await readFile(getSettingsFilePath(), 'utf-8')
+    const sanitizedRaw = raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw
     let parsed: unknown
+    let usedSalvage = false
     try {
-      parsed = JSON.parse(raw) as unknown
+      parsed = JSON.parse(sanitizedRaw) as unknown
     } catch {
       try {
-        parsed = salvageJsonObject(raw)
+        parsed = salvageJsonObject(sanitizedRaw)
+        usedSalvage = true
       } catch (error) {
-        console.warn('[settings] Failed to parse settings.json; falling back to defaults:', error)
+        const backupPath = await backupCorruptSettingsFile(raw)
+        console.warn('[settings] Failed to parse settings.json; backed up and reset:', { backupPath, error })
+        settingsWriteChain = settingsWriteChain.then(async () => {
+          await atomicWriteSettingsFile(JSON.stringify({}, null, 2))
+        })
+        await settingsWriteChain
         return {}
       }
     }
     const normalized = normalizeStoredSettings(parsed)
 
-    if (JSON.stringify(parsed) !== JSON.stringify(normalized)) {
+    if (usedSalvage || JSON.stringify(parsed) !== JSON.stringify(normalized)) {
       settingsWriteChain = settingsWriteChain.then(async () => {
         await atomicWriteSettingsFile(JSON.stringify(normalized, null, 2))
       })

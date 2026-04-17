@@ -321,22 +321,31 @@ export default function PromptBuilder({
         throw new Error(result.error || 'No fields generated.')
       }
 
-      // Update each generated field
       const generatedFields = result.data.fields
-      for (const [key, value] of Object.entries(generatedFields)) {
-        if (value) {
-          updatePart(key, value)
-        }
-      }
+      const nonEmptyEntries = Object.entries(generatedFields).filter(([, value]) => typeof value === 'string' && value.trim())
 
-      const filledCount = Object.keys(generatedFields).length
+      setParts((prev) =>
+        prev.map((part) => {
+          const nextValue = generatedFields[part.id]
+          if (typeof nextValue !== 'string') return part
+          const trimmed = nextValue.trim()
+          if (!trimmed) return part
+          return { ...part, value: trimmed }
+        })
+      )
+
+      const filledCount = nonEmptyEntries.length
       if (filledCount > 0) {
         notifications.show({
           message: `Filled ${filledCount} empty field${filledCount === 1 ? '' : 's'}!`,
           color: 'green',
         })
       } else {
-        notifications.show({ message: 'All fields already have content.', color: 'blue' })
+        const requestedCount = Object.keys(generatedFields).length
+        notifications.show({
+          message: requestedCount > 0 ? 'No usable text returned for the requested fields.' : 'All fields already have content.',
+          color: requestedCount > 0 ? 'yellow' : 'blue',
+        })
       }
     } catch (error) {
       notifications.show({ message: `Failed to fill fields: ${String(error)}`, color: 'red' })

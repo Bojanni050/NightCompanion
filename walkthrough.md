@@ -695,10 +695,16 @@
 
 - Findings: Magic Fill leek te draaien zonder zichtbare updates wanneer het model JSON in onverwachte vorm terugstuurde (bijv. code fences, key aliases of `fields` wrapper).
 - Conclusions: Robuuste response parsing met key-normalisatie en JSON-extractie voorkomt “filled but no visible change” gedrag.
-- Actions: Updated `electron/ipc/ai.ts` `generator:fillAllFields` met één gedeelde parser die JSON (incl. fenced JSON) en line-fallback ondersteunt, aliases/case-insensitive keys normaliseert (`artStyle` -> `style`, `technicalDetails` -> `technical`, etc.) en daarna pas de result fields invult; validated with `npm run build`.
+- Actions: Updated `electron/ipc/ai.ts` `generator:fillAllFields` met één gedeelde parser die JSON (incl. fenced JSON) en line-fallback ondersteunt, aliases/case-insensitive keys normaliseert (`artStyle` -> `style`, `technicalDetails` -> `technical`, etc.) en daarna pas de result fields invult. Updated `src/screens/PromptBuilder.tsx` om Magic Fill results in één `setParts` update toe te passen en een duidelijke waarschuwing te tonen als er geen bruikbare tekst terugkomt; validated with `npm run build`.
 
 ## 2026-04-15 (Settings: Greywords tab opgeschoond + General panel indeling)
 
 - Findings: Greywords tab bevatte niet-verwante instellingen doordat algemene settings/diagnostics onder de tab-layout doorliepen.
 - Conclusions: Houd Greywords tab beperkt tot greywords opties; consolideer alle overige settings op General met aparte panelen voor scanbaarheid.
 - Actions: Updated `src/screens/Settings.tsx` zodat Greywords tab alleen greywords beheer toont; General tab gegroepeerd in losse panels (Usage, Diagnostics, Storage, Export library, Backup database, NightCafe modelcards, Danger zone); validated with `npm run build`.
+
+## 2026-04-15 (Settings: herstel corrupte settings.json automatisch)
+
+- Findings: Bij corrupte/halfgeschreven `settings.json` faalde parsing en viel de app telkens terug naar defaults zonder het bestand te herstellen.
+- Conclusions: Bij parse failure moet de app het corrupte bestand backuppen en een schone default settings.json schrijven; bij salvage moet altijd herschreven worden.
+- Actions: Updated `electron/ipc/settings.ts` `readStoredSettings` om BOM te strippen, salvage-detectie toe te passen, corrupte settings.json te backuppen (`settings.json.corrupt.<timestamp>`) en defaults atomisch terug te schrijven; validated with `npm run build`.
