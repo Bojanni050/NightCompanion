@@ -726,3 +726,15 @@
 - Findings: Sectiekoppen op de Settings-pagina waren nog wit en misten de visuele accentkleur van de app.
 - Conclusions: Gebruik de bestaande amber accentkleur voor settings-sectiekoppen voor betere visuele hiërarchie en design-consistentie.
 - Actions: Updated `src/index.css` `settings-section-title` van `text-white` naar `text-amber-400`; validated with `npm run build`.
+
+## 2026-04-18 (AI Improve Prompt — BASE_PERSONA vernieuwd)
+
+- Findings: De bestaande BASE_PERSONA voor promptgeneratie was NightCafe-gericht en relatief formulaïsch, terwijl de gewenste improve-flow meer variatie en expliciete stijlvrijheid nodig heeft.
+- Conclusions: Een compactere persona met expliciete UK English, single-paragraph output en variabele compositie/stijl richtlijnen geeft consistenter gedrag voor de Improve Prompt route.
+- Actions: Replaced `BASE_PERSONA` in `electron/ipc/ai.ts` met de nieuwe creatieve versie (single paragraph, no labels/bullets/explanations, varied framing/style guidance); validated with `npm run build`.
+
+## 2026-04-18 (Improve Prompt variation modes)
+
+- Findings: Generated prompts lacked variation due to a prescriptive BASE_PERSONA and hardcoded temperature in improvePrompt. No mode choice was offered to the user.
+- Conclusions: BASE_PERSONA softened to encourage stylistic variety. Three improvement modes added (Expand / Reframe / Intensify) with per-mode temperature and instruction. Mode selector added as pill UI in ImprovementSection.
+- Actions: Updated BASE_PERSONA in `electron/ipc/ai.ts`; added IMPROVE_INSTRUCTIONS and IMPROVE_TEMPERATURES records; extended improvePrompt handler to accept and apply mode; updated IPC types in preload and electron.d.ts; added pill mode selector in ImprovementSection.tsx (positive prompt only, session state).

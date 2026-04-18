@@ -17,18 +17,25 @@ const MAX_GENERATED_TAGS = 15
 
 const LANGUAGE_INSTRUCTION = "CRITICAL: All output, including descriptions, reasoning, and analysis, MUST use English (UK) spelling and terminology (e.g., 'colour', 'centre', 'maximise')."
 
-const BASE_PERSONA = `You are an expert AI Art Prompt Engineer specializing in NightCafe Studio. Your goal is to craft highly detailed, optimized text-to-image prompts for advanced generative AI models. ${LANGUAGE_INSTRUCTION}
+const BASE_PERSONA = `You are a creative AI art prompt writer specialising in vivid, imaginative prompts for AI image generators. Always write in British English. Output a single paragraph with no bullet points, no labels, and no explanation — only the prompt text itself.
 
-Construct your prompts using the following elements, blending them seamlessly into a single, cohesive paragraph:
-- Subject & Action: Clear, specific description of the main focus and what is happening.
-- Style & Medium: Defined art form (e.g., 'digital concept art', 'oil on canvas', 'macro photography').
-- Setting & Composition: Background, environment, camera angle (e.g., 'low angle shot', 'rule of thirds'), and framing.
-- Lighting & Atmosphere: Specific lighting setups (e.g., 'volumetric lighting', 'golden hour') and mood.
-- Technical Modifiers: Enhancement tags (e.g., '8k resolution', 'masterpiece', 'trending on ArtStation', 'intricate details').
-
-STRICT FORMATTING RULE: Output ONLY the final prompt text. Do NOT use bullet points, line breaks, labels (like 'Subject:'), or introductory/concluding remarks. The output must be a single, flowing descriptive paragraph.`
+Approach each prompt with a fresh artistic perspective. Vary your sentence structure, compositional framing, and descriptive style between outputs. Do not default to a fixed formula — let the subject matter guide your approach.`
 
 const IMPROVE_INSTRUCTION = `Analyze the following basic concept and elevate it into a professional, highly detailed prompt following all your persona rules. Expand on missing elements (such as style, lighting, and composition) while strictly preserving the original intent. Write a single paragraph and end with a complete sentence and a final full stop.`
+type ImprovementMode = 'expand' | 'reframe' | 'intensify'
+
+const IMPROVE_INSTRUCTIONS: Record<ImprovementMode, string> = {
+  expand: IMPROVE_INSTRUCTION,
+  reframe: `Rewrite the following AI art prompt from a different artistic angle. Keep the core subject intact but approach the composition, framing, and atmosphere in a fresh way. Return only the rewritten prompt text.`,
+  intensify: `Amplify the drama, atmosphere, and visual impact of the following AI art prompt. Push contrast, mood, and detail further without changing the core subject. Return only the final prompt text.`,
+}
+
+const IMPROVE_TEMPERATURES: Record<ImprovementMode, number> = {
+  expand: 0.7,
+  reframe: 1.0,
+  intensify: 0.9,
+}
+
 const IMPROVE_NEGATIVE_INSTRUCTION = `Improve the following negative prompt for AI image generation. Keep it concise, high-signal, comma-separated, and focused on common visual defects and unwanted artifacts. Remove duplicates, keep original intent, and return only the final negative prompt text.`
 const NEGATIVE_PROMPT_INSTRUCTION = `Based on the following positive prompt, generate a concise negative prompt for NightCafe Studio. ${LANGUAGE_INSTRUCTION}
 
@@ -1432,7 +1439,7 @@ export function registerAiIpc({
     }
   })
 
-  ipcMain.handle('generator:improvePrompt', async (_, input?: { prompt?: string }) => {
+  ipcMain.handle('generator:improvePrompt', async (_, input?: { prompt?: string; mode?: ImprovementMode }) => {
     const requestId = crypto.randomUUID()
     const startedAt = Date.now()
     let requestModel = ''
@@ -1444,6 +1451,7 @@ export function registerAiIpc({
 
     try {
       const prompt = input?.prompt?.trim() || ''
+      const mode: ImprovementMode = input?.mode || 'expand'
       if (!prompt) return { error: 'No prompt to improve.' }
 
       const stored = await readStoredSettings()
@@ -1474,7 +1482,7 @@ export function registerAiIpc({
 
         requestPayload = {
           model: modelId,
-          temperature: 0.7,
+          temperature: IMPROVE_TEMPERATURES[mode],
           max_tokens: 2048,
           messages: [
             {
@@ -1483,7 +1491,7 @@ export function registerAiIpc({
             },
             {
               role: 'user',
-              content: `${IMPROVE_INSTRUCTION}\n\n${prompt}`,
+              content: `${IMPROVE_INSTRUCTIONS[mode]}\n\n${prompt}`,
             },
           ],
         }
@@ -1538,7 +1546,7 @@ export function registerAiIpc({
 
       requestPayload = {
         model: modelId,
-        temperature: 0.7,
+        temperature: IMPROVE_TEMPERATURES[mode],
         max_tokens: 2048,
         messages: [
           {
@@ -1547,7 +1555,7 @@ export function registerAiIpc({
           },
           {
             role: 'user',
-            content: `${IMPROVE_INSTRUCTION}\n\n${prompt}`,
+            content: `${IMPROVE_INSTRUCTIONS[mode]}\n\n${prompt}`,
           },
         ],
       }

@@ -25,6 +25,7 @@ type PromptViewTab = 'final' | 'diff'
 type NegativePromptViewTab = 'final' | 'diff'
 type CreativityLevel = 'focused' | 'balanced' | 'wild'
 type BudgetMode = 'cheap' | 'balanced' | 'premium'
+type ImprovementMode = 'expand' | 'reframe' | 'intensify'
 
 type BudgetPick = { modelName: string; reasons: string[] }
 type GeneratorPersistedState = {
@@ -465,8 +466,8 @@ export default function Generator() {
     setStatus('Negative prompt copied to clipboard.')
   }
 
-  const handleImprovePrompt = async () => {
-    await handleImprove()
+  const handleImprovePrompt = async (mode: ImprovementMode) => {
+    await handleImprove(mode)
   }
 
   const handleImproveNegativePrompt = async () => {
@@ -900,7 +901,7 @@ export default function Generator() {
     setStatus('Prompt copied to clipboard.')
   }
 
-  const handleImprove = async () => {
+  const handleImprove = async (mode: ImprovementMode = 'expand') => {
     if (!generatedPrompt.trim()) {
       setStatus('Nothing to improve yet. Generate (or paste) a prompt first.')
       return
@@ -911,7 +912,7 @@ export default function Generator() {
     try {
       const previousPrompt = generatedPrompt
 
-      const improved = await promptImprovement.handleImprove(generatedPrompt)
+      const improved = await promptImprovement.handleImprove(generatedPrompt, mode)
       if (!improved) {
         setStatus('Error: Failed to improve prompt.')
         return

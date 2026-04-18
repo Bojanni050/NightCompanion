@@ -1,6 +1,8 @@
 import { useCallback, useState } from 'react'
 import { notifications } from '@mantine/notifications'
 
+type ImprovementMode = 'expand' | 'reframe' | 'intensify'
+
 export type UsePromptImprovementReturn = {
   isImproving: boolean
   improvementDiff: { originalPrompt: string; improvedPrompt: string } | null
@@ -8,8 +10,8 @@ export type UsePromptImprovementReturn = {
   viewTab: 'final' | 'diff'
   setViewTab: (tab: 'final' | 'diff') => void
   clearDiff: () => void
-  handleImprove: (currentPrompt: string) => Promise<string | null>
-  handleImproveWithMeta: (currentPrompt: string) => Promise<{ prompt: string; modelId: string | null } | null>
+  handleImprove: (currentPrompt: string, mode?: ImprovementMode) => Promise<string | null>
+  handleImproveWithMeta: (currentPrompt: string, mode?: ImprovementMode) => Promise<{ prompt: string; modelId: string | null } | null>
   setImprovementDiff: (diff: { originalPrompt: string; improvedPrompt: string } | null) => void
 }
 
@@ -24,14 +26,14 @@ export function usePromptImprovement(): UsePromptImprovementReturn {
     setViewTab('final')
   }, [])
 
-  const handleImproveWithMeta = useCallback(async (currentPrompt: string) => {
+  const handleImproveWithMeta = useCallback(async (currentPrompt: string, mode: ImprovementMode = 'expand') => {
     const prompt = currentPrompt.trim()
     if (!prompt) return null
 
     setIsImproving(true)
 
     try {
-      const result = await window.electronAPI.generator.improvePrompt({ prompt })
+      const result = await window.electronAPI.generator.improvePrompt({ prompt, mode })
 
       if (result.error || !result.data?.prompt) {
         notifications.show({
@@ -57,8 +59,8 @@ export function usePromptImprovement(): UsePromptImprovementReturn {
     }
   }, [])
 
-  const handleImprove = useCallback(async (currentPrompt: string) => {
-    const result = await handleImproveWithMeta(currentPrompt)
+  const handleImprove = useCallback(async (currentPrompt: string, mode: ImprovementMode = 'expand') => {
+    const result = await handleImproveWithMeta(currentPrompt, mode)
     return result?.prompt || null
   }, [handleImproveWithMeta])
 

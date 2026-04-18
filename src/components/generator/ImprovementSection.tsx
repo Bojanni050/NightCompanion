@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Sparkles, Copy, Edit3, Save, ArrowRight } from 'lucide-react'
 import PromptDiffView from '../PromptDiffView'
 
 type PromptViewTab = 'final' | 'diff'
 type NegativePromptViewTab = 'final' | 'diff'
+type ImprovementMode = 'expand' | 'reframe' | 'intensify'
 
 type ImprovementSectionProps = {
   generatedPrompt: string
@@ -15,7 +17,7 @@ type ImprovementSectionProps = {
   setNegativePromptViewTab: (value: NegativePromptViewTab) => void
   improvementDiff: { originalPrompt: string; improvedPrompt: string } | null
   isImproving: boolean
-  handleImprove: () => void
+  handleImprove: (mode: ImprovementMode) => void
   handleImproveNegativePrompt: () => void
   handleCopyPrompt: () => void
   handleCopyNegativePrompt: () => void
@@ -62,6 +64,7 @@ export default function ImprovementSection({
   hasImprovementAiConfigured,
   maxWords,
 }: ImprovementSectionProps) {
+  const [improvementMode, setImprovementMode] = useState<ImprovementMode>('expand')
   const showNegativePromptControls = supportsNegativePrompt !== false
   const improvedWordLimit = Math.max(1, Math.ceil(maxWords * 1.1))
   const finalResultWordCount = splitWords(improvementDiff?.improvedPrompt ?? '').length
@@ -166,13 +169,37 @@ export default function ImprovementSection({
             </button>
             <button
               type="button"
-              onClick={handleImprove}
+              onClick={() => handleImprove(improvementMode)}
               disabled={!generatedPrompt.trim() || loading || isImproving || generatingNegative || improvingNegative}
               className="btn-compact-teal"
             >
               {isImproving ? 'Improving...' : 'Improve Prompt'}
             </button>
           </div>
+        </div>
+
+        <div className="mt-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setImprovementMode('expand')}
+            className={improvementMode === 'expand' ? 'btn-compact-primary' : 'btn-compact-ghost'}
+          >
+            Expand
+          </button>
+          <button
+            type="button"
+            onClick={() => setImprovementMode('reframe')}
+            className={improvementMode === 'reframe' ? 'btn-compact-primary' : 'btn-compact-ghost'}
+          >
+            Reframe
+          </button>
+          <button
+            type="button"
+            onClick={() => setImprovementMode('intensify')}
+            className={improvementMode === 'intensify' ? 'btn-compact-primary' : 'btn-compact-ghost'}
+          >
+            Intensify
+          </button>
         </div>
 
         {improvementDiff && (

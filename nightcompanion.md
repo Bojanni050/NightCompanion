@@ -51,3 +51,5 @@
 
 - Settings section headings are now visually larger than the individual options, so cards are easier to scan.
 - Settings section headings now use the app's orange accent colour for stronger visual grouping.
+- Improve Prompt now uses a refreshed creative persona that enforces British English, single-paragraph output, and more stylistic variation between prompt results.
+- Improve Prompt now offers three positive-prompt variation modes: Expand, Reframe, and Intensify.

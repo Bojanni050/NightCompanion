@@ -275,7 +275,7 @@ declare global {
       }
       generator: {
         magicRandom(input?: { presetName?: string; presetPrompt?: string; maxWords?: number; greylistEnabled?: boolean; greylistWords?: string[]; greylistEntries?: GreylistEntry[]; creativity?: 'focused' | 'balanced' | 'wild'; character?: { name: string; description: string } }): Promise<IpcResult<{ prompt: string }>>
-        improvePrompt(input?: { prompt?: string }): Promise<IpcResult<ImprovePromptResult>>
+        improvePrompt(input?: { prompt?: string; mode?: 'expand' | 'reframe' | 'intensify' }): Promise<IpcResult<ImprovePromptResult>>
         generateNegativePrompt(input?: { prompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
         improveNegativePrompt(input?: { negativePrompt?: string }): Promise<IpcResult<{ negativePrompt: string }>>
         generateTitle(input?: { prompt?: string }): Promise<IpcResult<{ title: string }>>
