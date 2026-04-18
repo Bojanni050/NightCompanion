@@ -46,3 +46,7 @@
 
 - AI Configuration dashboard now includes a `Test` button in each role panel (Generation, Improvement, Vision, Research & Reasoning) to validate the currently selected provider/model.
 - LM Studio local endpoint configuration now supports an optional API key.
+
+## 2026-04-18
+
+- Settings section headings are now visually larger than the individual options, so cards are easier to scan.

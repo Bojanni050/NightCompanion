@@ -408,7 +408,7 @@ export default function Settings() {
             <div className="pt-6 mt-6 space-y-6 border-t border-slate-800/50">
               <section className="p-6 card space-y-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">Usage</p>
+                  <p className="settings-section-title">Usage</p>
                   <p className="text-xs text-slate-500">Tokens and cost estimation display preferences</p>
                 </div>
 
@@ -489,7 +489,7 @@ export default function Settings() {
 
               <section className="p-6 card space-y-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">Diagnostics</p>
+                  <p className="settings-section-title">Diagnostics</p>
                   <p className="text-xs text-slate-500">Application preferences and debugging tools</p>
                 </div>
 
@@ -546,7 +546,7 @@ export default function Settings() {
 
               <section className="p-6 card space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Storage</p>
+                  <p className="settings-section-title">Storage</p>
                   <p className="text-xs text-slate-500">NightCompanion folder location for managed files</p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
@@ -589,7 +589,7 @@ export default function Settings() {
 
               <section className="p-6 card space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Export library</p>
+                  <p className="settings-section-title">Export library</p>
                   <p className="text-xs text-slate-500">Exporteer prompts (incl. versies) en lokale afbeeldingen naar een map.</p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -634,7 +634,7 @@ export default function Settings() {
 
               <section className="p-6 card space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Backup database</p>
+                  <p className="settings-section-title">Backup database</p>
                   <p className="text-xs text-slate-500">Maak een JSON snapshot van alle tabellen (geschikt voor backup/restore tooling).</p>
                 </div>
                 <button
@@ -656,7 +656,7 @@ export default function Settings() {
               <section className="p-6 card space-y-3">
                 <div className="flex gap-4 justify-between items-center">
                   <div>
-                    <p className="text-sm font-semibold text-white">NightCafe modelcards (Hugging Face)</p>
+                    <p className="settings-section-title">NightCafe modelcards (Hugging Face)</p>
                     <p className="text-xs text-slate-500">Refresh extra model metadata: summary, likes, downloads, and update date</p>
                     <p className="mt-1 text-xs text-slate-400">Laatste sync: {formattedLastSyncedAt}</p>
                     {hfSyncInfo && (
@@ -684,7 +684,7 @@ export default function Settings() {
 
               <section className="p-6 card space-y-3">
                 <div>
-                  <p className="text-sm font-semibold text-white">Danger zone</p>
+                  <p className="settings-section-title">Danger zone</p>
                   <p className="text-xs text-slate-500">Reset counters and local state</p>
                 </div>
                 <button
@@ -705,7 +705,7 @@ export default function Settings() {
             <div className="pt-6 mt-6 space-y-6 border-t border-slate-800/50">
               <section className="p-6 card space-y-4">
                 <div>
-                  <p className="text-sm font-semibold text-white">Greywords</p>
+                  <p className="settings-section-title">Greywords</p>
                   <p className="text-xs text-slate-500">Words the AI should avoid or use with a low probability.</p>
                   <p className={`text-xs mt-1 ${greylistSyncStatusClassName}`}>{greylistSyncStatusText}</p>
                 </div>

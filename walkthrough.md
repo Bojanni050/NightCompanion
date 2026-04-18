@@ -259,6 +259,12 @@
 - Conclusions: Copy the improved prompt when available, otherwise fall back to the current generated prompt.
 - Actions: Updated `src/screens/Generator.tsx` to add a `handleCopyImprovedPrompt` helper and render a `Copy Prompt` button next to `Improve Prompt` in the Improve section; validated with `npm run build`.
 
+## 2026-04-18 (Settings — stronger section headings)
+
+- Findings: Settings section headings used the same `text-sm` sizing as the option labels inside each card, which made sections harder to distinguish.
+- Conclusions: Introduce a dedicated reusable settings section title style and apply it only to the section headers so option typography stays unchanged.
+- Actions: Updated `src/index.css` with a `settings-section-title` component class and applied it across `src/screens/Settings.tsx`; updated `nightcompanion.md`; validated with `npm run build`.
+
 ## 2026-04-03 (Generator — persist Prompt Builder state)
 
 - Findings: Generator state was mostly persistent, but Prompt Builder tab fields reset after navigating away and back.
