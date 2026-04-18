@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { desc } from 'drizzle-orm'
 import * as schema from '../../src/lib/schema'
 import {
+  aiConfigurationSettings,
   aiUsageEvents,
   characters,
   collections,
@@ -153,6 +154,13 @@ type StoredSettings = {
   localEndpoints?: LocalEndpointStore[]
   generatorUiState?: GeneratorUiStateStore
   promptBuilderUiState?: PromptBuilderUiStateStore
+}
+
+type AiConfigurationStore = {
+  openRouter: OpenRouterSettings
+  providerMeta: Record<string, Partial<ProviderMetaStore>>
+  aiConfig: AiConfigStateStore
+  localEndpoints: LocalEndpointStore[]
 }
 
 type DashboardRole = 'generation' | 'improvement' | 'vision' | 'general'
@@ -370,6 +378,95 @@ function normalizeStoredSettings(input: unknown): StoredSettings {
   return normalized
 }
 
+function normalizeLocalEndpoints(input: unknown): LocalEndpointStore[] {
+  if (!Array.isArray(input)) return []
+  return input.filter((item): item is LocalEndpointStore => isRecord(item))
+}
+
+function toAiConfigurationStore(stored: StoredSettings): AiConfigurationStore {
+  return {
+    openRouter: normalizeOpenRouterSettings(stored.openRouter),
+    providerMeta: stored.providerMeta || {},
+    aiConfig: stored.aiConfig || {},
+    localEndpoints: normalizeLocalEndpoints(stored.localEndpoints),
+  }
+}
+
+async function writeAiConfigurationStore(db: Database | undefined, input: AiConfigurationStore) {
+  if (!db) return
+
+  const now = new Date()
+
+  await db.insert(aiConfigurationSettings)
+    .values({
+      singletonKey: 'singleton',
+      openRouter: normalizeOpenRouterSettings(input.openRouter),
+      providerMeta: input.providerMeta || {},
+      localEndpoints: normalizeLocalEndpoints(input.localEndpoints),
+      aiConfig: input.aiConfig || {},
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: aiConfigurationSettings.singletonKey,
+      set: {
+        openRouter: normalizeOpenRouterSettings(input.openRouter),
+        providerMeta: input.providerMeta || {},
+        localEndpoints: normalizeLocalEndpoints(input.localEndpoints),
+        aiConfig: input.aiConfig || {},
+        updatedAt: now,
+      },
+    })
+}
+
+async function readAiConfigurationStore(db?: Database): Promise<AiConfigurationStore> {
+  const stored = await readStoredSettings()
+  const fallback = toAiConfigurationStore(stored)
+
+  if (!db) {
+    return fallback
+  }
+
+  try {
+    const rows = await db
+      .select({
+        openRouter: aiConfigurationSettings.openRouter,
+        providerMeta: aiConfigurationSettings.providerMeta,
+        aiConfig: aiConfigurationSettings.aiConfig,
+        localEndpoints: aiConfigurationSettings.localEndpoints,
+      })
+      .from(aiConfigurationSettings)
+      .limit(1)
+
+    const row = rows[0]
+
+    if (row) {
+      return {
+        openRouter: normalizeOpenRouterSettings(row.openRouter),
+        providerMeta: normalizeProviderMetaMap(row.providerMeta) || {},
+        aiConfig: normalizeAiConfigState(row.aiConfig) || {},
+        localEndpoints: normalizeLocalEndpoints(row.localEndpoints),
+      }
+    }
+
+    const hasLegacyData = Boolean(
+      stored.openRouter
+      || stored.providerMeta
+      || stored.aiConfig
+      || (stored.localEndpoints && stored.localEndpoints.length > 0)
+    )
+
+    if (hasLegacyData) {
+      await writeAiConfigurationStore(db, fallback)
+    }
+
+    return fallback
+  } catch (error) {
+    console.warn('[settings] Failed to read ai_configuration_settings; falling back to settings.json:', error)
+    return fallback
+  }
+}
+
 function getSettingsFilePath() {
   return path.join(app.getPath('userData'), 'settings.json')
 }
@@ -556,24 +653,24 @@ async function writeStoredSettings(settings: {
   await settingsWriteChain
 }
 
-export async function getOpenRouterSettings() {
-  const stored = await readStoredSettings()
+export async function getOpenRouterSettings(db?: Database) {
+  const stored = await readAiConfigurationStore(db)
   return normalizeOpenRouterSettings(stored.openRouter)
 }
 
-export async function getAiApiRequestLoggingEnabled() {
-  const stored = await readStoredSettings()
-  return Boolean(stored.aiConfig?.aiApiRequestLoggingEnabled)
+export async function getAiApiRequestLoggingEnabled(db?: Database) {
+  const stored = await readAiConfigurationStore(db)
+  return Boolean(stored.aiConfig.aiApiRequestLoggingEnabled)
 }
 
-export async function getNativeWindowFrameEnabled() {
-  const stored = await readStoredSettings()
-  return Boolean(stored.aiConfig?.nativeWindowFrameEnabled)
+export async function getNativeWindowFrameEnabled(db?: Database) {
+  const stored = await readAiConfigurationStore(db)
+  return Boolean(stored.aiConfig.nativeWindowFrameEnabled)
 }
 
-export async function getNightCompanionFolderPath() {
-  const stored = await readStoredSettings()
-  const configuredPath = stored.aiConfig?.nightCompanionFolderPath
+export async function getNightCompanionFolderPath(db?: Database) {
+  const stored = await readAiConfigurationStore(db)
+  const configuredPath = stored.aiConfig.nightCompanionFolderPath
 
   if (typeof configuredPath === 'string' && configuredPath.trim()) {
     return path.resolve(configuredPath.trim())
@@ -789,6 +886,7 @@ function buildExportTimestamp() {
 }
 
 function buildDatabaseBackupPayload(input: {
+  aiConfigurationSettings: unknown[]
   prompts: unknown[]
   promptVersions: unknown[]
   styleProfiles: unknown[]
@@ -803,6 +901,7 @@ function buildDatabaseBackupPayload(input: {
   galleryItems: unknown[]
 }) {
   const tableCounts: Record<string, number> = {
+    ai_configuration_settings: input.aiConfigurationSettings.length,
     prompts: input.prompts.length,
     prompt_versions: input.promptVersions.length,
     style_profiles: input.styleProfiles.length,
@@ -821,6 +920,7 @@ function buildDatabaseBackupPayload(input: {
     exportedAt: new Date().toISOString(),
     summary: tableCounts,
     data: {
+      aiConfigurationSettings: input.aiConfigurationSettings,
       prompts: input.prompts,
       promptVersions: input.promptVersions,
       styleProfiles: input.styleProfiles,
@@ -846,7 +946,7 @@ export function registerSettingsIpc({
 }) {
   ipcMain.handle('settings:getOpenRouter', async () => {
     try {
-      const data = await getOpenRouterSettings()
+      const data = await getOpenRouterSettings(db)
       return { data }
     } catch (error) {
       return { error: String(error) }
@@ -855,8 +955,8 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:getProviderMeta', async (_, providerId: string, fallbackModel = DEFAULT_OPENROUTER_MODEL) => {
     try {
-      const stored = await readStoredSettings()
-      const providerMap = stored.providerMeta || {}
+      const stored = await readAiConfigurationStore(db)
+      const providerMap = stored.providerMeta
       const data = normalizeProviderMeta(providerMap[providerId], fallbackModel)
       return { data }
     } catch (error) {
@@ -866,19 +966,26 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:saveProviderMeta', async (_, providerId: string, input: Partial<ProviderMetaStore>) => {
     try {
-      const stored = await readStoredSettings()
-      const providerMap = stored.providerMeta || {}
+      const stored = await readAiConfigurationStore(db)
+      const providerMap = { ...stored.providerMeta }
       const fallbackModel = input.model_gen || input.model_improve || input.model_vision || input.model_general || DEFAULT_OPENROUTER_MODEL
       const current = normalizeProviderMeta(providerMap[providerId], fallbackModel)
       const next = normalizeProviderMeta({ ...current, ...input }, fallbackModel)
 
       providerMap[providerId] = next
 
-      await writeStoredSettings({
-        openRouter: normalizeOpenRouterSettings(stored.openRouter),
+      await writeAiConfigurationStore(db, {
+        ...stored,
         providerMeta: providerMap,
-        aiConfig: stored.aiConfig,
-        localEndpoints: stored.localEndpoints,
+      })
+
+      const legacyStored = await readStoredSettings()
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(legacyStored.openRouter),
+        providerMeta: providerMap,
+        aiConfig: legacyStored.aiConfig,
+        localEndpoints: legacyStored.localEndpoints,
       })
 
       return { data: next }
@@ -889,8 +996,8 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:getLocalEndpoints', async () => {
     try {
-      const stored = await readStoredSettings()
-      const data = Array.isArray(stored.localEndpoints) ? stored.localEndpoints : []
+      const stored = await readAiConfigurationStore(db)
+      const data = normalizeLocalEndpoints(stored.localEndpoints)
       return { data }
     } catch (error) {
       return { error: String(error) }
@@ -899,13 +1006,20 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:saveLocalEndpoints', async (_, input: LocalEndpointStore[]) => {
     try {
-      const stored = await readStoredSettings()
+      const stored = await readAiConfigurationStore(db)
       const nextLocalEndpoints = Array.isArray(input) ? input : []
 
+      await writeAiConfigurationStore(db, {
+        ...stored,
+        localEndpoints: nextLocalEndpoints,
+      })
+
+      const legacyStored = await readStoredSettings()
+
       await writeStoredSettings({
-        openRouter: normalizeOpenRouterSettings(stored.openRouter),
-        providerMeta: stored.providerMeta,
-        aiConfig: stored.aiConfig,
+        openRouter: normalizeOpenRouterSettings(legacyStored.openRouter),
+        providerMeta: legacyStored.providerMeta,
+        aiConfig: legacyStored.aiConfig,
         localEndpoints: nextLocalEndpoints,
       })
 
@@ -917,8 +1031,8 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:getAiConfigState', async () => {
     try {
-      const stored = await readStoredSettings()
-      return { data: stored.aiConfig || {} }
+      const stored = await readAiConfigurationStore(db)
+      return { data: stored.aiConfig }
     } catch (error) {
       return { error: String(error) }
     }
@@ -984,18 +1098,25 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:saveAiConfigState', async (_, input: AiConfigStateStore) => {
     try {
-      const stored = await readStoredSettings()
-      const previousNativeWindowFrameEnabled = Boolean(stored.aiConfig?.nativeWindowFrameEnabled)
+      const stored = await readAiConfigurationStore(db)
+      const previousNativeWindowFrameEnabled = Boolean(stored.aiConfig.nativeWindowFrameEnabled)
       const nextAiConfig: AiConfigStateStore = {
-        ...(stored.aiConfig || {}),
+        ...stored.aiConfig,
         ...(input || {}),
       }
 
-      await writeStoredSettings({
-        openRouter: normalizeOpenRouterSettings(stored.openRouter),
-        providerMeta: stored.providerMeta,
+      await writeAiConfigurationStore(db, {
+        ...stored,
         aiConfig: nextAiConfig,
-        localEndpoints: stored.localEndpoints,
+      })
+
+      const legacyStored = await readStoredSettings()
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(legacyStored.openRouter),
+        providerMeta: legacyStored.providerMeta,
+        aiConfig: nextAiConfig,
+        localEndpoints: legacyStored.localEndpoints,
       })
 
       if (typeof input.nativeWindowFrameEnabled === 'boolean') {
@@ -1013,7 +1134,7 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:getNightCompanionFolderPath', async () => {
     try {
-      const data = await getNightCompanionFolderPath()
+      const data = await getNightCompanionFolderPath(db)
       return { data }
     } catch (error) {
       return { error: String(error) }
@@ -1033,17 +1154,24 @@ export function registerSettingsIpc({
       const resolvedPath = path.resolve(nextPath)
       await mkdir(resolvedPath, { recursive: true })
 
-      const stored = await readStoredSettings()
+      const stored = await readAiConfigurationStore(db)
       const nextAiConfig: AiConfigStateStore = {
-        ...(stored.aiConfig || {}),
+        ...stored.aiConfig,
         nightCompanionFolderPath: resolvedPath,
       }
 
-      await writeStoredSettings({
-        openRouter: normalizeOpenRouterSettings(stored.openRouter),
-        providerMeta: stored.providerMeta,
+      await writeAiConfigurationStore(db, {
+        ...stored,
         aiConfig: nextAiConfig,
-        localEndpoints: stored.localEndpoints,
+      })
+
+      const legacyStored = await readStoredSettings()
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(legacyStored.openRouter),
+        providerMeta: legacyStored.providerMeta,
+        aiConfig: nextAiConfig,
+        localEndpoints: legacyStored.localEndpoints,
       })
 
       return { data: resolvedPath }
@@ -1057,17 +1185,24 @@ export function registerSettingsIpc({
       const defaultPath = path.resolve(getDefaultNightCompanionFolderPath())
       await mkdir(defaultPath, { recursive: true })
 
-      const stored = await readStoredSettings()
+      const stored = await readAiConfigurationStore(db)
       const nextAiConfig: AiConfigStateStore = {
-        ...(stored.aiConfig || {}),
+        ...stored.aiConfig,
         nightCompanionFolderPath: defaultPath,
       }
 
-      await writeStoredSettings({
-        openRouter: normalizeOpenRouterSettings(stored.openRouter),
-        providerMeta: stored.providerMeta,
+      await writeAiConfigurationStore(db, {
+        ...stored,
         aiConfig: nextAiConfig,
-        localEndpoints: stored.localEndpoints,
+      })
+
+      const legacyStored = await readStoredSettings()
+
+      await writeStoredSettings({
+        openRouter: normalizeOpenRouterSettings(legacyStored.openRouter),
+        providerMeta: legacyStored.providerMeta,
+        aiConfig: nextAiConfig,
+        localEndpoints: legacyStored.localEndpoints,
       })
 
       return { data: defaultPath }
@@ -1078,7 +1213,7 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:selectNightCompanionFolderPath', async () => {
     try {
-      const currentPath = await getNightCompanionFolderPath()
+      const currentPath = await getNightCompanionFolderPath(db)
       const result = await dialog.showOpenDialog({
         title: 'Select NightCompanion folder',
         defaultPath: currentPath || getDefaultNightCompanionFolderPath(),
@@ -1269,6 +1404,7 @@ export function registerSettingsIpc({
       await mkdir(exportDirPath, { recursive: true })
 
       const [
+        aiConfigurationSettingsRows,
         promptRows,
         versionRows,
         styleProfileRows,
@@ -1282,6 +1418,7 @@ export function registerSettingsIpc({
         collectionRows,
         galleryItemRows,
       ] = await Promise.all([
+        db.select().from(aiConfigurationSettings).orderBy(desc(aiConfigurationSettings.updatedAt)),
         db.select().from(prompts).orderBy(desc(prompts.createdAt)),
         db.select().from(promptVersions).orderBy(desc(promptVersions.createdAt)),
         db.select().from(styleProfiles).orderBy(desc(styleProfiles.createdAt)),
@@ -1297,6 +1434,7 @@ export function registerSettingsIpc({
       ])
 
       const payload = buildDatabaseBackupPayload({
+        aiConfigurationSettings: aiConfigurationSettingsRows,
         prompts: promptRows,
         promptVersions: versionRows,
         styleProfiles: styleProfileRows,
@@ -1327,17 +1465,24 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:saveOpenRouter', async (_, input: Partial<OpenRouterSettings>) => {
     try {
-      const stored = await readStoredSettings()
+      const stored = await readAiConfigurationStore(db)
       const data = normalizeOpenRouterSettings({
-        ...stored.openRouter,
+        ...normalizeOpenRouterSettings(stored.openRouter),
         ...input,
       })
 
+      await writeAiConfigurationStore(db, {
+        ...stored,
+        openRouter: data,
+      })
+
+      const legacyStored = await readStoredSettings()
+
       await writeStoredSettings({
         openRouter: data,
-        providerMeta: stored.providerMeta,
-        aiConfig: stored.aiConfig,
-        localEndpoints: stored.localEndpoints,
+        providerMeta: legacyStored.providerMeta,
+        aiConfig: legacyStored.aiConfig,
+        localEndpoints: legacyStored.localEndpoints,
       })
 
       if (data.apiKey) {
@@ -1367,7 +1512,7 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:refreshOpenRouterModels', async (_, input?: Partial<OpenRouterSettings>) => {
     try {
-      const stored = await getOpenRouterSettings()
+      const stored = await getOpenRouterSettings(db)
       const data = normalizeOpenRouterSettings({
         ...stored,
         ...input,
@@ -1381,7 +1526,7 @@ export function registerSettingsIpc({
 
   ipcMain.handle('settings:testOpenRouter', async (_, input?: Partial<OpenRouterSettings>) => {
     try {
-      const stored = await getOpenRouterSettings()
+      const stored = await getOpenRouterSettings(db)
       const data = normalizeOpenRouterSettings({
         ...stored,
         ...input,

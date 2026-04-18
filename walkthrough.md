@@ -714,3 +714,9 @@
 - Findings: Bij corrupte/halfgeschreven `settings.json` faalde parsing en viel de app telkens terug naar defaults zonder het bestand te herstellen.
 - Conclusions: Bij parse failure moet de app het corrupte bestand backuppen en een schone default settings.json schrijven; bij salvage moet altijd herschreven worden.
 - Actions: Updated `electron/ipc/settings.ts` `readStoredSettings` om BOM te strippen, salvage-detectie toe te passen, corrupte settings.json te backuppen (`settings.json.corrupt.<timestamp>`) en defaults atomisch terug te schrijven; validated with `npm run build`.
+
+## 2026-04-18 (AI Configuration settings naar database)
+
+- Findings: AI Configuration state (OpenRouter, provider-meta, local endpoints en dashboard routing) werd alleen in `settings.json` opgeslagen, terwijl de app al PostgreSQL/Drizzle gebruikt.
+- Conclusions: Een singleton DB-tabel voor AI Configuration maakt opslag consistenter, beter backupbaar en minder afhankelijk van bestandsschrijfacties.
+- Actions: Added `ai_configuration_settings` in `src/lib/schema.ts` plus migration `drizzle/0026_ai_configuration_settings.sql` en journal entry; refactored `electron/ipc/settings.ts` zodat `get/saveOpenRouter`, `get/saveProviderMeta`, `get/saveLocalEndpoints`, `get/saveAiConfigState` en gerelateerde reads DB-first zijn met fallback/migratie vanaf `settings.json`; updated `electron/main.ts` om DB-aware settings readers te gebruiken; uitgebreid `settings:backupDatabase` met `ai_configuration_settings`; validated with `npm run build`.

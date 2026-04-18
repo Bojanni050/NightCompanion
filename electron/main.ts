@@ -93,18 +93,18 @@ app.whenReady().then(async () => {
 
   registerIpcHandlers({
     db,
-    getOpenRouterSettings,
-    getAiApiRequestLoggingEnabled,
+    getOpenRouterSettings: () => getOpenRouterSettings(db),
+    getAiApiRequestLoggingEnabled: () => getAiApiRequestLoggingEnabled(db),
     onNativeWindowFrameChanged: (enabled) => {
       recreateMainWindowWithPreference(enabled)
     },
   })
-  const nativeWindowFrameEnabled = await getNativeWindowFrameEnabled()
+  const nativeWindowFrameEnabled = await getNativeWindowFrameEnabled(db)
   createWindowWithPreference(nativeWindowFrameEnabled)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      void getNativeWindowFrameEnabled().then((enabled) => {
+      void getNativeWindowFrameEnabled(db).then((enabled) => {
         createWindowWithPreference(enabled)
       })
     }

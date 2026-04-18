@@ -230,6 +230,71 @@ export const aiUsageEvents = pgTable(
   ]
 )
 
+export const aiConfigurationSettings = pgTable(
+  'ai_configuration_settings',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    singletonKey: varchar('singleton_key', { length: 32 }).default('singleton').notNull(),
+    openRouter: jsonb('open_router').$type<{
+      apiKey: string
+      model: string
+      siteUrl: string
+      appName: string
+    }>().default({
+      apiKey: '',
+      model: 'openai/gpt-4o-mini',
+      siteUrl: '',
+      appName: 'NightCompanion',
+    }).notNull(),
+    providerMeta: jsonb('provider_meta').$type<Record<string, {
+      model_gen?: string
+      model_improve?: string
+      model_vision?: string
+      model_general?: string
+      is_active?: boolean
+      is_active_gen?: boolean
+      is_active_improve?: boolean
+      is_active_vision?: boolean
+      is_active_general?: boolean
+    }>>().default({}).notNull(),
+    localEndpoints: jsonb('local_endpoints').$type<Array<{
+      id?: string
+      provider?: string
+      name?: string
+      baseUrl?: string
+      apiKey?: string
+      model_name?: string
+      model_gen?: string
+      model_improve?: string
+      model_vision?: string
+      model_general?: string
+      is_active?: boolean
+      is_active_gen?: boolean
+      is_active_improve?: boolean
+      is_active_vision?: boolean
+      is_active_general?: boolean
+      updated_at?: string
+    }>>().default([]).notNull(),
+    aiConfig: jsonb('ai_config').$type<{
+      dashboardRoleRouting?: unknown
+      cachedModels?: unknown
+      advisorModelRoute?: unknown
+      aiApiRequestLoggingEnabled?: boolean
+      nativeWindowFrameEnabled?: boolean
+      nightCompanionFolderPath?: string
+      usageCurrency?: 'usd' | 'eur'
+      eurRate?: number
+      storeAiPromptResponseForUsage?: boolean
+    }>().default({}).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex('ai_configuration_settings_singleton_key_unique').on(table.singletonKey),
+    index('ai_configuration_settings_updated_at_idx').on(table.updatedAt),
+  ]
+)
+
 // ─── Characters ───────────────────────────────────────────────────────────────
 
 export const characters = pgTable(
@@ -346,6 +411,9 @@ export type NewNightcafeModel = typeof nightcafeModels.$inferInsert
 
 export type NightcafePreset = typeof nightcafePresets.$inferSelect
 export type NewNightcafePreset = typeof nightcafePresets.$inferInsert
+
+export type AiConfigurationSettings = typeof aiConfigurationSettings.$inferSelect
+export type NewAiConfigurationSettings = typeof aiConfigurationSettings.$inferInsert
 
 export type Character = typeof characters.$inferSelect
 export type NewCharacter = typeof characters.$inferInsert
