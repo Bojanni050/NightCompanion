@@ -10,6 +10,8 @@ export type PromptImageMutationInput = {
   model?: string
   seed?: string
   createdAt?: string
+  promptSource?: 'generated' | 'improved' | 'custom'
+  customPrompt?: string
 }
 
 export type PromptMutationInput = Omit<import('../lib/schema').NewPrompt, 'createdAt' | 'updatedAt'> & {

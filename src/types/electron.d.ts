@@ -11,6 +11,8 @@ type PromptImageMutationInput = {
   model?: string
   seed?: string
   createdAt?: string
+  promptSource?: 'generated' | 'improved' | 'custom'
+  customPrompt?: string
 }
 type PromptMutationInput = Omit<NewPrompt, 'createdAt' | 'updatedAt'> & {
   imageDataUrl?: string | null

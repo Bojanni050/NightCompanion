@@ -20,6 +20,7 @@ type ImageDraft = {
   seed: string
   createdAt: string
   promptSource?: 'generated' | 'improved' | 'custom'
+  customPrompt: string
 }
 
 const MAX_TAG_COUNT = 15
@@ -51,7 +52,6 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [isFavorite, setIsFavorite] = useState(initial?.isFavorite ?? false)
   const [rating, setRating] = useState<number>(initial?.rating ?? 0)
   const [notes, setNotes] = useState(initial?.notes ?? '')
-  const [customPrompt, setCustomPrompt] = useState('')
 
   const improvedPromptValue = useMemo(() => {
     const candidate = (initial as unknown as { improvedPrompt?: string } | undefined)?.improvedPrompt
@@ -72,10 +72,17 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         createdAt: image.createdAt ?? new Date().toISOString(),
         promptSource: (() => {
           const saved = (image as unknown as { promptSource?: 'generated' | 'improved' | 'custom' | 'original' }).promptSource
+          const customPrompt = typeof (image as unknown as { customPrompt?: unknown }).customPrompt === 'string'
+            ? String((image as unknown as { customPrompt: string }).customPrompt).trim()
+            : ''
+          if (customPrompt) return 'custom'
           if (saved === 'original') return 'generated'
           if (saved === 'generated' || saved === 'improved' || saved === 'custom') return saved
           return 'generated'
         })(),
+        customPrompt: typeof (image as unknown as { customPrompt?: unknown }).customPrompt === 'string'
+          ? String((image as unknown as { customPrompt: string }).customPrompt)
+          : '',
       }))
     }
     if (initial?.imageUrl) {
@@ -94,6 +101,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         seed: initial.seed ?? '',
         createdAt: now,
         promptSource: 'generated',
+        customPrompt: '',
       }]
     }
 
@@ -221,10 +229,17 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           createdAt: image.createdAt ?? new Date().toISOString(),
           promptSource: (() => {
             const saved = (image as unknown as { promptSource?: 'generated' | 'improved' | 'custom' | 'original' }).promptSource
+            const customPrompt = typeof (image as unknown as { customPrompt?: unknown }).customPrompt === 'string'
+              ? String((image as unknown as { customPrompt: string }).customPrompt).trim()
+              : ''
+            if (customPrompt) return 'custom'
             if (saved === 'original') return 'generated'
             if (saved === 'generated' || saved === 'improved' || saved === 'custom') return saved
             return 'generated'
           })(),
+          customPrompt: typeof (image as unknown as { customPrompt?: unknown }).customPrompt === 'string'
+            ? String((image as unknown as { customPrompt: string }).customPrompt)
+            : '',
         }))
       }
 
@@ -244,6 +259,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           seed: version.seed ?? '',
           createdAt: now,
           promptSource: 'generated',
+          customPrompt: '',
         }]
       }
 
@@ -336,6 +352,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           seed: seed.trim(),
           createdAt: now,
           promptSource: 'generated',
+          customPrompt: '',
         })
       } catch {
         setError('Could not read one of the selected images.')
@@ -382,15 +399,14 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const selectedPrompt = customPrompt.trim() ? customPrompt : promptText
-    if (!title.trim() || !selectedPrompt.trim()) return
+    if (!title.trim() || !promptText.trim()) return
 
     setSubmitting(true)
     setError(null)
 
     const err = await onSubmit({
       title: title.trim(),
-      promptText: selectedPrompt.trim(),
+      promptText: promptText.trim(),
       negativePrompt: negativePrompt.trim(),
       model: model.trim(),
       suggestedModel: suggestedModel.trim(),
@@ -410,7 +426,12 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         model: image.model,
         seed: image.seed,
         createdAt: image.createdAt,
-        promptSource: image.promptSource ?? 'generated',
+        promptSource: image.customPrompt.trim()
+          ? 'custom'
+          : image.promptSource === 'custom'
+            ? 'generated'
+            : (image.promptSource ?? 'generated'),
+        customPrompt: image.customPrompt.trim(),
       })),
     })
 
@@ -552,36 +573,58 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                           </div>
 
                           <div>
-                            <label className="label">Prompt used</label>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {(
-                                [
-                                  { id: 'generated' as const, label: 'Generated' },
-                                  ...(improvedPromptValue.trim()
-                                    ? [{ id: 'improved' as const, label: 'Improved' }]
-                                    : []),
-                                  { id: 'custom' as const, label: 'Custom' },
-                                ] as const
-                              ).map((option) => {
-                                const checked = (image.promptSource ?? 'generated') === option.id
-                                return (
-                                  <button
-                                    key={option.id}
-                                    type="button"
-                                    onClick={() => updateImage(image.id, { promptSource: option.id })}
-                                    className={checked ? 'btn-compact-primary' : 'btn-compact-ghost'}
-                                    aria-pressed={checked ? 'true' : 'false'}
-                                  >
-                                    <span className="inline-flex items-center gap-2">
-                                      <span className={checked ? 'text-white' : 'text-slate-400'}>
-                                        {checked ? <Check size={14} /> : <span className="w-[14px]" />}
-                                      </span>
-                                      {option.label}
-                                    </span>
-                                  </button>
-                                )
-                              })}
-                            </div>
+                            <label className="label !mb-2">Prompt used</label>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const enableCustom = !image.customPrompt.trim() && (image.promptSource ?? 'generated') !== 'custom'
+                                if (enableCustom) {
+                                  updateImage(image.id, { promptSource: 'custom', customPrompt: promptText })
+                                  return
+                                }
+
+                                updateImage(image.id, {
+                                  promptSource: image.promptSource === 'custom' || image.customPrompt.trim() ? 'generated' : 'custom',
+                                  customPrompt: image.promptSource === 'custom' || image.customPrompt.trim() ? '' : promptText,
+                                })
+                              }}
+                              className={(image.promptSource ?? 'generated') === 'custom' || image.customPrompt.trim()
+                                ? 'btn-compact-primary'
+                                : 'btn-compact-ghost'}
+                              aria-pressed={((image.promptSource ?? 'generated') === 'custom' || image.customPrompt.trim()) ? 'true' : 'false'}
+                            >
+                              <span className="inline-flex items-center gap-2">
+                                <span className={((image.promptSource ?? 'generated') === 'custom' || image.customPrompt.trim()) ? 'text-white' : 'text-slate-400'}>
+                                  {((image.promptSource ?? 'generated') === 'custom' || image.customPrompt.trim()) ? <Check size={14} /> : <span className="w-[14px]" />}
+                                </span>
+                                Use custom prompt for this image
+                              </span>
+                            </button>
+
+                            {((image.promptSource ?? 'generated') === 'custom' || image.customPrompt.trim()) && (
+                              <div className="mt-3">
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <label className="label !mb-0">Custom Prompt</label>
+                                  <span className="text-[10px] text-slate-500">{image.customPrompt.length} chars</span>
+                                </div>
+                                <textarea
+                                  value={image.customPrompt}
+                                  onChange={(e) => updateImage(image.id, {
+                                    customPrompt: e.target.value,
+                                    promptSource: e.target.value.trim() ? 'custom' : 'generated',
+                                  })}
+                                  className="textarea"
+                                  rows={3}
+                                  placeholder="Enter a custom prompt for this image..."
+                                />
+                              </div>
+                            )}
+
+                            {(image.promptSource ?? 'generated') !== 'custom' && !image.customPrompt.trim() && improvedPromptValue.trim() && (
+                              <p className="mt-2 text-[10px] text-slate-500">
+                                This image currently uses the saved generated or improved prompt.
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -643,20 +686,6 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 />
               </div>
 
-              {/* Custom Prompt */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="label !mb-0">Custom Prompt</label>
-                  <span className="text-[10px] text-slate-500">{customPrompt.length} chars</span>
-                </div>
-                <textarea
-                  value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  className="textarea"
-                  rows={3}
-                  placeholder="Enter a custom prompt…"
-                />
-              </div>
             </div>
 
             {/* Negative prompt */}
@@ -671,45 +700,6 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 className="textarea"
                 rows={2}
                 placeholder="Things to avoid…"
-              />
-            </div>
-
-            {/* Model */}
-            <div>
-              <label className="label">Model</label>
-              <div className="flex gap-2">
-                <select
-                  value={modelOptions.includes(model) ? model : ''}
-                  onChange={(e) => setModel(e.target.value)}
-                  aria-label="Select model"
-                  className="w-1/2 input"
-                >
-                  <option value="">— kies model —</option>
-                  {modelOptions.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={model}
-                  onChange={(e) => setModel(e.target.value)}
-                  className="w-1/2 input"
-                  placeholder="of typ een modelnaam"
-                />
-              </div>
-            </div>
-
-            {/* Seed */}
-            <div>
-              <label className="label">Seed</label>
-              <input
-                type="text"
-                value={seed}
-                onChange={(e) => setSeed(e.target.value)}
-                className="input"
-                placeholder="e.g. 123456789"
               />
             </div>
 
@@ -926,7 +916,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             <div className="overflow-y-auto p-4 border-t border-slate-800/50 lg:border-t-0 lg:border-l md:p-5">
               <div className="lg:sticky lg:top-0">
                 <PromptPreview
-                  promptText={customPrompt.trim() ? customPrompt : promptText}
+                  promptText={promptText}
                   negativePrompt={negativePrompt}
                   styleSnippet={selectedStyleProfile?.basePromptSnippet ?? ''}
                   styleNegative={selectedStyleProfile?.commonNegativePrompts ?? ''}
@@ -934,7 +924,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                   maxWords={70}
                   onSave={() => formRef.current?.requestSubmit()}
                   saveLabel={isEdit ? 'Save changes' : 'Create prompt'}
-                  saveDisabled={submitting || !title.trim() || !(customPrompt.trim() ? customPrompt : promptText).trim()}
+                  saveDisabled={submitting || !title.trim() || !promptText.trim()}
                 />
               </div>
             </div>

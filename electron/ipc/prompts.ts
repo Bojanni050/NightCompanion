@@ -21,6 +21,8 @@ type PromptImageMutationInput = {
   model?: string
   seed?: string
   createdAt?: string
+  promptSource?: 'generated' | 'improved' | 'custom'
+  customPrompt?: string
 }
 
 type PromptImageRow = {
@@ -30,6 +32,8 @@ type PromptImageRow = {
   model: string
   seed: string
   createdAt: string
+  promptSource?: 'generated' | 'improved' | 'custom'
+  customPrompt?: string
 }
 
 type PromptMutationInput = Partial<NewPrompt> & {
@@ -124,7 +128,16 @@ function normalisePromptImageRow(input: {
   model?: string
   seed?: string
   createdAt?: string
+  promptSource?: 'generated' | 'improved' | 'custom'
+  customPrompt?: string
 }): PromptImageRow {
+  const customPrompt = (input.customPrompt ?? '').trim()
+  const normalizedPromptSource = customPrompt
+    ? 'custom'
+    : input.promptSource === 'improved'
+      ? 'improved'
+      : 'generated'
+
   return {
     id: input.id?.trim() || randomUUID(),
     url: input.url.trim(),
@@ -132,6 +145,8 @@ function normalisePromptImageRow(input: {
     model: (input.model ?? '').trim(),
     seed: (input.seed ?? '').trim(),
     createdAt: input.createdAt?.trim() || new Date().toISOString(),
+    promptSource: normalizedPromptSource,
+    customPrompt,
   }
 }
 
@@ -165,6 +180,8 @@ async function resolvePromptImages(
           model: image.model,
           seed: image.seed,
           createdAt: image.createdAt,
+          promptSource: image.promptSource,
+          customPrompt: image.customPrompt,
         })
       )
     }

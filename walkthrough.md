@@ -768,3 +768,15 @@
 - Findings: computeBudgetPicks gaf nog steeds hetzelfde model voor alle drie de budget-categorieën, ondanks de eerder toegevoegde harde costTier-filter. Oorzaak: parseCostTier kon de CSV-notatie met dollar-tekens ($$$$) niet parsen — parseInt('$$$$') levert NaN, de string-checks matchen niet, en de fallback is altijd 2. Hierdoor kregen alle modellen costTier 2 en kwamen ze door alle drie filters.
 - Conclusions: Dollar-teken notatie ($ t/m $$$$$) toevoegen als eerste check: lengte van de $-string = costTier (1–5). De bestaande numerieke en string-checks blijven als fallback behouden.
 - Actions: electron/ipc/ai.ts — parseCostTier uitgebreid met /^\$+$/ regex-check vóór de parseInt; validated with npm run build.
+
+## 2026-04-18 (Prompt Library: image-level custom prompt + lightbox label)
+
+- Findings: In het Prompt Library edit-formulier stond een globale Custom Prompt, terwijl de gewenste flow een optionele custom prompt per afbeelding is. In de lightbox was bovendien niet zichtbaar of de getoonde prompt image-specifiek custom was.
+- Conclusions: Verplaats custom prompt van prompt-niveau naar image-niveau met een checkmark-toggle per uploadkaart. Toon bij custom images in de lightbox de image-specifieke prompttekst en een duidelijke `Custom` overlay linksboven.
+- Actions: Updated `src/components/PromptForm.tsx` (globale Custom Prompt verwijderd; per-image checkmark + custom prompt textarea), `electron/ipc/prompts.ts` + `src/lib/schema.ts` + `src/types/index.ts` + `src/types/electron.d.ts` (image metadata uitgebreid met `promptSource`/`customPrompt`), en `src/screens/Library.tsx` (lightbox gebruikt image metadata, toont custom prompttekst + `Custom` badge linksboven); validated with `npm run build`.
+
+## 2026-04-18 (Hotfix: PromptForm customPrompt runtime error)
+
+- Findings: Prompt Library edit-form crashte met `ReferenceError: customPrompt is not defined` in `PromptForm` preview-sectie nadat de globale custom prompt state was verwijderd.
+- Conclusions: Alle resterende verwijzingen naar de verwijderde globale variabele moeten terugvallen op `promptText`.
+- Actions: Updated `src/components/PromptForm.tsx` `PromptPreview` props (`promptText` en `saveDisabled`) om alleen `promptText` te gebruiken; validated with `npm run build`.

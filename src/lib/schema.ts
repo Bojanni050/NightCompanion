@@ -28,6 +28,8 @@ export const prompts = pgTable(
       model: string
       seed: string
       createdAt: string
+      promptSource?: 'generated' | 'improved' | 'custom'
+      customPrompt?: string
     }>>().default([]).notNull(),
     promptText: text('prompt_text').notNull(),
     originalPrompt: text('original_prompt'),
@@ -68,6 +70,8 @@ export const promptVersions = pgTable(
       model: string
       seed: string
       createdAt: string
+      promptSource?: 'generated' | 'improved' | 'custom'
+      customPrompt?: string
     }>>().default([]).notNull(),
     promptText: text('prompt_text').notNull(),
     originalPrompt: text('original_prompt'),

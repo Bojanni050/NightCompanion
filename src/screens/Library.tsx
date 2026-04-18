@@ -24,6 +24,13 @@ type LightboxItem = {
   rating: number
   model: string
   stylePreset: string
+  isCustomPrompt: boolean
+}
+
+type PromptImageView = {
+  url: string
+  customPrompt: string
+  promptSource: 'generated' | 'improved' | 'custom'
 }
 
 type LightboxPosition = {
@@ -31,22 +38,39 @@ type LightboxPosition = {
   imageIndex: number
 }
 
-function getPromptImageUrls(prompt: Prompt): string[] {
-  const urls: string[] = []
+function getPromptImages(prompt: Prompt): PromptImageView[] {
+  const images: PromptImageView[] = []
 
   if (Array.isArray(prompt.imagesJson)) {
     for (const image of prompt.imagesJson) {
       const candidate = typeof image?.url === 'string' ? image.url.trim() : ''
-      if (candidate) urls.push(candidate)
+      if (!candidate) continue
+
+      const customPrompt = typeof image?.customPrompt === 'string' ? image.customPrompt.trim() : ''
+      const promptSource = customPrompt
+        ? 'custom'
+        : image?.promptSource === 'improved'
+          ? 'improved'
+          : 'generated'
+
+      images.push({
+        url: candidate,
+        customPrompt,
+        promptSource,
+      })
     }
   }
 
   const fallback = typeof prompt.imageUrl === 'string' ? prompt.imageUrl.trim() : ''
-  if (fallback && !urls.includes(fallback)) {
-    urls.push(fallback)
+  if (fallback && !images.some((image) => image.url === fallback)) {
+    images.push({
+      url: fallback,
+      customPrompt: '',
+      promptSource: 'generated',
+    })
   }
 
-  return urls
+  return images
 }
 
 function getStarFill(rating: number, starIndex: number) {
@@ -93,7 +117,7 @@ export default function Library() {
     const promptIndex = filteredPrompts.findIndex((prompt) => prompt.id === promptId)
     if (promptIndex === -1) return
 
-    const promptImages = getPromptImageUrls(filteredPrompts[promptIndex])
+    const promptImages = getPromptImages(filteredPrompts[promptIndex])
     if (promptImages.length === 0) return
 
     const clampedIndex = Math.max(0, Math.min(imageIndex, promptImages.length - 1))
@@ -115,19 +139,20 @@ export default function Library() {
     const prompt = filteredPrompts[lightboxPosition.promptIndex]
     if (!prompt) return null
 
-    const promptImages = getPromptImageUrls(prompt)
+    const promptImages = getPromptImages(prompt)
     if (promptImages.length === 0) return null
 
     const currentImage = promptImages[lightboxPosition.imageIndex]
     if (!currentImage) return null
 
     return {
-      url: currentImage,
+      url: currentImage.url,
       title: prompt.title || 'Prompt image',
-      promptText: prompt.promptText,
+      promptText: currentImage.customPrompt || prompt.promptText,
       rating: prompt.rating ?? 0,
       model: prompt.model || prompt.suggestedModel || '',
       stylePreset: prompt.stylePreset ?? '',
+      isCustomPrompt: Boolean(currentImage.customPrompt) || currentImage.promptSource === 'custom',
     }
   }, [filteredPrompts, lightboxPosition])
 
@@ -135,7 +160,7 @@ export default function Library() {
     if (!lightboxPosition) return 0
     const prompt = filteredPrompts[lightboxPosition.promptIndex]
     if (!prompt) return 0
-    return getPromptImageUrls(prompt).length
+    return getPromptImages(prompt).length
   }, [filteredPrompts, lightboxPosition])
 
   const goToNextLightboxImage = useCallback(() => {
@@ -145,7 +170,7 @@ export default function Library() {
     const currentPrompt = filteredPrompts[lightboxPosition.promptIndex]
     if (!currentPrompt) return
 
-    const currentImages = getPromptImageUrls(currentPrompt)
+    const currentImages = getPromptImages(currentPrompt)
     if (currentImages.length === 0) return
 
     if (lightboxPosition.imageIndex < currentImages.length - 1) {
@@ -158,7 +183,7 @@ export default function Library() {
 
     for (let offset = 1; offset <= filteredPrompts.length; offset += 1) {
       const nextPromptIndex = (lightboxPosition.promptIndex + offset) % filteredPrompts.length
-      const nextPromptImages = getPromptImageUrls(filteredPrompts[nextPromptIndex])
+      const nextPromptImages = getPromptImages(filteredPrompts[nextPromptIndex])
       if (nextPromptImages.length > 0) {
         setLightboxPosition({ promptIndex: nextPromptIndex, imageIndex: 0 })
         return
@@ -173,7 +198,7 @@ export default function Library() {
     const currentPrompt = filteredPrompts[lightboxPosition.promptIndex]
     if (!currentPrompt) return
 
-    const currentImages = getPromptImageUrls(currentPrompt)
+    const currentImages = getPromptImages(currentPrompt)
     if (currentImages.length === 0) return
 
     if (lightboxPosition.imageIndex > 0) {
@@ -186,7 +211,7 @@ export default function Library() {
 
     for (let offset = 1; offset <= filteredPrompts.length; offset += 1) {
       const previousPromptIndex = (lightboxPosition.promptIndex - offset + filteredPrompts.length) % filteredPrompts.length
-      const previousPromptImages = getPromptImageUrls(filteredPrompts[previousPromptIndex])
+      const previousPromptImages = getPromptImages(filteredPrompts[previousPromptIndex])
       if (previousPromptImages.length > 0) {
         setLightboxPosition({
           promptIndex: previousPromptIndex,
@@ -465,8 +490,8 @@ export default function Library() {
                 const preview = prompt.promptText.length > 170
                   ? `${prompt.promptText.slice(0, 170)}...`
                   : prompt.promptText
-                const promptImages = getPromptImageUrls(prompt)
-                const coverImageUrl = promptImages[0] || ''
+                const promptImages = getPromptImages(prompt)
+                const coverImageUrl = promptImages[0]?.url || ''
 
                 return (
                   <div
@@ -908,6 +933,15 @@ export default function Library() {
             >
               <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">Used model</p>
               <p className="mt-1 text-sm font-medium text-white/95 break-words">{lightboxImage.model}</p>
+            </div>
+          )}
+
+          {lightboxImage.isCustomPrompt && (
+            <div
+              className={`absolute top-16 left-4 z-[101] rounded-full border border-amber-300/60 bg-amber-500/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 shadow-xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              Custom
             </div>
           )}
 
