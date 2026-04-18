@@ -762,3 +762,9 @@
 - Findings: AI advice gaf voor alle drie de budget-categorieën (cheap/balanced/premium) hetzelfde model (3D Animation Diffusion v10) terug. Oorzaak: computeBudgetPicks filterde niet op costTier vóór de scoring, waardoor een model met hoge quality-score én lage costTier ook de balanced- en premium-categorie won via de zachte penalty (die voor premium altijd 0 is).
 - Conclusions: Harde costTier-filter per budget-modus vóór de .map() zorgt dat cheap alleen costTier ≤ 2 en balanced alleen costTier ≤ 3 overweegt; premium blijft onbeperkt. De zachte penalty-logica blijft als tiebreaker behouden.
 - Actions: electron/ipc/ai.ts — in computeBudgetPicks / scoreFor een candidateModels-filter toegevoegd vóór de scoring-map; de bestaande penalty-logica en sort ongewijzigd gelaten; validated with npm run build.
+
+## 2026-04-18 (Bug fix: parseCostTier herkent dollar-teken notatie niet)
+
+- Findings: computeBudgetPicks gaf nog steeds hetzelfde model voor alle drie de budget-categorieën, ondanks de eerder toegevoegde harde costTier-filter. Oorzaak: parseCostTier kon de CSV-notatie met dollar-tekens ($$$$) niet parsen — parseInt('$$$$') levert NaN, de string-checks matchen niet, en de fallback is altijd 2. Hierdoor kregen alle modellen costTier 2 en kwamen ze door alle drie filters.
+- Conclusions: Dollar-teken notatie ($ t/m $$$$$) toevoegen als eerste check: lengte van de $-string = costTier (1–5). De bestaande numerieke en string-checks blijven als fallback behouden.
+- Actions: electron/ipc/ai.ts — parseCostTier uitgebreid met /^\$+$/ regex-check vóór de parseInt; validated with npm run build.

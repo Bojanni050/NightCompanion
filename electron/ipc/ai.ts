@@ -370,11 +370,17 @@ function parseScore(value: string) {
 function parseCostTier(value: string) {
   const raw = String(value ?? '').trim().toLowerCase()
   if (!raw) return 2
+
+  // Dollar-teken notatie: $ = 1, $$ = 2, $$$ = 3, $$$$ = 4, $$$$$ = 5
+  if (/^\$+$/.test(raw)) return Math.min(5, raw.length)
+
   const asNumber = Number.parseInt(raw, 10)
   if (Number.isFinite(asNumber)) return Math.max(1, Math.min(5, asNumber))
+
   if (raw.includes('low') || raw.includes('cheap') || raw.includes('budget')) return 1
   if (raw.includes('med')) return 2
   if (raw.includes('high') || raw.includes('expensive') || raw.includes('premium')) return 4
+
   return 2
 }
 
