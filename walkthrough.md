@@ -786,3 +786,9 @@
 - Findings: In Prompt Library edit-form sloot het image-level `Custom Prompt` veld direct wanneer de inhoud tijdelijk leeg werd gemaakt (Delete/Backspace) en kon dit ook optreden tijdens plakacties met Ctrl+V.
 - Conclusions: Het veld mag tijdens bewerken niet automatisch terugschakelen naar `generated`; alleen de expliciete toggle-knop mag de mode wisselen.
 - Actions: Updated `src/components/PromptForm.tsx` textarea `onChange` voor image custom prompts zodat `promptSource` tijdens input altijd `custom` blijft; validated with `npm run build`.
+
+## 2026-04-18 (Lightbox: used model from image metadata + overlay layering)
+
+- Findings: In de Prompt Library lightbox werd `Used model` getoond op basis van prompt-level modeldata, niet op basis van de geselecteerde afbeelding. Daarnaast kon de model-overlay visueel achter de lightbox-afbeelding vallen door gelijke z-index.
+- Conclusions: `Used model` moet primair uit image-level metadata (`imagesJson[].model`) komen, met prompt-level fallback voor oudere records. De model-overlay moet een hogere z-index hebben dan de lightbox-afbeelding.
+- Actions: Updated `src/screens/Library.tsx` door `getPromptImages` uit te breiden met `model`, `lightboxImage.model` te koppelen aan de geselecteerde afbeelding, en de `Used model` overlay naar `z-[103]` te verhogen; validated with `npm run build`.

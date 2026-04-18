@@ -29,6 +29,7 @@ type LightboxItem = {
 
 type PromptImageView = {
   url: string
+  model: string
   customPrompt: string
   promptSource: 'generated' | 'improved' | 'custom'
 }
@@ -55,6 +56,7 @@ function getPromptImages(prompt: Prompt): PromptImageView[] {
 
       images.push({
         url: candidate,
+        model: typeof image?.model === 'string' ? image.model.trim() : '',
         customPrompt,
         promptSource,
       })
@@ -65,6 +67,7 @@ function getPromptImages(prompt: Prompt): PromptImageView[] {
   if (fallback && !images.some((image) => image.url === fallback)) {
     images.push({
       url: fallback,
+      model: prompt.model || prompt.suggestedModel || '',
       customPrompt: '',
       promptSource: 'generated',
     })
@@ -150,7 +153,7 @@ export default function Library() {
       title: prompt.title || 'Prompt image',
       promptText: currentImage.customPrompt || prompt.promptText,
       rating: prompt.rating ?? 0,
-      model: prompt.model || prompt.suggestedModel || '',
+      model: currentImage.model || prompt.model || prompt.suggestedModel || '',
       stylePreset: prompt.stylePreset ?? '',
       isCustomPrompt: Boolean(currentImage.customPrompt) || currentImage.promptSource === 'custom',
     }
@@ -928,7 +931,7 @@ export default function Library() {
 
           {lightboxImage.model && (
             <div
-              className={`absolute top-16 right-4 z-[101] max-w-[min(42rem,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-black/45 px-4 py-2 text-right text-white shadow-2xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              className={`absolute top-16 right-4 z-[103] max-w-[min(42rem,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-black/45 px-4 py-2 text-right text-white shadow-2xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               onClick={(event) => event.stopPropagation()}
             >
               <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">Used model</p>

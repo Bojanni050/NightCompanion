@@ -59,3 +59,4 @@
 - Prompt Library edit form no longer shows a global Custom Prompt field; each uploaded image now has its own custom-prompt toggle with a checkmark.
 - When an image-level custom prompt is enabled, that custom text is shown in the Prompt Library lightbox and a `Custom` label appears as an overlay in the top-left corner of the image.
 - The image-level `Custom Prompt` field now stays open while editing, including when temporarily clearing text or pasting with Ctrl+V.
+- Prompt Library lightbox now shows `Used model` from the selected uploaded image metadata, and keeps this label visually in front of the image.
