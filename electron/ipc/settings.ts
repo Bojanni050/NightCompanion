@@ -77,6 +77,7 @@ type GeneratorUiStateStore = {
   advisorFastest?: string
   supportsNegativePrompt?: boolean | null
   budgetMode?: 'cheap' | 'balanced' | 'premium'
+  savePromptMode?: 'original-only' | 'original-and-improved'
 }
 
 type PromptBuilderUiStateStore = {
@@ -258,6 +259,9 @@ function normalizeGeneratorUiState(input: unknown): GeneratorUiStateStore {
   }
   if (input.budgetMode === 'cheap' || input.budgetMode === 'balanced' || input.budgetMode === 'premium') {
     normalized.budgetMode = input.budgetMode
+  }
+  if (input.savePromptMode === 'original-only' || input.savePromptMode === 'original-and-improved') {
+    normalized.savePromptMode = input.savePromptMode
   }
 
   return normalized

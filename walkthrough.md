@@ -265,6 +265,18 @@
 - Conclusions: A fixed icon column with a constrained text column keeps every menu row aligned regardless of icon shape.
 - Actions: Updated `src/components/Sidebar.tsx` to use a two-column grid (`icon + text`) with a fixed icon container and `min-w-0` text block for consistent alignment; validated with `npm run build`.
 
+## 2026-04-19 (Generator — save mode for original vs improved)
+
+- Findings: Generator save flow always used the improved prompt when an improvement diff existed, with no user choice.
+- Conclusions: Add an explicit save mode selector so users can save original-only or keep original+improved behavior.
+- Actions: Updated `src/screens/Generator.tsx` to add persisted `savePromptMode` state and branch save payload selection; updated `src/components/generator/TitleSaveSection.tsx` with a new `Save mode` dropdown; extended generator UI state typing/normalization in `electron/ipc/settings.ts`, `electron/preload.ts`, and `src/types/electron.d.ts`; validated with `npm run build`.
+
+## 2026-04-19 (Generator — place Generate Title before save mode)
+
+- Findings: In the Generator save row, `Generate Title (AI)` appeared after the save-mode selector.
+- Conclusions: Place `Generate Title (AI)` directly before the save-mode dropdown to match the intended action order.
+- Actions: Updated `src/components/generator/TitleSaveSection.tsx` to reorder controls into title input → generate title button → save mode dropdown, while keeping `Save to Library` as the trailing action; validated with `npm run build`.
+
 ## 2026-04-18 (Settings — stronger section headings)
 
 - Findings: Settings section headings used the same `text-sm` sizing as the option labels inside each card, which made sections harder to distinguish.

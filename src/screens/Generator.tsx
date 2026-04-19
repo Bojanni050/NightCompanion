@@ -26,6 +26,7 @@ type NegativePromptViewTab = 'final' | 'diff'
 type CreativityLevel = 'focused' | 'balanced' | 'wild'
 type BudgetMode = 'cheap' | 'balanced' | 'premium'
 type ImprovementMode = 'expand' | 'reframe' | 'intensify'
+type SavePromptMode = 'original-only' | 'original-and-improved'
 
 type BudgetPick = { modelName: string; reasons: string[] }
 type GeneratorPersistedState = {
@@ -63,6 +64,7 @@ type GeneratorPersistedState = {
   supportsNegativePrompt?: boolean | null
   budgetMode?: BudgetMode
   autoTitleEnabled?: boolean
+  savePromptMode?: SavePromptMode
 }
 
 function buildDefaultTitle(value: string) {
@@ -101,6 +103,7 @@ export default function Generator() {
   const [improvingNegative, setImprovingNegative] = useState(false)
   const [generatingTitle, setGeneratingTitle] = useState(false)
   const [savedTitle, setSavedTitle] = useState('')
+  const [savePromptMode, setSavePromptMode] = useState<SavePromptMode>('original-and-improved')
   const [autoTitleEnabled, setAutoTitleEnabled] = useState(true)
   const [recommendedModel, setRecommendedModel] = useState('')
   const [recommendedModelReason, setRecommendedModelReason] = useState('')
@@ -633,6 +636,7 @@ export default function Generator() {
       setMagicRandomCharacterId(parsed.magicRandomCharacterId ?? legacyCharacterId)
       setBudgetMode(parsed.budgetMode === 'cheap' ? 'cheap' : parsed.budgetMode === 'premium' ? 'premium' : 'balanced')
       setAutoTitleEnabled(parsed.autoTitleEnabled !== false)
+      setSavePromptMode(parsed.savePromptMode === 'original-only' ? 'original-only' : 'original-and-improved')
 
       const nextPromptViewTab = parsed.promptViewTab === 'diff' && parsed.improvementDiff ? 'diff' : 'final'
       promptImprovementSetViewTab(nextPromptViewTab)
@@ -706,6 +710,7 @@ export default function Generator() {
       magicRandomCharacterId,
       budgetMode,
       autoTitleEnabled,
+      savePromptMode,
     })
 
     if (uiStateSaveTimeoutRef.current) {
@@ -753,6 +758,7 @@ export default function Generator() {
     magicRandomCharacterId,
     budgetMode,
     autoTitleEnabled,
+    savePromptMode,
   ])
 
   useEffect(() => {
@@ -1004,7 +1010,10 @@ export default function Generator() {
   }
 
   const handleSaveToLibrary = async () => {
-    const finalPromptText = (promptImprovement.improvementDiff?.improvedPrompt ?? generatedPrompt).trim()
+    const originalPromptText = (promptImprovement.improvementDiff?.originalPrompt ?? generatedPrompt).trim()
+    const improvedPromptText = (promptImprovement.improvementDiff?.improvedPrompt ?? '').trim()
+    const shouldUseImprovedPrompt = savePromptMode === 'original-and-improved' && Boolean(improvedPromptText)
+    const finalPromptText = shouldUseImprovedPrompt ? improvedPromptText : originalPromptText
     if (!finalPromptText) {
       setStatus('Generate or paste a prompt before saving to library.')
       return
@@ -1016,7 +1025,7 @@ export default function Generator() {
       return
     }
 
-    const nextOriginalPrompt = (promptImprovement.improvementDiff?.originalPrompt ?? finalPromptText).trim()
+    const nextOriginalPrompt = originalPromptText || finalPromptText
 
     try {
       const existingPromptsResult = await window.electronAPI.prompts.list()
@@ -1060,8 +1069,9 @@ export default function Generator() {
       }
 
       setSavedTitle('')
-      setStatus('Saved to Prompt Library!')
-      notifications.show({ message: 'Saved to Prompt Library!', color: 'green' })
+      const modeLabel = shouldUseImprovedPrompt ? 'original + improved' : 'original only'
+      setStatus(`Saved to Prompt Library (${modeLabel}).`)
+      notifications.show({ message: `Saved to Prompt Library (${modeLabel}).`, color: 'green' })
     } catch (error) {
       setStatus(error instanceof Error ? `Error: ${error.message}` : 'Error: Failed to save to Prompt Library.')
       notifications.show({
@@ -1217,6 +1227,8 @@ export default function Generator() {
             <TitleSaveSection
               savedTitle={savedTitle}
               setSavedTitle={handleSavedTitleChange}
+              savePromptMode={savePromptMode}
+              setSavePromptMode={setSavePromptMode}
               generatedPrompt={generatedPrompt}
               negativePrompt={negativePrompt}
               generatingTitle={generatingTitle}

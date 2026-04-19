@@ -192,6 +192,7 @@ export type GeneratorUiStateStore = {
   advisorFastest?: string
   supportsNegativePrompt?: boolean | null
   budgetMode?: 'cheap' | 'balanced' | 'premium'
+  savePromptMode?: 'original-only' | 'original-and-improved'
 }
 
 export type PromptBuilderUiStateStore = {
