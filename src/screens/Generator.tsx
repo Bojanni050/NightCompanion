@@ -82,6 +82,13 @@ function splitWords(value: string): string[] {
     .filter(Boolean)
 }
 
+function normalizePromptForDuplicateCheck(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export default function Generator() {
   const [tab, setTab] = useState<'generator' | 'builder'>('generator')
   const [presetOptions, setPresetOptions] = useState<PresetOption[]>([])
@@ -1034,19 +1041,19 @@ export default function Generator() {
         return
       }
 
+      const normalizedNextPrompt = normalizePromptForDuplicateCheck(finalPromptText)
       const duplicate = existingPromptsResult.data.find((prompt) => (
-        prompt.promptText.trim() === finalPromptText
-        && prompt.title.trim().toLowerCase() === titleToSave.toLowerCase()
+        normalizePromptForDuplicateCheck(prompt.promptText) === normalizedNextPrompt
       ))
 
       if (duplicate) {
         await window.electronAPI.dialog.showMessageBox({
           type: 'warning',
           title: 'Duplicate Prompt',
-          message: 'A prompt with this title and content already exists in your library.',
+          message: 'This prompt already exists in your library, even if the title is different.',
           buttons: ['OK'],
         })
-        notifications.show({ message: 'Duplicate prompt already exists in your library.', color: 'yellow' })
+        notifications.show({ message: 'Duplicate prompt already exists (prompt text match).', color: 'yellow' })
         return
       }
 

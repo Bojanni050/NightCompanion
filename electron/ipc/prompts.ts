@@ -150,6 +150,13 @@ function normalisePromptImageRow(input: {
   }
 }
 
+function normalizePromptForDuplicateCheck(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 async function resolvePromptImages(
   currentImages: PromptImageRow[],
   currentLegacyImageUrl: string,
@@ -266,6 +273,25 @@ export function registerPromptsIpc({ db }: { db: Database }) {
 
   ipcMain.handle('prompts:create', async (_, data: PromptMutationInput) => {
     try {
+      const promptText = (data.promptText ?? '').trim()
+      const normalizedPromptText = normalizePromptForDuplicateCheck(promptText)
+
+      if (!normalizedPromptText) {
+        return { error: 'Prompt text is required.' }
+      }
+
+      const existingPrompts = await db
+        .select({ promptText: prompts.promptText })
+        .from(prompts)
+
+      const hasDuplicatePromptText = existingPrompts.some((prompt) => (
+        normalizePromptForDuplicateCheck(prompt.promptText) === normalizedPromptText
+      ))
+
+      if (hasDuplicatePromptText) {
+        return { error: 'Duplicate prompt: this prompt text already exists.' }
+      }
+
       const images = await resolvePromptImages([], '', data)
       const imageUrl = images[0]?.url ?? ''
       const [created] = await db
@@ -274,7 +300,7 @@ export function registerPromptsIpc({ db }: { db: Database }) {
           title: data.title ?? '',
           imageUrl,
           imagesJson: images,
-          promptText: data.promptText ?? '',
+          promptText,
           originalPrompt: typeof data.originalPrompt === 'string' ? data.originalPrompt : null,
           negativePrompt: data.negativePrompt ?? '',
           stylePreset: typeof data.stylePreset === 'string' ? data.stylePreset : '',

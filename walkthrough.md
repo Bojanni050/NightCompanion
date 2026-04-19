@@ -277,6 +277,12 @@
 - Conclusions: Place `Generate Title (AI)` directly before the save-mode dropdown to match the intended action order.
 - Actions: Updated `src/components/generator/TitleSaveSection.tsx` to reorder controls into title input → generate title button → save mode dropdown, while keeping `Save to Library` as the trailing action; validated with `npm run build`.
 
+## 2026-04-19 (Generator — prevent duplicate saves by prompt text)
+
+- Findings: The duplicate check allowed saving the same prompt text multiple times when titles differed.
+- Conclusions: Duplicate detection should compare normalized prompt text only, independent from title.
+- Actions: Updated `src/screens/Generator.tsx` duplicate pre-check to compare normalized prompt text only; added IPC guard in `electron/ipc/prompts.ts` `prompts:create` to reject duplicate prompt text globally and return a clear error; validated with `npm run build`.
+
 ## 2026-04-18 (Settings — stronger section headings)
 
 - Findings: Settings section headings used the same `text-sm` sizing as the option labels inside each card, which made sections harder to distinguish.

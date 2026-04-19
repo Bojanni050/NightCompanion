@@ -66,3 +66,4 @@
 - Left sidebar menu items now use a fixed icon column and aligned text column, so labels and descriptions line up consistently across all navigation rows.
 - Generator now includes a `Save mode` option to choose between saving the original prompt only, or saving the improved prompt while retaining the original prompt context.
 - On the Generator page, `Generate Title (AI)` is now positioned before the save-mode dropdown for a more logical save workflow.
+- Saving to Prompt Library now blocks duplicate prompts by comparing normalized prompt text, even when the title is different.
