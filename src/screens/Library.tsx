@@ -1021,12 +1021,11 @@ export default function Library() {
                   <button
                     type="button"
                     onClick={() => void handleCopyLightboxPrompt()}
-                    className="inline-flex items-center gap-1 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-xs text-white/90 hover:bg-black/55 transition-colors"
-                    aria-label="Copy prompt"
-                    title="Copy prompt"
+                    className="inline-flex items-center justify-center rounded-full border border-white/20 bg-black/35 p-2 text-white/90 hover:bg-black/55 transition-colors"
+                    aria-label={lightboxPromptCopied ? 'Prompt copied' : 'Copy prompt'}
+                    title={lightboxPromptCopied ? 'Copied' : 'Copy prompt'}
                   >
                     {lightboxPromptCopied ? <Check size={13} /> : <Copy size={13} />}
-                    {lightboxPromptCopied ? 'Copied' : 'Copy Prompt'}
                   </button>
                   <div className="flex items-center justify-center gap-1 text-glow-amber">
                   {[1, 2, 3, 4, 5].map((value) => {

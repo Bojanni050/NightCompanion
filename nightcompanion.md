@@ -70,3 +70,4 @@
 - Prompt Library lightbox now displays the image at the maximum available viewport height while preserving aspect ratio.
 - Prompt Library lightbox now includes a `Copy Prompt` button directly in the overlay card.
 - Prompt Library lightbox now always renders in front of other overlays and modals.
+- Prompt Library lightbox copy action is now icon-only and uses tooltip text (`Copy prompt` / `Copied`).

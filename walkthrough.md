@@ -295,6 +295,12 @@
 - Conclusions: Increase the lightbox root z-index so it consistently sits above all current in-screen overlays.
 - Actions: Updated `src/screens/Library.tsx` lightbox container from `z-[100]` to `z-[220]`; validated with `npm run build`.
 
+## 2026-04-19 (Prompt Library lightbox — icon-only copy tooltip)
+
+- Findings: The lightbox copy action showed explicit `Copy Prompt` text, while the preferred UI is icon-only with tooltip guidance.
+- Conclusions: Keep the copy affordance compact by removing inline button text and exposing action state through `title` + `aria-label`.
+- Actions: Updated `src/screens/Library.tsx` lightbox copy button to icon-only styling and dynamic tooltip/accessibility labels (`Copy prompt` / `Copied`); validated with `npm run build`.
+
 ## 2026-04-18 (Settings — stronger section headings)
 
 - Findings: Settings section headings used the same `text-sm` sizing as the option labels inside each card, which made sections harder to distinguish.
