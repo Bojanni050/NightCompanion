@@ -900,3 +900,9 @@
 - Findings: Gebruikersfeedback gaf aan dat de taal van pagina's niet zichtbaar wijzigde via de sidebar-switcher, omdat meerdere schermen nog statische headers/labels gebruikten.
 - Conclusions: Naast context/persistence moet ook de zichtbare page chrome (titels, subtitels en primaire labels) op alle hoofdschermen aan de language context worden gekoppeld.
 - Actions: Extended translation keys in `src/contexts/LanguageContext.tsx`; localized primary page text in `src/screens/Generator.tsx`, `src/screens/Usage.tsx`, `src/screens/StyleProfiles.tsx`, `src/screens/Gallery.tsx`, `src/screens/Characters.tsx`, `src/screens/Settings.tsx`, and `src/screens/Settings/Dashboard.tsx`; updated `nightcompanion.md`; validated with `npm run build`.
+
+## 2026-04-21 (Dashboard: Top Characters image overlay cards)
+
+- Findings: In de Dashboard `Top Characters` sectie werden afbeeldingen klein als avatar getoond, terwijl de gewenste presentatie een grotere image card met overlay-informatie is.
+- Conclusions: Een compacte tile met vaste/maximale hoogte en een bottom gradient-overlay maakt de character-afbeelding visueel leidend en houdt naam/beschrijving leesbaar.
+- Actions: Updated `src/screens/Dashboard.tsx` zodat `Top Characters` items renderen als `h-28 max-h-28` image tiles met naam + beschrijving als overlay; updated `nightcompanion.md`; validated with `npm run build`.

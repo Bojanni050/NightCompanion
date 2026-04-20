@@ -262,16 +262,21 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
                         <button
                           key={character.id}
                           onClick={() => onNavigate('characters')}
-                          className="flex gap-3 items-center p-3 w-full text-left rounded-xl transition-colors bg-night-800/60 hover:bg-night-800"
+                          className="relative w-full h-28 max-h-28 overflow-hidden rounded-xl border border-night-700/60 bg-night-900/50 text-left transition-colors hover:border-night-500/70"
                         >
                           {mainImage ? (
-                            <img src={mainImage} alt={character.name} className="object-cover w-10 h-10 rounded-lg" />
+                            <img src={mainImage} alt={character.name} className="absolute inset-0 w-full h-full object-cover" />
                           ) : (
-                            <div className="flex justify-center items-center w-10 h-10 rounded-lg bg-night-700 text-night-500">◉</div>
+                            <div className="absolute inset-0 flex items-center justify-center bg-night-800 text-night-500">◉</div>
                           )}
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-medium text-white truncate">{character.name}</h3>
-                            <p className="text-xs truncate text-night-400">{character.description || t('dashboard.emptyCharacterDescription')}</p>
+
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+
+                          <div className="absolute inset-x-0 bottom-0 p-3 min-w-0">
+                            <h3 className="text-sm font-semibold text-white truncate">{character.name}</h3>
+                            <p className="text-xs text-night-200/90 truncate">
+                              {character.description || t('dashboard.emptyCharacterDescription')}
+                            </p>
                           </div>
                         </button>
                       )
