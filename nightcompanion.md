@@ -78,3 +78,4 @@
 
 - Prompt Library cards now show an `Improved` indicator when a prompt has improved content metadata.
 - Prompt Library lightbox title row now also shows an `Improved` indicator for improved prompts.
+- De volledige applicatie-menubalk is hersteld; naast `Edit` zijn nu ook de overige standaardmenu's weer zichtbaar.

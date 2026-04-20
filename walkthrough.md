@@ -876,3 +876,9 @@
 - Findings: In `src/screens/Library.tsx` ontbraken visuele indicators voor prompts die via de improve-flow zijn opgeslagen, ondanks bestaande TODO-markers.
 - Conclusions: Een compacte `Improved` badge op zowel kaartniveau als in de lightbox-header maakt meteen zichtbaar dat een prompt verbeterde inhoud heeft.
 - Actions: Added `hasImprovedPrompt(...)` helper in `src/screens/Library.tsx`, wired `isImprovedPrompt` into `lightboxImage`, and rendered `Improved` badges in card and lightbox title rows; updated `nightcompanion.md`; validated with `npm run build`.
+
+## 2026-04-20 (App menu: overige menu's hersteld)
+
+- Findings: In `electron/main.ts` stond een minimale menubalk met alleen `Edit`, waardoor de overige standaardmenu's niet zichtbaar waren.
+- Conclusions: Een platform-standaard menu-template (`fileMenu`, `editMenu`, `viewMenu`, `windowMenu`, plus `appMenu` op macOS) herstelt de verwachte menubalk zonder custom onderhoud.
+- Actions: Updated `electron/main.ts` met een volledige `Menu.buildFromTemplate(...)` configuratie in plaats van Edit-only; updated `nightcompanion.md`; validated with `npm run build`.

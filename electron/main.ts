@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { app, BrowserWindow, dialog, Menu } from 'electron'
+import type { MenuItemConstructorOptions } from 'electron'
 import path from 'path'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
@@ -65,25 +66,15 @@ function recreateMainWindowWithPreference(nativeWindowFrameEnabled: boolean) {
   }
 }
 
-// Register a minimal application menu so OS-level cut/copy/paste/undo
-// shortcuts (Ctrl+X/C/V/Z on Windows, Cmd+X/C/V/Z on macOS) are forwarded
-// into renderer text inputs and textareas.
-Menu.setApplicationMenu(
-  Menu.buildFromTemplate([
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' },
-      ],
-    },
-  ])
-)
+const appMenuTemplate: MenuItemConstructorOptions[] = [
+  ...(process.platform === 'darwin' ? [{ role: 'appMenu' as const }] : []),
+  { role: 'fileMenu' },
+  { role: 'editMenu' },
+  { role: 'viewMenu' },
+  { role: 'windowMenu' },
+]
+
+Menu.setApplicationMenu(Menu.buildFromTemplate(appMenuTemplate))
 
 app.whenReady().then(async () => {
   try {
