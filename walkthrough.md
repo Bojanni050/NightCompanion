@@ -906,3 +906,9 @@
 - Findings: In de Dashboard `Top Characters` sectie werden afbeeldingen klein als avatar getoond, terwijl de gewenste presentatie een grotere image card met overlay-informatie is.
 - Conclusions: Een compacte tile met vaste/maximale hoogte en een bottom gradient-overlay maakt de character-afbeelding visueel leidend en houdt naam/beschrijving leesbaar.
 - Actions: Updated `src/screens/Dashboard.tsx` zodat `Top Characters` items renderen als `h-28 max-h-28` image tiles met naam + beschrijving als overlay; updated `nightcompanion.md`; validated with `npm run build`.
+
+## 2026-04-21 (Dashboard: equal-width Recent Prompts and Top Characters)
+
+- Findings: Op dashboard had `Recent Prompts` een bredere kolom dan `Top Characters`, waardoor de cardbalans ongelijk was.
+- Conclusions: Een 2-koloms grid op xl-breekpunt geeft beide kaarten identieke breedte en een rustiger, symmetrische layout.
+- Actions: Updated `src/screens/Dashboard.tsx` van `xl:grid-cols-3` + `xl:col-span-2` naar `xl:grid-cols-2` zonder col-span override; updated `nightcompanion.md`; validated with `npm run build`.
