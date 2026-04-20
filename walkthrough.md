@@ -912,3 +912,9 @@
 - Findings: De gewenste verdeling is dat `Top Characters` 1/3 van de rij inneemt (en `Recent Prompts` 2/3), in plaats van gelijke breedte.
 - Conclusions: Een `xl:grid-cols-3` layout met `Recent Prompts` op `xl:col-span-2` en `Top Characters` op één kolom levert exact de 2/3-1/3 verhouding.
 - Actions: Updated `src/screens/Dashboard.tsx` van `xl:grid-cols-2` terug naar `xl:grid-cols-3` en `Recent Prompts` naar `xl:col-span-2`; updated `nightcompanion.md`; validated with `npm run build`.
+
+## 2026-04-21 (Generator model advisor: explicit AI-only flow)
+
+- Findings: The Generator auto-ran rule-based model advice after prompt generation, and the explicit AI advice action still reused rule-based budget picks, which made the advisor cards look stuck on defaults.
+- Conclusions: Model advice should stay empty until explicitly requested, and explicit AI advice should be able to supply the cheap/balanced/premium cards instead of always defaulting to local scoring.
+- Actions: Updated `src/screens/Generator.tsx` to clear stale advisor state instead of auto-requesting rule advice, extended `electron/ipc/ai.ts` so AI advisor responses can include cheap/balanced/premium picks with rule-based fallback only when omitted, and updated `electron/ipc/settings.ts` to persist and normalise advisor budget picks correctly; validated with `npm run build`.

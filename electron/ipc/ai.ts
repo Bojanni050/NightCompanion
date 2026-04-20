@@ -580,13 +580,40 @@ function computeBudgetPicks(prompt: string, models: AdvisorModelRecord[]): { che
   return { cheapPick: scoreFor('cheap'), balancedPick: scoreFor('balanced'), premiumPick: scoreFor('premium') }
 }
 
-function parseAdvisorAiResponse(rawContent: string): Pick<AdvisorResult, 'recommendation' | 'alternatives'> {
+function parseBudgetPick(value: unknown, fallbackReason: string): BudgetPick | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+
+  const modelName = String((value as { modelName?: unknown }).modelName || '').trim()
+  if (!modelName) return undefined
+
+  const reasonsRaw = (value as { reasons?: unknown }).reasons
+  const reasons = Array.isArray(reasonsRaw)
+    ? reasonsRaw
+      .map((reason) => String(reason || '').trim())
+      .filter(Boolean)
+      .slice(0, 3)
+    : []
+
+  return {
+    modelName,
+    reasons: reasons.length > 0 ? reasons : [fallbackReason],
+  }
+}
+
+function parseAdvisorAiResponse(rawContent: string): Pick<AdvisorResult, 'recommendation' | 'alternatives'> & {
+  cheapPick?: BudgetPick
+  balancedPick?: BudgetPick
+  premiumPick?: BudgetPick
+} {
   const cleaned = rawContent.trim()
   try {
     const parsed = JSON.parse(cleaned) as {
       recommendedModel?: string
       reasoning?: string
       alternatives?: Array<{ modelName?: string; why?: string }>
+      cheapPick?: unknown
+      balancedPick?: unknown
+      premiumPick?: unknown
     }
 
     const recommendedModel = String(parsed.recommendedModel || '').trim()
@@ -609,6 +636,9 @@ function parseAdvisorAiResponse(rawContent: string): Pick<AdvisorResult, 'recomm
         explanation: reasoning || 'Recommended by AI analysis based on prompt semantics and model metadata.',
       },
       alternatives,
+      cheapPick: parseBudgetPick(parsed.cheapPick, 'AI-selected value pick for a lower budget.'),
+      balancedPick: parseBudgetPick(parsed.balancedPick, 'AI-selected balance of cost and quality.'),
+      premiumPick: parseBudgetPick(parsed.premiumPick, 'AI-selected premium-quality option.'),
     }
   } catch {
     const firstLine = cleaned.split('\n').find((line) => line.trim().length > 0) || cleaned
@@ -618,6 +648,9 @@ function parseAdvisorAiResponse(rawContent: string): Pick<AdvisorResult, 'recomm
         explanation: cleaned,
       },
       alternatives: [],
+      cheapPick: undefined,
+      balancedPick: undefined,
+      premiumPick: undefined,
     }
   }
 }
@@ -948,8 +981,9 @@ export function registerAiIpc({
         'If the prompt is photorealistic, prioritise realismScore. If artistic/stylized, prioritise artScore. If it contains text, prioritise typographyScore.',
         'Avoid recommending the same popular model every time — consider the full list.',
         'Return strict JSON only, no markdown, no explanation outside JSON:',
-        '{"recommendedModel":"<exact modelName from list>","reasoning":"<2-3 sentences why this model fits THIS prompt>","alternatives":[{"modelName":"<exact name>","why":"<one sentence>"}]}',
+        '{"recommendedModel":"<exact modelName from list>","reasoning":"<2-3 sentences why this model fits THIS prompt>","alternatives":[{"modelName":"<exact name>","why":"<one sentence>"}],"cheapPick":{"modelName":"<exact name>","reasons":["<short reason>"]},"balancedPick":{"modelName":"<exact name>","reasons":["<short reason>"]},"premiumPick":{"modelName":"<exact name>","reasons":["<short reason>"]}}',
         'Keep alternatives to max 3. Use exact modelName values from the provided list.',
+        'Always include cheapPick, balancedPick, and premiumPick with exact model names from the provided list and 1-3 short reasons each.',
       ].join(' ')
 
       const userContent = [
@@ -1016,7 +1050,9 @@ export function registerAiIpc({
           recommendation: parsed.recommendation,
           alternatives: parsed.alternatives,
           matchedSignals: ['semantic-ai-analysis'],
-          ...budgetPicksOr,
+          cheapPick: parsed.cheapPick ?? budgetPicksOr.cheapPick,
+          balancedPick: parsed.balancedPick ?? budgetPicksOr.balancedPick,
+          premiumPick: parsed.premiumPick ?? budgetPicksOr.premiumPick,
         }
         resultData = advice
         return { data: advice }
@@ -1080,7 +1116,9 @@ export function registerAiIpc({
         recommendation: parsed.recommendation,
         alternatives: parsed.alternatives,
         matchedSignals: ['semantic-ai-analysis'],
-        ...budgetPicksLocal,
+        cheapPick: parsed.cheapPick ?? budgetPicksLocal.cheapPick,
+        balancedPick: parsed.balancedPick ?? budgetPicksLocal.balancedPick,
+        premiumPick: parsed.premiumPick ?? budgetPicksLocal.premiumPick,
       }
       resultData = advice
       return { data: advice }

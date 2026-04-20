@@ -74,6 +74,9 @@ type GeneratorUiStateStore = {
   recommendedModel?: string
   recommendedModelReason?: string
   recommendedModelMode?: 'rule' | 'ai' | null
+  advisorCheapPick?: { modelName: string; reasons: string[] }
+  advisorBalancedPick?: { modelName: string; reasons: string[] }
+  advisorPremiumPick?: { modelName: string; reasons: string[] }
   advisorBestValue?: string
   advisorFastest?: string
   supportsNegativePrompt?: boolean | null
@@ -209,6 +212,21 @@ function normalizeGeneratorUiState(input: unknown): GeneratorUiStateStore {
   if (!isRecord(input)) return {}
 
   const normalized: GeneratorUiStateStore = {}
+  const normalizeBudgetPick = (value: unknown): { modelName: string; reasons: string[] } | undefined => {
+    if (!isRecord(value)) return undefined
+
+    const modelName = typeof value.modelName === 'string' ? value.modelName : ''
+    const reasons = Array.isArray(value.reasons)
+      ? value.reasons.map((reason) => String(reason || '').trim()).filter(Boolean)
+      : []
+
+    if (!modelName.trim()) return undefined
+
+    return {
+      modelName,
+      reasons,
+    }
+  }
 
   if (input.tab === 'generator' || input.tab === 'builder') normalized.tab = input.tab
   if (typeof input.selectedPreset === 'string') normalized.selectedPreset = input.selectedPreset
@@ -253,6 +271,12 @@ function normalizeGeneratorUiState(input: unknown): GeneratorUiStateStore {
   if (input.recommendedModelMode === 'rule' || input.recommendedModelMode === 'ai' || input.recommendedModelMode === null) {
     normalized.recommendedModelMode = input.recommendedModelMode
   }
+  const advisorCheapPick = normalizeBudgetPick(input.advisorCheapPick)
+  if (advisorCheapPick) normalized.advisorCheapPick = advisorCheapPick
+  const advisorBalancedPick = normalizeBudgetPick(input.advisorBalancedPick)
+  if (advisorBalancedPick) normalized.advisorBalancedPick = advisorBalancedPick
+  const advisorPremiumPick = normalizeBudgetPick(input.advisorPremiumPick)
+  if (advisorPremiumPick) normalized.advisorPremiumPick = advisorPremiumPick
   if (typeof input.advisorBestValue === 'string') normalized.advisorBestValue = input.advisorBestValue
   if (typeof input.advisorFastest === 'string') normalized.advisorFastest = input.advisorFastest
   if (typeof input.supportsNegativePrompt === 'boolean' || input.supportsNegativePrompt === null) {

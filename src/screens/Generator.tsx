@@ -157,6 +157,16 @@ export default function Generator() {
     setSavedTitle(value)
   }
 
+  const clearModelAdvice = () => {
+    setRecommendedModel('')
+    setRecommendedModelReason('')
+    setRecommendedModelMode(null)
+    setAdvisorCheapPick({ modelName: '', reasons: [] })
+    setAdvisorBalancedPick({ modelName: '', reasons: [] })
+    setAdvisorPremiumPick({ modelName: '', reasons: [] })
+    setSupportsNegativePrompt(null)
+  }
+
   const handleClearQuickstart = () => {
     setStatus(null)
     setQuickStartIdea('')
@@ -169,13 +179,7 @@ export default function Generator() {
     setNegativeImprovementDiff(null)
     setNegativePromptViewTab('final')
     setSavedTitle('')
-    setRecommendedModel('')
-    setRecommendedModelReason('')
-    setRecommendedModelMode(null)
-    setAdvisorCheapPick({ modelName: '', reasons: [] })
-    setAdvisorBalancedPick({ modelName: '', reasons: [] })
-    setAdvisorPremiumPick({ modelName: '', reasons: [] })
-    setSupportsNegativePrompt(null)
+    clearModelAdvice()
     setBudgetMode('balanced')
   }
 
@@ -372,7 +376,7 @@ export default function Generator() {
       setNegativeImprovementDiff(null)
       setNegativePromptViewTab('final')
       setTab('generator')
-      void requestModelAdvice('rule', nextPrompt)
+      clearModelAdvice()
       void maybeAutoGenerateTitle(nextPrompt, generatedPrompt)
     } catch (error) {
       console.error('Quick expand failed:', error)
@@ -894,6 +898,7 @@ export default function Generator() {
       promptImprovement.clearDiff()
       setNegativeImprovementDiff(null)
       setNegativePromptViewTab('final')
+      clearModelAdvice()
       if (!autoTitleEnabled) {
         setSavedTitle((currentTitle) => {
           const trimmedTitle = currentTitle.trim()
@@ -902,7 +907,6 @@ export default function Generator() {
         })
       }
       void maybeAutoGenerateTitle(nextPrompt, previousPrompt)
-      void requestModelAdvice('rule', nextPrompt)
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Error: Failed to generate prompt.')
     } finally {
