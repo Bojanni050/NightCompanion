@@ -435,6 +435,9 @@ export default function Library({ initialView = 'prompts', initialImageId }: Lib
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {view === 'prompts' && (
+            <button onClick={() => setForm({ mode: 'create' })} className="btn-primary"><Plus size={16} /> {t('library.newPrompt')}</button>
+          )}
           <div className="inline-flex rounded-xl border border-slate-700/50 bg-slate-900/40 p-1">
             {([
               { id: 'prompts', label: t('library.viewPrompts') },
@@ -450,9 +453,6 @@ export default function Library({ initialView = 'prompts', initialImageId }: Lib
               </button>
             ))}
           </div>
-          {view === 'prompts' && (
-            <button onClick={() => setForm({ mode: 'create' })} className="btn-primary"><Plus size={16} /> {t('library.newPrompt')}</button>
-          )}
         </div>
       </div>
 
