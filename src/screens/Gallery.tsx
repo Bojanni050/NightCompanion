@@ -42,9 +42,10 @@ function loadDisplaySettings(): DisplaySettings {
 
 interface GalleryProps {
   initialImageId?: string
+  embedded?: boolean
 }
 
-export default function Gallery({ initialImageId }: GalleryProps) {
+export default function Gallery({ initialImageId, embedded = false }: GalleryProps) {
   const { t } = useLanguage()
   const state = useGalleryState()
   const [promptOptions, setPromptOptions] = useState<Prompt[]>([])
@@ -237,13 +238,14 @@ export default function Gallery({ initialImageId }: GalleryProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="px-6 pt-6 pb-2">
-        <h1 className="text-2xl font-bold text-white">{t('gallery.title')}</h1>
-        <p className="text-night-400 text-sm mt-1">
-          {state.totalCount} item{state.totalCount !== 1 ? 's' : ''}
-        </p>
-      </div>
+      {!embedded && (
+        <div className="px-6 pt-6 pb-2">
+          <h1 className="text-2xl font-bold text-white">{t('gallery.title')}</h1>
+          <p className="text-night-400 text-sm mt-1">
+            {state.totalCount} item{state.totalCount !== 1 ? 's' : ''}
+          </p>
+        </div>
+      )}
 
       {/* Action bar */}
       <div className="px-6 py-3 flex items-center gap-2 flex-wrap">

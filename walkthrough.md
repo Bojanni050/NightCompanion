@@ -919,6 +919,12 @@
 - Conclusions: Model advice should stay empty until explicitly requested, and explicit AI advice should be able to supply the cheap/balanced/premium cards instead of always defaulting to local scoring.
 - Actions: Updated `src/screens/Generator.tsx` to clear stale advisor state instead of auto-requesting rule advice, extended `electron/ipc/ai.ts` so AI advisor responses can include cheap/balanced/premium picks with rule-based fallback only when omitted, and updated `electron/ipc/settings.ts` to persist and normalise advisor budget picks correctly; validated with `npm run build`.
 
+## 2026-04-21 (Prompt Library absorbs Gallery)
+
+- Findings: The standalone Gallery overlapped heavily with Prompt Library, while most of the image-management workflow could be reused without a separate top-level destination.
+- Conclusions: The cleanest simplification is to keep one saved-content area and split it into `Prompts` and `Media` views, while preserving the existing gallery implementation under the hood.
+- Actions: Updated `src/screens/Library.tsx` with a `Prompts | Media` switch and embedded `src/screens/Gallery.tsx`, updated `src/screens/Gallery.tsx` to support embedded mode, removed Gallery from `src/components/Sidebar.tsx`, redirected image browsing from `src/App.tsx` and `src/screens/Dashboard.tsx` into Library media view, and added the new Library view labels in `src/contexts/LanguageContext.tsx`; validated with `npm run build`.
+
 ## 2026-04-21 (Prompt Library: style preset moved to image metadata)
 
 - Findings: In the Prompt Library edit form, Style Preset was only available as a global prompt field while uploaded images already store per-image generation metadata.

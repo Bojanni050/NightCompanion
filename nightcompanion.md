@@ -91,6 +91,7 @@
 - Dashboard `Top Characters` now uses fixed max-height image tiles with character name and description as overlay text.
 - Dashboard row layout now uses a 2/3 vs 1/3 split: `Recent Prompts` takes two columns and `Top Characters` takes one column on wide screens.
 - Generator model advice now stays empty until you explicitly request it, and AI advice can now populate the cheap, balanced, and premium recommendation cards instead of always showing the same default rule picks.
+- Prompt Library now includes a `Media` view that embeds the former Gallery workflow, and image browsing from the dashboard now opens inside Prompt Library instead of a separate Gallery screen.
 - Prompt Library prompt edit form no longer has a global Style Preset field; style presets are now attached per uploaded image in the image metadata block.
 - Prompt Library lightbox controls and overlay cards now render above the image layer consistently, and the image counter pill was widened so values like `3 / 3` remain readable.
 - Prompt Library cards now show cover-image metadata in the footer (`Used model` and `Preset`) and no longer show the negative prompt message in that footer panel.

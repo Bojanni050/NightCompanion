@@ -6,7 +6,6 @@ import Library from './screens/Library'
 import Characters from './screens/Characters'
 import StyleProfiles from './screens/StyleProfiles'
 import Generator from './screens/Generator'
-import Gallery from './screens/Gallery'
 import Settings from './screens/Settings'
 import Usage from './screens/Usage'
 import ScreenErrorBoundary from './components/ScreenErrorBoundary'
@@ -80,6 +79,12 @@ export default function App() {
   }
 
   const handleNavigate = (newScreen: Screen, params?: Record<string, unknown>) => {
+    if (newScreen === 'gallery') {
+      setScreen('library')
+      setScreenParams({ ...params, view: 'media' })
+      return
+    }
+
     setScreen(newScreen)
     setScreenParams(params)
   }
@@ -106,7 +111,10 @@ export default function App() {
             )}
             {screen === 'library' && (
               <ScreenErrorBoundary screenName="Library" language={language}>
-                <Library />
+                <Library
+                  initialView={screenParams?.view === 'media' ? 'media' : 'prompts'}
+                  initialImageId={typeof screenParams?.imageId === 'string' ? screenParams.imageId : undefined}
+                />
               </ScreenErrorBoundary>
             )}
             {screen === 'characters' && (
@@ -122,11 +130,6 @@ export default function App() {
             {screen === 'generator' && (
               <ScreenErrorBoundary screenName="Generator" language={language}>
                 <Generator />
-              </ScreenErrorBoundary>
-            )}
-            {screen === 'gallery' && (
-              <ScreenErrorBoundary screenName="Gallery" language={language}>
-                <Gallery initialImageId={screenParams?.imageId as string | undefined} />
               </ScreenErrorBoundary>
             )}
             {screen === 'usage' && (

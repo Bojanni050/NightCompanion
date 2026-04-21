@@ -49,13 +49,6 @@ function getNavItems(t: (key: TranslationKey) => string): NavItem[] {
       description: t('sidebar.nav.styleProfiles.description'),
     },
     {
-      id: 'gallery',
-      label: t('sidebar.nav.gallery.label'),
-      icon: '▣',
-      iconColorClass: 'text-teal-400',
-      description: t('sidebar.nav.gallery.description'),
-    },
-    {
       id: 'usage',
       label: t('sidebar.nav.usage.label'),
       icon: '◷',
@@ -90,7 +83,6 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
 
   return (
     <aside className="w-[270px] flex-shrink-0 flex flex-col bg-gradient-sidebar border-r border-slate-900/50 pt-10">
-      {/* Logo */}
       <div className="px-5 pb-8">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-glow-purple to-glow-blue flex items-center justify-center shadow-glow-sm">
@@ -103,7 +95,6 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 min-h-0 overflow-y-auto px-3 space-y-1 pb-4">
         {navItems.map((item) => {
           const isActive = item.id === activeScreen
@@ -143,7 +134,6 @@ export default function Sidebar({ activeScreen, onNavigate }: Props) {
         })}
       </nav>
 
-      {/* Footer */}
       <div className="px-5 py-5 border-t border-slate-900/50 space-y-4">
         <div>
           <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-2">{t('sidebar.language.title')}</p>
