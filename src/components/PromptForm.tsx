@@ -18,6 +18,7 @@ type ImageDraft = {
   note: string
   model: string
   seed: string
+  stylePreset: string
   createdAt: string
   promptSource?: 'generated' | 'improved' | 'custom'
   customPrompt: string
@@ -47,7 +48,6 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [negativePrompt, setNegativePrompt] = useState(initial?.negativePrompt ?? '')
   const [model, setModel] = useState(initial?.model ?? '')
   const [seed, setSeed] = useState(initial?.seed ?? '')
-  const [stylePreset, setStylePreset] = useState(initial?.stylePreset ?? '')
   const [isTemplate, setIsTemplate] = useState(initial?.isTemplate ?? false)
   const [isFavorite, setIsFavorite] = useState(initial?.isFavorite ?? false)
   const [rating, setRating] = useState<number>(initial?.rating ?? 0)
@@ -69,6 +69,9 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         note: image.note ?? '',
         model: image.model ?? '',
         seed: image.seed ?? '',
+        stylePreset: typeof (image as unknown as { stylePreset?: unknown }).stylePreset === 'string'
+          ? String((image as unknown as { stylePreset: string }).stylePreset)
+          : (initial?.stylePreset ?? ''),
         createdAt: image.createdAt ?? new Date().toISOString(),
         promptSource: (() => {
           const saved = (image as unknown as { promptSource?: 'generated' | 'improved' | 'custom' | 'original' }).promptSource
@@ -99,6 +102,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         note: '',
         model: initial.model ?? '',
         seed: initial.seed ?? '',
+        stylePreset: initial.stylePreset ?? '',
         createdAt: now,
         promptSource: 'generated',
         customPrompt: '',
@@ -226,6 +230,9 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           note: image.note ?? '',
           model: image.model ?? '',
           seed: image.seed ?? '',
+          stylePreset: typeof (image as unknown as { stylePreset?: unknown }).stylePreset === 'string'
+            ? String((image as unknown as { stylePreset: string }).stylePreset)
+            : (version.stylePreset ?? ''),
           createdAt: image.createdAt ?? new Date().toISOString(),
           promptSource: (() => {
             const saved = (image as unknown as { promptSource?: 'generated' | 'improved' | 'custom' | 'original' }).promptSource
@@ -257,6 +264,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           note: '',
           model: version.model ?? '',
           seed: version.seed ?? '',
+          stylePreset: version.stylePreset ?? '',
           createdAt: now,
           promptSource: 'generated',
           customPrompt: '',
@@ -267,7 +275,6 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
     })
     setPromptText(version.promptText)
     setNegativePrompt(version.negativePrompt)
-    setStylePreset(version.stylePreset ?? '')
     setModel(version.model)
     setSuggestedModel(version.suggestedModel ?? '')
     setSeed(version.seed ?? '')
@@ -350,6 +357,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           note: '',
           model: model.trim(),
           seed: seed.trim(),
+          stylePreset: '',
           createdAt: now,
           promptSource: 'generated',
           customPrompt: '',
@@ -404,6 +412,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
     setSubmitting(true)
     setError(null)
 
+    const coverStylePreset = images[0]?.stylePreset?.trim() ?? ''
+
     const err = await onSubmit({
       title: title.trim(),
       promptText: promptText.trim(),
@@ -411,7 +421,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
       model: model.trim(),
       suggestedModel: suggestedModel.trim(),
       seed: seed.trim(),
-      stylePreset: stylePreset.trim(),
+      stylePreset: coverStylePreset,
       isTemplate,
       isFavorite,
       rating: rating || null,
@@ -425,6 +435,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         note: image.note,
         model: image.model,
         seed: image.seed,
+        stylePreset: image.stylePreset.trim(),
         createdAt: image.createdAt,
         promptSource: image.customPrompt.trim()
           ? 'custom'
@@ -573,6 +584,32 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                           </div>
 
                           <div>
+                            <label className="label">Image Style Preset</label>
+                            <div className="flex gap-2">
+                              <select
+                                value={presetOptions.some((p) => p.presetName === image.stylePreset) ? image.stylePreset : ''}
+                                onChange={(e) => updateImage(image.id, { stylePreset: e.target.value })}
+                                aria-label="Select image style preset"
+                                className="w-1/2 input"
+                              >
+                                <option value="">- kies preset -</option>
+                                {presetOptions.map((preset) => (
+                                  <option key={preset.presetName} value={preset.presetName}>
+                                    {preset.presetName}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="text"
+                                value={image.stylePreset}
+                                onChange={(e) => updateImage(image.id, { stylePreset: e.target.value })}
+                                className="w-1/2 input"
+                                placeholder="of typ een presetnaam"
+                              />
+                            </div>
+                          </div>
+
+                          <div>
                             <label className="label !mb-2">Prompt used</label>
                             <button
                               type="button"
@@ -702,32 +739,6 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                 rows={2}
                 placeholder="Things to avoid…"
               />
-            </div>
-
-            <div>
-              <label className="label">Style Preset</label>
-              <div className="flex gap-2">
-                <select
-                  value={presetOptions.some((p) => p.presetName === stylePreset) ? stylePreset : ''}
-                  onChange={(e) => setStylePreset(e.target.value)}
-                  aria-label="Select style preset"
-                  className="w-1/2 input"
-                >
-                  <option value="">— kies preset —</option>
-                  {presetOptions.map((preset) => (
-                    <option key={preset.presetName} value={preset.presetName}>
-                      {preset.presetName}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="text"
-                  value={stylePreset}
-                  onChange={(e) => setStylePreset(e.target.value)}
-                  className="w-1/2 input"
-                  placeholder="of typ een presetnaam"
-                />
-              </div>
             </div>
 
             <div>

@@ -20,6 +20,7 @@ type PromptImageMutationInput = {
   note?: string
   model?: string
   seed?: string
+  stylePreset?: string
   createdAt?: string
   promptSource?: 'generated' | 'improved' | 'custom'
   customPrompt?: string
@@ -31,6 +32,7 @@ type PromptImageRow = {
   note: string
   model: string
   seed: string
+  stylePreset?: string
   createdAt: string
   promptSource?: 'generated' | 'improved' | 'custom'
   customPrompt?: string
@@ -127,6 +129,7 @@ function normalisePromptImageRow(input: {
   note?: string
   model?: string
   seed?: string
+  stylePreset?: string
   createdAt?: string
   promptSource?: 'generated' | 'improved' | 'custom'
   customPrompt?: string
@@ -144,6 +147,7 @@ function normalisePromptImageRow(input: {
     note: (input.note ?? '').trim(),
     model: (input.model ?? '').trim(),
     seed: (input.seed ?? '').trim(),
+    stylePreset: (input.stylePreset ?? '').trim(),
     createdAt: input.createdAt?.trim() || new Date().toISOString(),
     promptSource: normalizedPromptSource,
     customPrompt,
@@ -186,6 +190,7 @@ async function resolvePromptImages(
           note: image.note,
           model: image.model,
           seed: image.seed,
+          stylePreset: image.stylePreset,
           createdAt: image.createdAt,
           promptSource: image.promptSource,
           customPrompt: image.customPrompt,

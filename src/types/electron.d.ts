@@ -10,6 +10,7 @@ type PromptImageMutationInput = {
   note?: string
   model?: string
   seed?: string
+  stylePreset?: string
   createdAt?: string
   promptSource?: 'generated' | 'improved' | 'custom'
   customPrompt?: string

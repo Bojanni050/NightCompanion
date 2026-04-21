@@ -32,6 +32,7 @@ type LightboxItem = {
 type PromptImageView = {
   url: string
   model: string
+  stylePreset: string
   customPrompt: string
   promptSource: 'generated' | 'improved' | 'custom'
 }
@@ -59,6 +60,7 @@ function getPromptImages(prompt: Prompt): PromptImageView[] {
       images.push({
         url: candidate,
         model: typeof image?.model === 'string' ? image.model.trim() : '',
+        stylePreset: typeof image?.stylePreset === 'string' ? image.stylePreset.trim() : (prompt.stylePreset ?? ''),
         customPrompt,
         promptSource,
       })
@@ -70,6 +72,7 @@ function getPromptImages(prompt: Prompt): PromptImageView[] {
     images.push({
       url: fallback,
       model: prompt.model || prompt.suggestedModel || '',
+      stylePreset: prompt.stylePreset || '',
       customPrompt: '',
       promptSource: 'generated',
     })
@@ -168,7 +171,7 @@ export default function Library() {
       promptText: currentImage.customPrompt || prompt.promptText,
       rating: prompt.rating ?? 0,
       model: currentImage.model || prompt.model || prompt.suggestedModel || '',
-      stylePreset: prompt.stylePreset ?? '',
+      stylePreset: currentImage.stylePreset || prompt.stylePreset ?? '',
       isCustomPrompt: Boolean(currentImage.customPrompt) || currentImage.promptSource === 'custom',
       isImprovedPrompt: hasImprovedPrompt(prompt),
     }
