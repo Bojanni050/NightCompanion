@@ -918,3 +918,15 @@
 - Findings: The Generator auto-ran rule-based model advice after prompt generation, and the explicit AI advice action still reused rule-based budget picks, which made the advisor cards look stuck on defaults.
 - Conclusions: Model advice should stay empty until explicitly requested, and explicit AI advice should be able to supply the cheap/balanced/premium cards instead of always defaulting to local scoring.
 - Actions: Updated `src/screens/Generator.tsx` to clear stale advisor state instead of auto-requesting rule advice, extended `electron/ipc/ai.ts` so AI advisor responses can include cheap/balanced/premium picks with rule-based fallback only when omitted, and updated `electron/ipc/settings.ts` to persist and normalise advisor budget picks correctly; validated with `npm run build`.
+
+## 2026-04-21 (Prompt Library: style preset moved to image metadata)
+
+- Findings: In the Prompt Library edit form, Style Preset was only available as a global prompt field while uploaded images already store per-image generation metadata.
+- Conclusions: Style preset selection should live inside each uploaded image block so presets can be attached per image; keep prompt-level `stylePreset` compatibility by deriving it from the cover image preset.
+- Actions: Updated `src/components/PromptForm.tsx` to remove the global Style Preset field and add per-image style preset controls in the image subform; updated image metadata typing and normalization in `src/types/index.ts`, `src/types/electron.d.ts`, `src/lib/schema.ts`, and `electron/ipc/prompts.ts`; updated lightbox style-preset sourcing in `src/screens/Library.tsx` to prefer selected-image metadata with prompt fallback; validated with `npm run build`.
+
+## 2026-04-21 (Prompt Library lightbox: foreground layering + wider counter pill)
+
+- Findings: Some lightbox UI controls could visually end up behind/on the same layer as the main image, and the image counter pill could render cramped for values like `3 / 3`.
+- Conclusions: Keep the main image on a lower z-layer and raise all interactive/overlay UI layers consistently; make the counter pill wider with non-wrapping, tabular numerals.
+- Actions: Updated `src/screens/Library.tsx` lightbox z-index assignments so controls/overlay cards render in front of the image, lowered the main image layer, and widened the counter pill with `min-w`, `whitespace-nowrap`, and `tabular-nums`; validated with `npm run build`.

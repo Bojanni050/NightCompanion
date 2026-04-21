@@ -171,7 +171,7 @@ export default function Library() {
       promptText: currentImage.customPrompt || prompt.promptText,
       rating: prompt.rating ?? 0,
       model: currentImage.model || prompt.model || prompt.suggestedModel || '',
-      stylePreset: currentImage.stylePreset || prompt.stylePreset ?? '',
+      stylePreset: currentImage.stylePreset || (prompt.stylePreset ?? ''),
       isCustomPrompt: Boolean(currentImage.customPrompt) || currentImage.promptSource === 'custom',
       isImprovedPrompt: hasImprovedPrompt(prompt),
     }
@@ -950,7 +950,7 @@ export default function Library() {
               event.stopPropagation()
               toggleLightboxOverlay()
             }}
-            className={`absolute top-4 left-4 z-[101] inline-flex items-center gap-2 rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+            className={`absolute top-4 left-4 z-[130] inline-flex items-center gap-2 rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
             aria-label={lightboxOverlayVisible ? 'Hide overlay information' : 'Show overlay information'}
             title={lightboxOverlayVisible ? 'Hide overlay information (I)' : 'Show overlay information (I)'}
           >
@@ -964,14 +964,14 @@ export default function Library() {
               event.stopPropagation()
               closeLightbox()
             }}
-            className={`absolute top-4 right-4 z-[101] rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+            className={`absolute top-4 right-4 z-[130] rounded-full bg-black/50 border border-white/20 px-3 py-1.5 text-sm text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
           >
             Close
           </button>
 
           {lightboxImage.model && (
             <div
-              className={`absolute top-16 right-4 z-[103] max-w-[min(42rem,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-black/45 px-4 py-2 text-right text-white shadow-2xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              className={`absolute top-16 right-4 z-[130] max-w-[min(42rem,calc(100vw-2rem))] rounded-2xl border border-white/15 bg-black/45 px-4 py-2 text-right text-white shadow-2xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               onClick={(event) => event.stopPropagation()}
             >
               <p className="text-[10px] uppercase tracking-[0.28em] text-white/55">Used model</p>
@@ -981,7 +981,7 @@ export default function Library() {
 
           {lightboxImage.isCustomPrompt && (
             <div
-              className={`absolute top-16 left-4 z-[101] rounded-full border border-amber-300/60 bg-amber-500/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 shadow-xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+              className={`absolute top-16 left-4 z-[130] rounded-full border border-amber-300/60 bg-amber-500/25 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-100 shadow-xl backdrop-blur-xl transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
               onClick={(event) => event.stopPropagation()}
             >
               Custom
@@ -994,7 +994,7 @@ export default function Library() {
               event.stopPropagation()
               goToPreviousLightboxImage()
             }}
-            className={`absolute left-4 top-1/2 z-[101] -translate-y-1/2 rounded-full bg-black/50 border border-white/20 px-3 py-2 text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}
+            className={`absolute left-4 top-1/2 z-[130] -translate-y-1/2 rounded-full bg-black/50 border border-white/20 px-3 py-2 text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2'}`}
             aria-label="Previous image"
             title="Previous image (Left arrow)"
           >
@@ -1007,7 +1007,7 @@ export default function Library() {
               event.stopPropagation()
               goToNextLightboxImage()
             }}
-            className={`absolute right-4 top-1/2 z-[101] -translate-y-1/2 rounded-full bg-black/50 border border-white/20 px-3 py-2 text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}`}
+            className={`absolute right-4 top-1/2 z-[130] -translate-y-1/2 rounded-full bg-black/50 border border-white/20 px-3 py-2 text-white hover:bg-black/70 transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-out ${lightboxVisible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}`}
             aria-label="Next image"
             title="Next image (Right arrow)"
           >
@@ -1018,11 +1018,11 @@ export default function Library() {
             src={lightboxImage.url}
             alt={lightboxImage.title}
             onClick={(event) => event.stopPropagation()}
-            className={`relative z-[101] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] object-contain rounded-2xl shadow-2xl transition-all will-change-transform ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
+            className={`relative z-[90] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] object-contain rounded-2xl shadow-2xl transition-all will-change-transform ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
           />
 
           <div
-            className={`pointer-events-none absolute inset-x-4 bottom-4 z-[101] flex justify-center transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
+            className={`pointer-events-none absolute inset-x-4 bottom-4 z-[130] flex justify-center transition-all ${lightboxVisible ? 'duration-[320ms]' : 'duration-200'} ease-[cubic-bezier(0.22,1,0.36,1)] ${lightboxVisible && lightboxOverlayVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
           >
             <div
               className="pointer-events-auto w-full max-w-3xl rounded-[28px] border border-white/15 bg-black/45 px-5 py-4 text-white shadow-2xl backdrop-blur-2xl"
@@ -1032,7 +1032,7 @@ export default function Library() {
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-semibold text-white">{lightboxImage.title}</h3>
                   {lightboxPosition && lightboxImageCount > 1 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full border border-white/15 bg-black/35 text-white/80">
+                    <span className="inline-flex min-w-[3.25rem] items-center justify-center whitespace-nowrap px-2.5 py-0.5 text-[11px] leading-none tabular-nums rounded-full border border-white/15 bg-black/35 text-white/80">
                       {lightboxPosition.imageIndex + 1} / {lightboxImageCount}
                     </span>
                   )}
