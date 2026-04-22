@@ -20,6 +20,7 @@ type FilterType = 'all' | 'templates' | 'favorites'
 
 type LightboxItem = {
   url: string
+  startImageUrl: string
   title: string
   promptText: string
   rating: number
@@ -31,6 +32,7 @@ type LightboxItem = {
 
 type PromptImageView = {
   url: string
+  startImageUrl: string
   model: string
   stylePreset: string
   customPrompt: string
@@ -59,6 +61,7 @@ function getPromptImages(prompt: Prompt): PromptImageView[] {
 
       images.push({
         url: candidate,
+        startImageUrl: typeof image?.startImageUrl === 'string' ? image.startImageUrl.trim() : '',
         model: typeof image?.model === 'string' ? image.model.trim() : '',
         stylePreset: typeof image?.stylePreset === 'string' ? image.stylePreset.trim() : (prompt.stylePreset ?? ''),
         customPrompt,
@@ -71,6 +74,7 @@ function getPromptImages(prompt: Prompt): PromptImageView[] {
   if (fallback && !images.some((image) => image.url === fallback)) {
     images.push({
       url: fallback,
+      startImageUrl: '',
       model: prompt.model || prompt.suggestedModel || '',
       stylePreset: prompt.stylePreset || '',
       customPrompt: '',
@@ -167,6 +171,7 @@ export default function Library() {
 
     return {
       url: currentImage.url,
+      startImageUrl: currentImage.startImageUrl,
       title: prompt.title || 'Prompt image',
       promptText: currentImage.customPrompt || prompt.promptText,
       rating: prompt.rating ?? 0,
@@ -1082,6 +1087,19 @@ export default function Library() {
                   <span className="text-[11px] px-3 py-1 rounded-full border border-white/15 bg-black/35 text-white/85">
                     Preset: {lightboxImage.stylePreset}
                   </span>
+                </div>
+              )}
+
+              {lightboxImage.startImageUrl && (
+                <div className="mb-3 rounded-xl border border-white/15 bg-black/30 p-2.5">
+                  <p className="mb-2 text-[10px] uppercase tracking-[0.14em] text-white/60 text-center">Start image reference</p>
+                  <div className="mx-auto w-full max-w-xs overflow-hidden rounded-lg border border-white/10 bg-black/35">
+                    <img
+                      src={lightboxImage.startImageUrl}
+                      alt="Start image reference"
+                      className="h-28 w-full object-cover"
+                    />
+                  </div>
                 </div>
               )}
 

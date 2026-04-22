@@ -996,3 +996,9 @@
 - Findings: Start/reference images uploaded in Prompt Library should be stored with the prompt media item, but must never appear as gallery media cards or lightbox items in Prompt Library/Media.
 - Conclusions: Treat start images as metadata (`startImageUrl`) attached to a prompt media entry rather than standalone gallery media.
 - Actions: Updated `src/components/PromptForm.tsx` to add per-media `Start Image` upload/replace/remove UI and submit `startImageUrl`/`startImageDataUrl` metadata; updated prompt image types in `src/types/index.ts`, `src/types/electron.d.ts`, `electron/preload.ts`, `electron/ipc/prompts.ts`, `src/lib/schema.ts`, and `electron/ipc/settings.ts`; updated `electron/ipc/prompts.ts` to persist start image files and clean them up on prompt delete; validated with `npm run build`.
+
+## 2026-04-22 (Prompt Library lightbox shows start-image reference)
+
+- Findings: Start images were stored correctly as prompt-media metadata, but there was no visual way to inspect that reference image while reviewing an item in the Prompt Library lightbox.
+- Conclusions: Show start images as a compact reference preview inside the lightbox metadata card, while keeping them excluded from Prompt/Media gallery item lists.
+- Actions: Updated `src/screens/Library.tsx` to carry `startImageUrl` through lightbox image mapping and render a `Start image reference` preview panel in the lightbox overlay when available; validated with `npm run build`.
