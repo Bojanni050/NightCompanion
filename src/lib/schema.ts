@@ -25,6 +25,8 @@ export const prompts = pgTable(
       id: string
       url: string
       startImageUrl?: string
+      characterId?: string
+      characterName?: string
       note: string
       model: string
       seed: string
@@ -73,6 +75,8 @@ export const promptVersions = pgTable(
       id: string
       url: string
       startImageUrl?: string
+      characterId?: string
+      characterName?: string
       note: string
       model: string
       seed: string

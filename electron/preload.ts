@@ -9,6 +9,8 @@ type PromptImageMutationInput = {
   startImageUrl?: string
   startImageDataUrl?: string | null
   startImageFileName?: string | null
+  characterId?: string
+  characterName?: string
   note?: string
   model?: string
   seed?: string

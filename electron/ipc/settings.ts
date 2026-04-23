@@ -129,6 +129,8 @@ type PromptImageJsonItem = {
   id?: string
   url?: string
   startImageUrl?: string
+  characterId?: string
+  characterName?: string
   note?: string
   model?: string
   seed?: string

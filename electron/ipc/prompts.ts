@@ -20,6 +20,8 @@ type PromptImageMutationInput = {
   startImageUrl?: string
   startImageDataUrl?: string | null
   startImageFileName?: string | null
+  characterId?: string
+  characterName?: string
   note?: string
   model?: string
   seed?: string
@@ -37,6 +39,8 @@ type PromptImageRow = {
   id: string
   url: string
   startImageUrl?: string
+  characterId?: string
+  characterName?: string
   note: string
   model: string
   seed: string
@@ -158,6 +162,8 @@ function normalisePromptImageRow(input: {
   id?: string
   url: string
   startImageUrl?: string
+  characterId?: string
+  characterName?: string
   note?: string
   model?: string
   seed?: string
@@ -181,6 +187,8 @@ function normalisePromptImageRow(input: {
     id: input.id?.trim() || randomUUID(),
     url: input.url.trim(),
     startImageUrl: (input.startImageUrl ?? '').trim(),
+    characterId: (input.characterId ?? '').trim(),
+    characterName: (input.characterName ?? '').trim(),
     note: (input.note ?? '').trim(),
     model: (input.model ?? '').trim(),
     seed: (input.seed ?? '').trim(),
@@ -239,6 +247,8 @@ async function resolvePromptImages(
           id: image.id,
           url,
           startImageUrl,
+          characterId: image.characterId,
+          characterName: image.characterName,
           note: image.note,
           model: image.model,
           seed: image.seed,

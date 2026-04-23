@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import type { Prompt, PromptVersion, StyleProfile, PromptMutationInput } from '../types'
 import PromptPreview from './PromptPreview'
-import { Check, Star, StarHalf } from 'lucide-react'
+import { Check, Star, StarHalf, Wand2 } from 'lucide-react'
+import { notifications } from '@mantine/notifications'
 
 type FormData = PromptMutationInput
 
@@ -18,6 +19,8 @@ type ImageDraft = {
   startImageUrl: string
   startImageDataUrl: string | null
   startImageFileName: string | null
+  characterId: string
+  characterName: string
   note: string
   model: string
   seed: string
@@ -37,6 +40,11 @@ type Props = {
   initial?: Prompt
   onSubmit: (data: FormData) => Promise<string | null>
   onClose: () => void
+}
+
+type CharacterOption = {
+  id: string
+  name: string
 }
 
 function getStarFill(rating: number, starIndex: number) {
@@ -74,6 +82,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [isFavorite, setIsFavorite] = useState(initial?.isFavorite ?? false)
   const [rating, setRating] = useState<number>(initial?.rating ?? 0)
   const [notes, setNotes] = useState(initial?.notes ?? '')
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false)
 
   const improvedPromptValue = useMemo(() => {
     const candidate = (initial as unknown as { improvedPrompt?: string } | undefined)?.improvedPrompt
@@ -93,6 +102,12 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           : '',
         startImageDataUrl: null,
         startImageFileName: null,
+        characterId: typeof (image as unknown as { characterId?: unknown }).characterId === 'string'
+          ? String((image as unknown as { characterId: string }).characterId)
+          : '',
+        characterName: typeof (image as unknown as { characterName?: unknown }).characterName === 'string'
+          ? String((image as unknown as { characterName: string }).characterName)
+          : '',
         note: image.note ?? '',
         model: image.model ?? '',
         seed: image.seed ?? '',
@@ -143,6 +158,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         startImageUrl: '',
         startImageDataUrl: null,
         startImageFileName: null,
+        characterId: '',
+        characterName: '',
         note: '',
         model: initial.model ?? '',
         seed: initial.seed ?? '',
@@ -172,6 +189,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
   const [loadingVersions, setLoadingVersions] = useState(false)
   const [styleProfiles, setStyleProfiles] = useState<StyleProfile[]>([])
   const [selectedStyleProfileId, setSelectedStyleProfileId] = useState<number | ''>('')
+  const [characterOptions, setCharacterOptions] = useState<CharacterOption[]>([])
 
   const titleRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -197,6 +215,27 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
     }
 
     loadNightcafePresets()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadCharacters() {
+      const result = await window.electronAPI.characters.list()
+      if (ignore || result.error || !result.data) return
+
+      const options = result.data
+        .map((character) => ({ id: character.id, name: character.name }))
+        .sort((left, right) => left.name.localeCompare(right.name))
+
+      setCharacterOptions(options)
+    }
+
+    void loadCharacters()
 
     return () => {
       ignore = true
@@ -280,6 +319,12 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             : '',
           startImageDataUrl: null,
           startImageFileName: null,
+          characterId: typeof (image as unknown as { characterId?: unknown }).characterId === 'string'
+            ? String((image as unknown as { characterId: string }).characterId)
+            : '',
+          characterName: typeof (image as unknown as { characterName?: unknown }).characterName === 'string'
+            ? String((image as unknown as { characterName: string }).characterName)
+            : '',
           note: image.note ?? '',
           model: image.model ?? '',
           seed: image.seed ?? '',
@@ -331,6 +376,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           startImageUrl: '',
           startImageDataUrl: null,
           startImageFileName: null,
+          characterId: '',
+          characterName: '',
           note: '',
           model: version.model ?? '',
           seed: version.seed ?? '',
@@ -431,6 +478,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
           startImageUrl: '',
           startImageDataUrl: null,
           startImageFileName: null,
+          characterId: '',
+          characterName: '',
           note: '',
           model: model.trim(),
           seed: seed.trim(),
@@ -545,6 +594,8 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
         startImageUrl: image.startImageUrl,
         startImageDataUrl: image.startImageDataUrl,
         startImageFileName: image.startImageFileName,
+        characterId: image.characterId,
+        characterName: image.characterName,
         note: image.note,
         model: image.model,
         seed: image.seed,
@@ -598,7 +649,28 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
             <div className="overflow-y-auto px-6 py-5 space-y-5">
             {/* Title */}
             <div>
-              <label className="label">Title *</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="label !mb-0">Title *</label>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsGeneratingTitle(true)
+                    try {
+                      const result = await window.electronAPI.generator.generateTitle({ prompt: promptText })
+                      if (result.error) { notifications.show({ message: result.error, color: 'red' }); return }
+                      if (result.data?.title) setTitle(result.data.title)
+                    } finally {
+                      setIsGeneratingTitle(false)
+                    }
+                  }}
+                  disabled={isGeneratingTitle || !promptText.trim()}
+                  className="btn btn-ghost text-xs flex items-center gap-1 py-1 px-2 disabled:opacity-40"
+                  title={promptText.trim() ? 'Generate title from prompt text' : 'Enter a prompt first'}
+                >
+                  <Wand2 size={11} />
+                  {isGeneratingTitle ? 'Generating…' : 'AI Title'}
+                </button>
+              </div>
               <input
                 ref={titleRef}
                 type="text"
@@ -731,7 +803,7 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                             )}
                           </div>
 
-                          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                          <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
                             <div>
                               <label className="label">Generated By (Model)</label>
                               <select
@@ -757,6 +829,29 @@ export default function PromptForm({ initial, onSubmit, onClose }: Props) {
                                 className="input"
                                 placeholder="e.g. 123456789"
                               />
+                            </div>
+                            <div>
+                              <label className="label">Character</label>
+                              <select
+                                value={image.characterId}
+                                onChange={(e) => {
+                                  const nextCharacterId = e.target.value
+                                  const selectedCharacter = characterOptions.find((character) => character.id === nextCharacterId)
+                                  updateImage(image.id, {
+                                    characterId: nextCharacterId,
+                                    characterName: selectedCharacter?.name ?? '',
+                                  })
+                                }}
+                                aria-label="Linked character"
+                                className="input"
+                              >
+                                <option value="">— no character —</option>
+                                {characterOptions.map((character) => (
+                                  <option key={character.id} value={character.id}>
+                                    {character.name}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
                           </div>
 

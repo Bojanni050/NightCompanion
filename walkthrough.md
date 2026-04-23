@@ -1008,3 +1008,9 @@
 - Findings: Users had no guidance on which models to pick per role.
 - Conclusions: A small hover tooltip next to the MODEL label in each role card shows three curated recommendations with short notes, without cluttering the layout.
 - Actions: Added ROLE_RECOMMENDATIONS constant and RecommendationsTooltip component in src/screens/Settings/Dashboard.tsx; placed tooltip next to MODEL label in each role card; added Info icon to lucide-react import; validated with npm run build.
+
+## 2026-04-23 (Prompt Library: character dropdown per uploaded media)
+
+- Findings: In the Prompt edit form there was no per-image character selector, so character context could not be linked to a specific uploaded media item.
+- Conclusions: Add a character dropdown on each media block and persist the selected character on that exact image metadata record.
+- Actions: Updated `src/components/PromptForm.tsx` to load characters and render a per-image Character select; stored `characterId` and `characterName` per media draft; propagated fields through `src/types/index.ts`, `src/types/electron.d.ts`, `electron/preload.ts`, `electron/ipc/prompts.ts`, `src/lib/schema.ts`, and `electron/ipc/settings.ts`; validated with `npm run build`.
